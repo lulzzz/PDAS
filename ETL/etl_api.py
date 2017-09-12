@@ -22,6 +22,8 @@ def get_data_from_extracts():
     # Scan folder and sub-folders
     for f in df_metadata_before[df_metadata_before['etl_type'] == 'file']['src_name'].values.tolist():
         # Work with files defined in metadata table only
+        if not(os.path.isfile(cp.SOURCE_FILE_PATH + '\\' + f)):
+            continue
         magic.write_to_file(cp.LOG_FILE, r'''Processing ETL for file {} started'''.format(f))
         timestamp_old = magic.get_table_column_values_as_list(engine, 'pdas_metadata', 'timestamp_file', {'src_name': [f]})[0].strftime("%Y-%m-%d %H:%M:%S")
         timestamp_new = magic.get_modified_date(os.path.join(cp.SOURCE_FILE_PATH, f))
