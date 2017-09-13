@@ -398,7 +398,7 @@ def get_table_to_df(engine, table, dictfilter=None, output_cols=None):
     r"""
     Extract data from table and return a dataframe
     """
-    alchemy_table = Table(table, metadata, autoload=True, autoload_with=engine, schema="vcdwh.vcdwh")
+    alchemy_table = Table(table, metadata, autoload=True, autoload_with=engine, schema="vcdwh.dbo")
     Session = sessionmaker(bind=engine)
     session = Session()
     queryset = session.query(alchemy_table)
@@ -776,7 +776,7 @@ def get_table_column_values_as_list(engine, table, column, dictfilter=None):
     r"""
     Generic Select distinct values from a particular column with dictfilter as conditions
     """
-    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.vcdwh')
+    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.dbo')
     Session = sessionmaker(bind=engine)
     session = Session()
     queryset = session.query(getattr(table.c, column))
@@ -797,7 +797,7 @@ def set_table_column_value(engine, table, column, valueforupdate, colfilter, val
     r"""
     Update generic function for a particular column with dictfilter as conditions
     """
-    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.vcdwh')
+    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.dbo')
     kwargs = {column: valueforupdate}
     stmt = update(table).where(getattr(table.c, colfilter) == valuefilter).values(**kwargs)
     engine.execute(stmt)
@@ -807,7 +807,7 @@ def delete_from_table(engine, table, dictfilter=None):
     r"""
     Delete from table on conditions in dictfilter
     """
-    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.vcdwh')
+    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.dbo')
     if dictfilter:
         for key, values in dictfilter.items():
             where_clause = getattr(table.c, key).in_(values)
