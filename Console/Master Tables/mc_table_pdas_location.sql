@@ -24,10 +24,10 @@ BEGIN
 		DECLARE @test nvarchar(500) =
 		(
 			SELECT TOP 1
-				temp.[Region] + ' / ' +
-				temp.[Country] + ' / ' +
-				temp.[Country Code A2] + ' / ' +
-				temp.[Country Code A3]
+				ISNULL(temp.[Region], '') + ' / ' +
+				ISNULL(temp.[Country], '') + ' / ' +
+				ISNULL(temp.[Country Code A2], '') + ' / ' +
+				ISNULL(temp.[Country Code A3], '')
 			FROM [dbo].[mc_temp_pdas_location] temp
 			WHERE
 			NOT
@@ -73,13 +73,13 @@ BEGIN
 			FROM
 				[dbo].[mc_temp_pdas_location] temp
 				LEFT OUTER JOIN [dbo].[dim_location] dim
-					ON temp.[Country code A2] = dim.[country_code_a2]
-			WHERE dim.[country_code_a2] IS NULL
+					ON temp.[id] = dim.[id]
+			WHERE dim.[id] IS NULL
 
 			-- Update existing rows
 			UPDATE dim
 			SET
-				dim.[region] = dim.[region],
+				dim.[region] = temp.[Region],
 				dim.[country_code_a2] = temp.[Country code A2],
 				dim.[country_code_a3] = temp.[Country code A3]
 			FROM
