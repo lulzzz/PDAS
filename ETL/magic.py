@@ -11,7 +11,6 @@ import locale
 from functools import reduce
 locale.setlocale(locale.LC_ALL, '')
 from datetime import datetime
-import datefinder
 from collections import Counter
 import settings as cp
 from sqlalchemy import Table, Column, ForeignKey, create_engine, UniqueConstraint, schema, types, update, and_
@@ -108,17 +107,6 @@ def convert_string_to_float(string):
         return string
 
 
-def is_datetime(string):
-    r"""
-    Returns True if the string parameter can be converted into a datetime. False otherwise
-    """
-    pattern = re.compile(r"""([^0-9/\-.:]+)""")
-    if not pd.isnull(string) and [l for l in datefinder.find_dates(str(string))] and not(re.search(pattern, string)):
-        return True
-    else:
-        return False
-
-
 def normalize_date_format(string):
     r"""
     Append 01 when the string is a month date format
@@ -132,18 +120,6 @@ def normalize_date_format(string):
         if re.search(format_regex, string):
             string = string + '01'
         return re.sub(r"""[./-]""", '', string)
-
-
-def convert_string_to_datetime(string):
-    r"""
-    Convert the input string to datetime format if possible
-    Otherwise return the input string parameter
-    """
-    # Check if string can be converted to datetime
-    if is_datetime(string):
-        return [l for l in datefinder.find_dates(str(string))]
-    else:
-        return string
 
 
 def identify_date_format(table, column):
