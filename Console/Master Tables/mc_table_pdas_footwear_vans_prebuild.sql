@@ -28,11 +28,7 @@ BEGIN
                 ISNULL(temp.[MTL], '')  + ' / ' +
                 ISNULL(temp.[Size], '')  + ' / ' +
                 ISNULL(temp.[Factory], '')  + ' / ' +
-                ISNULL(temp.[Current Balance Date], '')  + ' / ' +
-                ISNULL(temp.[Current Balance], '')  + ' / ' +
-                ISNULL(temp.[Buying Program], '')  + ' / ' +
-                ISNULL(temp.[Status], '')  + ' / ' +
-                ISNULL(temp.[Cancellation Cost per Unit], '')
+                ISNULL(temp.[Buying Program], '')
 			FROM [dbo].[mc_temp_pdas_footwear_vans_prebuild]  temp
                 LEFT JOIN (SELECT DISTINCT [region], 1 as flag FROM [dbo].[dim_location]) dim_l
                     ON 	UPPER(temp.[Region]) = UPPER(dim_l.[region])

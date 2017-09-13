@@ -50,7 +50,7 @@ BEGIN
 			-- Delete removed rows (secured by PK constraint)
 			DELETE dim
 			FROM
-				[dbo].[dim__buying_program] dim
+				[dbo].[dim_buying_program] dim
 				LEFT OUTER JOIN (
 					SELECT temp.*
 					FROM
@@ -63,7 +63,7 @@ BEGIN
 			WHERE temp.[id] IS NULL
 
 			-- Insert new rows
-			INSERT INTO [dbo].[dim__buying_program]
+			INSERT INTO [dbo].[dim_buying_program]
             (
                 [dim_business_id]
                 ,[name]
@@ -76,7 +76,7 @@ BEGIN
 				INNER JOIN (SELECT [id], [brand], [product_line] FROM [dbo].[dim_business]) dim_b
 					ON 	temp.[Purchasing Organization] = dim_b.[brand]
 						AND temp.[Product Category] = dim_b.[product_line]
-				LEFT JOIN [dbo].[dim__buying_program] dim_bp
+				LEFT JOIN [dbo].[dim_buying_program] dim_bp
 					ON temp.[id] = dim_f.[id]
 			WHERE dim_bp.[id] IS NULL
 
@@ -86,7 +86,7 @@ BEGIN
                 dim.[dim_business_id] = dim_b.[id]
 				,dim.[name] = temp.[Name]
 			FROM
-				[dbo].[dim__buying_program] dim
+				[dbo].[dim_buying_program] dim
 				INNER JOIN [dbo].[mc_temp_pdas_footwear_vans_buying_program] temp
 					ON	dim.[id] = temp.[id]
                 INNER JOIN (SELECT [id], [brand], [product_line] FROM [dbo].[dim_business]) dim_b

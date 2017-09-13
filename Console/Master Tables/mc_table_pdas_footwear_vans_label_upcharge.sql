@@ -25,8 +25,7 @@ BEGIN
 		(
 			SELECT TOP 1
                 ISNULL([Customer], '')  + ' / ' +
-                ISNULL([Product Type], '') + ' / ' +
-                ISNULL([Label Upcharge], '')
+                ISNULL([Product Type], '')
 			FROM [dbo].[mc_temp_pdas_footwear_vans_label_upcharge]  temp
                 LEFT JOIN (SELECT [name], 1 as flag FROM [dbo].[dim_customer]) dim_c
                     ON 	UPPER(temp.[Customer]) = UPPER(dim_c.[name])
@@ -35,7 +34,7 @@ BEGIN
                 OR
                 UPPER([Product Type]) NOT IN (
                     'SHOES',
-                    'SANDALS',
+                    'SANDAL',
                     'ALL'
                 )
                 OR

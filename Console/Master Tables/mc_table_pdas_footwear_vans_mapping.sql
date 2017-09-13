@@ -56,25 +56,11 @@ BEGIN
             BEGIN
 
     			-- Delete removed rows (secured by PK constraint)
-    			DELETE dim
-    			FROM
-    				[dbo].[helper_pdas_footwear_vans_mapping] dim
-    				LEFT JOIN [dbo].[mc_temp_pdas_footwear_vans_mapping] temp
-                        ON  dim.[Type]= temp.[Type] and
-                            dim.[Parent] = temp.[Parent] and
-                            dim.[Child] = temp.[Child]
-    			WHERE temp.[Type] IS NULL
+    			DELETE FROM [dbo].[helper_pdas_footwear_vans_mapping]
 
     			-- Insert new rows
     			INSERT INTO [dbo].[helper_pdas_footwear_vans_mapping]
-                SELECT t1.*
-    			FROM
-    				[dbo].[temp_mapping] t1
-    				LEFT OUTER JOIN [dbo].[helper_mapping] t2
-                        ON  dim.[Type]= temp.[Type] and
-                            dim.[Parent] = temp.[Parent] and
-                            dim.[Child] = temp.[Child]
-    			WHERE temp.[Type] IS NULL
+                SELECT * FROM [dbo].[mc_temp_pdas_footwear_vans_mapping]
 
             END
     		ELSE
