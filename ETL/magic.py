@@ -11,7 +11,6 @@ import locale
 from functools import reduce
 locale.setlocale(locale.LC_ALL, '')
 from datetime import datetime
-import datefinder
 from collections import Counter
 import settings as cp
 from sqlalchemy import Table, Column, ForeignKey, create_engine, UniqueConstraint, schema, types, update, and_
@@ -108,17 +107,6 @@ def convert_string_to_float(string):
         return string
 
 
-def is_datetime(string):
-    r"""
-    Returns True if the string parameter can be converted into a datetime. False otherwise
-    """
-    pattern = re.compile(r"""([^0-9/\-.:]+)""")
-    if not pd.isnull(string) and [l for l in datefinder.find_dates(str(string))] and not(re.search(pattern, string)):
-        return True
-    else:
-        return False
-
-
 def normalize_date_format(string):
     r"""
     Append 01 when the string is a month date format
@@ -132,18 +120,6 @@ def normalize_date_format(string):
         if re.search(format_regex, string):
             string = string + '01'
         return re.sub(r"""[./-]""", '', string)
-
-
-def convert_string_to_datetime(string):
-    r"""
-    Convert the input string to datetime format if possible
-    Otherwise return the input string parameter
-    """
-    # Check if string can be converted to datetime
-    if is_datetime(string):
-        return [l for l in datefinder.find_dates(str(string))]
-    else:
-        return string
 
 
 def identify_date_format(table, column):
@@ -407,7 +383,7 @@ def load_df_into_db(engine, table, name, dict_types=None, mode='append', index=F
         for i, cdf in enumerate(chunker(table, chunksize)):
             if mode == 'replace' and i > 0:
                 mode = 'append'
-            cdf.to_sql(con=engine, name=name, if_exists=mode, index=index, dtype=dict_types, schema='vcdwh')
+            cdf.to_sql(con=engine, name=name, if_exists=mode, index=index, dtype=dict_types, schema='dbo')
     except SQLAlchemyError:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
@@ -422,7 +398,7 @@ def get_table_to_df(engine, table, dictfilter=None, output_cols=None):
     r"""
     Extract data from table and return a dataframe
     """
-    alchemy_table = Table(table, metadata, autoload=True, autoload_with=engine, schema="vcdwh.vcdwh")
+    alchemy_table = Table(table, metadata, autoload=True, autoload_with=engine, schema="vcdwh.dbo")
     Session = sessionmaker(bind=engine)
     session = Session()
     queryset = session.query(alchemy_table)
@@ -483,7 +459,7 @@ def get_table_to_df(engine, table, dictfilter=None, output_cols=None):
         result = pd.read_sql_query(queryset.statement, engine)
         result = result.rename(columns={col: col.replace(table + '_', '') for col in result.columns})
     else:
-        result = pd.read_sql_table(table, engine, schema='vcdwh')
+        result = pd.read_sql_table(table, engine, schema='dbo')
     session.close()
     # Convert dtypes to match with table types
     result = set_pandas_dtypes_with_db_table_types(result, get_column_types(engine, table))
@@ -800,7 +776,7 @@ def get_table_column_values_as_list(engine, table, column, dictfilter=None):
     r"""
     Generic Select distinct values from a particular column with dictfilter as conditions
     """
-    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.vcdwh')
+    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.dbo')
     Session = sessionmaker(bind=engine)
     session = Session()
     queryset = session.query(getattr(table.c, column))
@@ -821,7 +797,7 @@ def set_table_column_value(engine, table, column, valueforupdate, colfilter, val
     r"""
     Update generic function for a particular column with dictfilter as conditions
     """
-    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.vcdwh')
+    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.dbo')
     kwargs = {column: valueforupdate}
     stmt = update(table).where(getattr(table.c, colfilter) == valuefilter).values(**kwargs)
     engine.execute(stmt)
@@ -831,7 +807,7 @@ def delete_from_table(engine, table, dictfilter=None):
     r"""
     Delete from table on conditions in dictfilter
     """
-    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.vcdwh')
+    table = Table(table, metadata, autoload=True, autoload_with=engine, schema='vcdwh.dbo')
     if dictfilter:
         for key, values in dictfilter.items():
             where_clause = getattr(table.c, key).in_(values)
@@ -856,7 +832,7 @@ def get_column_names(engine, table, column_type=None):
     Return list with column names of table
     """
     insp = reflection.Inspector.from_engine(engine)
-    list_of_dicts = insp.get_columns(table, schema='vcdwh')
+    list_of_dicts = insp.get_columns(table, schema='dbo')
     if column_type:
         if column_type == 'numeric':
             list_output = [col['name'] for col in list_of_dicts if col['type'] in (Integer, Float)]
