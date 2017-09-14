@@ -35,10 +35,11 @@ BEGIN
 	    id INT,
 		full_date DATE,
         season_accounting NVARCHAR(45),
-        season_year_accounting NVARCHAR(45),
-        year_accounting INT,
+		season_year_short_accounting NVARCHAR(45),
+		year_accounting INT,
         year_cw_accounting NVARCHAR(45),
 		year_month_accounting NVARCHAR(45),
+		month_name_accounting NVARCHAR(45),
 		day_of_week INT,
 		day_name_of_week NVARCHAR(45),
 		is_last_day_of_month INT,
@@ -101,15 +102,29 @@ BEGIN
 	WHILE @CurrentDate <= @FiscalCalendarEnd
 		BEGIN
 
-			INSERT INTO @NewCalendar (id, full_date, season_accounting, season_year_accounting, year_accounting, year_cw_accounting, year_month_accounting, day_of_week, day_name_of_week, is_last_day_of_month, is_weekend_day)
+			INSERT INTO @NewCalendar (id, full_date, season_accounting, season_year_short_accounting, year_accounting, year_cw_accounting, year_month_accounting, month_name_accounting, day_of_week, day_name_of_week, is_last_day_of_month, is_weekend_day)
 				SELECT
 					CAST(CONVERT(VARCHAR(8),@CurrentDate,112) AS INT) as id,
 					FORMAT(@CurrentDate,'yyyy-MM-dd') as full_date,
 					@WorkSeasonSeed as season_accounting,
-					@WorkSeasonSeed + SUBSTRING(CONVERT(VARCHAR(4),@FiscalYearSeed),3,2) season_year_accounting,
+					@WorkSeasonSeed + SUBSTRING(CONVERT(VARCHAR(4),@FiscalYearSeed),3,2) season_year_short_accounting,
 				    @FiscalYearSeed as year_accounting,
 					CONVERT(VARCHAR(4),@FiscalYearSeed) + 'CW' + CONVERT(VARCHAR(2),@WorkWeekSeed) as year_cw_accounting,
 					CONVERT(VARCHAR(4),@FiscalYearSeed) + '-' + RIGHT('00'+CAST(@WorkPeriodSeed AS VARCHAR(2)),2) as year_month_accounting,
+					CASE @WorkPeriodSeed
+						WHEN 1 THEN 'January'
+						WHEN 2 THEN 'February'
+						WHEN 3 THEN 'March'
+						WHEN 4 THEN 'April'
+						WHEN 5 THEN 'May'
+						WHEN 6 THEN 'June'
+						WHEN 7 THEN 'July'
+						WHEN 8 THEN 'August'
+						WHEN 9 THEN 'September'
+						WHEN 10 THEN 'October'
+						WHEN 11 THEN 'November'
+						ELSE 'December'
+					END as month_name_accounting,
 					DATEPART(DW,@CurrentDate) as day_of_week,
 					DATENAME(DW,@CurrentDate) as day_name_of_week,
 					CASE
@@ -254,15 +269,22 @@ BEGIN
 		Finally we insert the new calendar in the dim_date table
 	*/
 
-	INSERT INTO [dbo].[dim_date] (id, full_date, season_accounting, season_year_accounting, year_accounting, year_cw_accounting, year_month_accounting, day_of_week, day_name_of_week, is_last_day_of_month, is_weekend_day)
+	INSERT INTO [dbo].[dim_date] (id, full_date, season_accounting, season_year_accounting, season_year_short_accounting, year_accounting, year_cw_accounting, year_month_accounting, month_name_accounting, month_name_short_accounting, day_of_week, day_name_of_week, is_last_day_of_month, is_weekend_day)
 	SELECT
 		id,
 		full_date,
 		season_accounting,
-		season_year_accounting,
+		CASE season_accounting
+			WHEN 'SP' THEN 'Spring ' + CONVERT(VARCHAR(4), year_accounting)
+			WHEN 'FA' THEN 'Fall ' + CONVERT(VARCHAR(4), year_accounting)
+			ELSE 'Holiday ' + CONVERT(VARCHAR(4), year_accounting)
+		END as season_year_accounting,
+		season_year_short_accounting,
 		year_accounting,
 		year_cw_accounting,
 		year_month_accounting,
+		month_name_accounting,
+		SUBSTRING(month_name_accounting, 1, 3) as month_name_short_accounting,
 		day_of_week,
 		day_name_of_week,
 		is_last_day_of_month,
@@ -280,10 +302,17 @@ BEGIN
 	SET
 		dt.full_date = new.full_date,
 		dt.season_accounting = new.season_accounting,
-		dt.season_year_accounting = new.season_year_accounting,
+		dt.season_year_accounting = CASE new.season_accounting
+										WHEN 'SP' THEN 'Spring ' + CONVERT(VARCHAR(4), new.year_accounting)
+										WHEN 'FA' THEN 'Fall ' + CONVERT(VARCHAR(4), new.year_accounting)
+										ELSE 'Holiday ' + CONVERT(VARCHAR(4), new.year_accounting)
+									END,
+		dt.season_year_short_accounting = new.season_year_short_accounting,
 		dt.year_accounting = new.year_accounting,
 		dt.year_cw_accounting = new.year_cw_accounting,
 		dt.year_month_accounting = new.year_month_accounting,
+		dt.month_name_accounting = new.month_name_accounting,
+		dt.month_name_short_accounting = SUBSTRING(new.month_name_accounting, 1, 3),
 		dt.day_of_week = new.day_of_week,
 		dt.day_name_of_week = new.day_name_of_week,
 		dt.is_last_day_of_month = new.is_last_day_of_month,

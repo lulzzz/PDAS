@@ -3,6 +3,7 @@
 __pycache__
 ve/
 users/
+help_script.py
 db.sqlite3
 .DS_Store
 test.py
@@ -16,5 +17,3 @@ test.py
 *.ipynb
 documentation/
 *migrations/
-
-
