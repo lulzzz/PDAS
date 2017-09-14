@@ -17,3 +17,4 @@ test.py
 *.ipynb
 documentation/
 *migrations/
+__pycache__/

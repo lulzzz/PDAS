@@ -24,12 +24,12 @@ BEGIN
 		DECLARE @test nvarchar(500) =
 		(
 			SELECT TOP 1
-				temp.[Purchasing Organization] + ' / ' +
-				temp.[Product Category] + ' / ' +
-				temp.[Country] + ' / ' +
-				temp.[Vendor Group] + ' / ' +
-				temp.[Short Name] + ' / ' +
-				temp.[Status]
+				ISNULL(temp.[Purchasing Organization], '') + ' / ' +
+				ISNULL(temp.[Product Category], '') + ' / ' +
+				ISNULL(temp.[Country], '') + ' / ' +
+				ISNULL(temp.[Vendor Group], '') + ' / ' +
+				ISNULL(temp.[Short Name], '') + ' / ' +
+				ISNULL(temp.[Status], '')
 			FROM
 				[dbo].[mc_temp_pdas_footwear_vans_factory] temp
 				LEFT JOIN (SELECT DISTINCT [country], 1 as flag FROM [dbo].[dim_location]) dim_l
@@ -94,8 +94,8 @@ BEGIN
 					ON 	temp.[Purchasing Organization] = dim_b.[brand]
 						AND temp.[Product Category] = dim_b.[product_line]
 				LEFT JOIN [dbo].[dim_factory] dim_f
-					ON temp.[Short Name] = dim_f.[short_name]
-			WHERE dim_f.[short_name] IS NULL
+					ON temp.[id] = dim_f.[id]
+			WHERE dim_f.[id] IS NULL
 
 			-- Update existing rows
 			UPDATE dim
