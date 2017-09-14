@@ -57,15 +57,11 @@ BEGIN
             BEGIN
 
     			-- Delete removed rows (secured by PK constraint)
-    			DELETE dim
-    			FROM
-    				[dbo].[helper_pdas_footwear_vans_cutoff]
+    			DELETE FROM [dbo].[helper_pdas_footwear_vans_cutoff]
 
     			-- Insert new rows
     			INSERT INTO [dbo].[helper_pdas_footwear_vans_cutoff]
-    			SELECT *
-    			FROM
-    				[dbo].[mc_temp_pdas_footwear_vans_cutoff]
+    			SELECT * FROM [dbo].[mc_temp_pdas_footwear_vans_cutoff]
 
             END
     		ELSE

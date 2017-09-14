@@ -10,7 +10,7 @@ GO
 -- Create date: 9/6/2017
 -- Description:	Console procedure to edit the average FOB table.
 -- =============================================
-ALTER PROCEDURE [dbo].[mc_table_pdas_footwear_vans_moq_policy]
+ALTER PROCEDURE [dbo].[mc_table_pdas_footwear_vans_avg_fob]
 	@output_param nvarchar(500) OUTPUT
 AS
 BEGIN

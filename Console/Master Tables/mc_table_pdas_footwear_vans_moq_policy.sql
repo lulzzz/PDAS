@@ -29,7 +29,11 @@ BEGIN
                 LEFT JOIN (SELECT DISTINCT [type], 1 as flag FROM [dbo].[dim_product]) dim_p
                     ON 	temp.[Product Type] = dim_p.[type]
             WHERE
-                ISNULL(dim_p.[flag], 0) = 0
+                (
+					ISNULL(dim_p.[flag], 0) = 0
+					AND
+					UPPER([Product Type]) NOT IN ('REGULAR', 'VAULT')
+				)
         )
 
 		IF @test IS NULL
