@@ -179,6 +179,6 @@ if __name__ == '__main__':
     get_data_from_extracts()
     magic.write_to_file(cp.LOG_FILE, '''\n\n''', with_time_stamp=False)
     magic.write_to_file(cp.LOG_FILE, '''## QUERIES ##''', with_time_stamp=False)
-    get_data_from_query(1)
+    get_data_from_query()
     magic.write_to_file(cp.LOG_FILE, '''\n\n''', with_time_stamp=False)
     magic.write_to_file(cp.LOG_FILE, '''#### ETL END ####\n\n\n''', with_time_stamp=False)
