@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import settings as cp
 import magic
-from dateutil import relativedelta
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -67,7 +66,7 @@ def get_data_from_extracts():
             magic.set_table_column_value(engine, 'pdas_metadata', 'state', 'OK', 'src_name', f)
 
 
-def get_data_from_query(user_nb_months=None):
+def get_data_from_query():
     r"""
     =======================================================
         Extract and load SQL Queries Data in Staging Area
@@ -84,7 +83,7 @@ def get_data_from_query(user_nb_months=None):
         magic.write_to_file(cp.LOG_FILE, r'''Processing ETL for query source {} started'''.format(f))
         timestamp_old = magic.get_table_column_values_as_list(engine_target, 'pdas_metadata', 'timestamp_file', {'src_name': [f]})[0]
         timestamp_new = pd.read_sql_query(
-            r'''SELECT max(Origdd) as date_dt
+            r'''SELECT MAX(ModifiedOn) as date_dt
                 FROM Prbunhea
                 WHERE Prbunhea.Misc21 IN ('CONDOR', 'JBA-VF', 'JBA-VS', 'REVA', 'S65')
                 AND Prbunhea.Misc6 IN ('OCN', 'OIN', 'OSA', 'VF ASIA', 'VF INDIA', 'VF Thailand', 'VFA', 'VFA Bangladesh', 'VFA Guangzhou', 'VFA HongKong', 'VFA India', 'VFA Indonesia', 'VFA Qingdao', 'VFA Shanghai', 'VFA Vietnam', 'VFA Zhuhai', 'VFI')
@@ -93,15 +92,13 @@ def get_data_from_query(user_nb_months=None):
                 AND Not (Prbunhea.Qtyship=0 AND Prbunhea.Done=1) AND Prbunhea.POLocation NOT IN('CANCELED')''',
             engine_source
         )['date_dt'].max()
-        print(timestamp_new)
         if timestamp_old == timestamp_new:
-            magic.write_to_file(cp.LOG_FILE, r'''Data snapshot {} already loaded for max Origdd = {}'''.format(f, timestamp_new))
+            magic.write_to_file(cp.LOG_FILE, r'''Data snapshot {} already loaded for max ModifiedOn = {}'''.format(f, timestamp_new))
             continue
         # Calculate relative delta
-        r = relativedelta.relativedelta(timestamp_new, timestamp_old)
         magic.set_table_column_value(engine_target, 'pdas_metadata', 'state', 'TBL', 'src_name', f)
         # Extract query
-        magic.write_to_file(cp.LOG_FILE, r'''Extracting data from {}, depth = {} months'''.format(f, user_nb_months if user_nb_months else r.months))
+        magic.write_to_file(cp.LOG_FILE, r'''Extracting data from {}'''.format(f))
         while True:
             try:
                 df = pd.read_sql_query(
@@ -148,10 +145,10 @@ def get_data_from_query(user_nb_months=None):
                         LEFT OUTER JOIN prscale WITH (nolock) ON (nbbundet.size=prscale.scale)
                         LEFT OUTER JOIN Shipmast WITH (nolock) ON (Shipmast.shipno=Prbunhea.Store_No)
 
-                        WHERE (Prbunhea.Origdd >= (DATEADD(month, {}, GETDATE())) AND Prbunhea.Misc21 IN ('CONDOR', 'JBA-VF', 'JBA-VS', 'REVA', 'S65') AND Prbunhea.Misc6 IN ('OCN', 'OIN', 'OSA', 'VF ASIA', 'VF INDIA', 'VF Thailand', 'VFA', 'VFA Bangladesh', 'VFA Guangzhou', 'VFA HongKong', 'VFA India', 'VFA Indonesia', 'VFA Qingdao', 'VFA Shanghai', 'VFA Vietnam', 'VFA Zhuhai', 'VFI') AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots') AND Prbunhea.Misc25 IN ('DS', 'DYO', 'PG', 'REGULAR', 'ZCS', 'ZCUS', 'ZDIR', 'ZFGP', 'ZOT', 'ZRDS', 'ZTP', 'ZVFL', 'ZVFS') AND Not (Prbunhea.Qtyship=0 AND Prbunhea.Done=1) AND Prbunhea.POLocation NOT IN('CANCELED') AND  Not(Nbbundet.qty=0))
+                        WHERE (Prbunhea.ModifiedOn >= {} AND Prbunhea.Misc21 IN ('CONDOR', 'JBA-VF', 'JBA-VS', 'REVA', 'S65') AND Prbunhea.Misc6 IN ('OCN', 'OIN', 'OSA', 'VF ASIA', 'VF INDIA', 'VF Thailand', 'VFA', 'VFA Bangladesh', 'VFA Guangzhou', 'VFA HongKong', 'VFA India', 'VFA Indonesia', 'VFA Qingdao', 'VFA Shanghai', 'VFA Vietnam', 'VFA Zhuhai', 'VFI') AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots') AND Prbunhea.Misc25 IN ('DS', 'DYO', 'PG', 'REGULAR', 'ZCS', 'ZCUS', 'ZDIR', 'ZFGP', 'ZOT', 'ZRDS', 'ZTP', 'ZVFL', 'ZVFS') AND Not (Prbunhea.Qtyship=0 AND Prbunhea.Done=1) AND Prbunhea.POLocation NOT IN('CANCELED') AND  Not(Nbbundet.qty=0))
 
                         GROUP BY Shipped.shipment, Prbunhea.rdacode, Prbunhea.rfactory, Prbunhea.lot, Prbunhea.misc1, Nbbundet.size, Nbbundet.color, Nbbundet.dimension, Prbunhea.plan_date, Shipment.closed, Prbunhea.misc6, Prbunhea.style, Shshipto.ship_to_1, Shshipto_2.ship_to_1, Prbunhea.ship_no, Prbunhea.misc25, Prbunhea.misc41, Prbunhea.store_no, Prbunhea.origdd, Prbunhea.revdd, Shipped.shipdate, CONVERT(VARCHAR(8000), Prbunhea.notes), Prbunhea.misc18, Shipment.misc2, Prscale.desce, Prbunhea.misc21, Shipment.firstclosedon, Prbunhea.done, Shipmast.shipname
-                        '''.format(user_nb_months if user_nb_months else r.months),
+                        '''.format(timestamp_old),
                     engine_source
                 )
             except SQLAlchemyError:
@@ -182,6 +179,6 @@ if __name__ == '__main__':
     get_data_from_extracts()
     magic.write_to_file(cp.LOG_FILE, '''\n\n''', with_time_stamp=False)
     magic.write_to_file(cp.LOG_FILE, '''## QUERIES ##''', with_time_stamp=False)
-    get_data_from_query(1)
+    get_data_from_query()
     magic.write_to_file(cp.LOG_FILE, '''\n\n''', with_time_stamp=False)
     magic.write_to_file(cp.LOG_FILE, '''#### ETL END ####\n\n\n''', with_time_stamp=False)

@@ -3,10 +3,12 @@
 __pycache__
 ve/
 users/
+help_script.py
 db.sqlite3
 .DS_Store
 test.py
 *manage.py
+*settings.py
 *.csv
 *.xlsx
 *.xls
