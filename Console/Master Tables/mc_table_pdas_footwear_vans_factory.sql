@@ -76,6 +76,8 @@ BEGIN
 				,[vendor_group]
 				,[short_name]
 				,[is_active]
+				,[is_placeholder]
+				,[placeholder_level]
 			)
 			SELECT
 				dim_b.[id] AS [dim_business_id]
@@ -86,6 +88,11 @@ BEGIN
 					WHEN 'ACTIVE' THEN 1
 					ELSE 0
 				END as [is_active]
+				,CASE UPPER(temp.[Is Placeholder])
+					WHEN 'YES' THEN 1
+					ELSE 0
+				END AS [is_placeholder]
+                ,temp.[Placeholder Level] AS [placeholder_level]
 			FROM
 				[dbo].[mc_temp_pdas_footwear_vans_factory] temp
 				INNER JOIN (SELECT [id], [country] FROM [dbo].[dim_location]) dim_l
@@ -108,6 +115,11 @@ BEGIN
 										WHEN 'ACTIVE' THEN 1
 										ELSE 0
 									END
+				,dim.[is_placeholder] = CASE UPPER(temp.[Is Placeholder])
+					WHEN 'YES' THEN 1
+					ELSE 0
+				END
+	            ,dim.[placeholder_level] = temp.[Placeholder Level]
 			FROM
 				[dbo].[dim_factory] dim
 				INNER JOIN [dbo].[mc_temp_pdas_footwear_vans_factory] temp

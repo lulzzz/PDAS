@@ -26,18 +26,24 @@ BEGIN
 			SELECT TOP 1
 				ISNULL(temp.[Type], '') + ' / ' +
 				ISNULL(temp.[Parent], '') + ' / ' +
-				ISNULL(temp.[Child], '') + ' / ' +
-				ISNULL(temp.[Description], '')
+				ISNULL(temp.[Child], '')
 			FROM [dbo].[mc_temp_pdas_footwear_vans_mapping] temp
 			WHERE
                 ([Type] = 'Factory Master' and [Parent] NOT IN (SELECT DISTINCT [short_name] FROM [dbo].[dim_factory]))
                 OR
                 ([Type] = 'Customer Master' and [Parent] NOT IN (SELECT DISTINCT [name] FROM [dbo].[dim_customer]))
+				OR
+				([Type] = 'Buying Program Master' and [Parent] NOT IN (SELECT DISTINCT [name] FROM [dbo].[dim_buying_program]))
+				OR
+				([Type] = 'Construction Type Master' and [Parent] NOT IN (SELECT DISTINCT [name] FROM [dbo].[dim_construction_type]))
                 OR
                 [Type] NOT IN (
                     'Factory Master',
-                    'Customer Master'
+                    'Customer Master',
+					'Buying Program Master',
+					'Construction Type Master'
                 )
+				OR temp.[Parent] = temp.[Child]
 		)
 
 		IF @test IS NULL
