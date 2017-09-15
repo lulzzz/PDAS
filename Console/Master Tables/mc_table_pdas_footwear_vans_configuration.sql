@@ -26,7 +26,7 @@ BEGIN
 			-- Remove duplicates
             DECLARE @table_count_before int = (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_configuration])
 			DELETE x FROM (
-				SELECT *, rn=row_number() OVER (PARTITION BY [Variable] ORDER BY [Variable])
+				SELECT *, rn=row_number() OVER (PARTITION BY [variable] ORDER BY [variable])
 				FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
 			) x
 			WHERE rn > 1;
@@ -43,13 +43,15 @@ BEGIN
     			INSERT INTO [dbo].[fact_configuration]
 				(
 					[dim_pdas_id],
+					[type],
 					[variable],
 					[value]
 				)
     			SELECT
 					@dim_pdas_id,
-					[Variable],
-					[Value]
+					[type],
+					[variable],
+					[value]
     			FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
 
             END
