@@ -10,3 +10,4 @@ INSERT INTO dbo.pdas_metadata VALUES('staging_pdas_footwear_vans_nora_forecast',
 INSERT INTO dbo.pdas_metadata VALUES('staging_pdas_footwear_vans_size_master', 'file', 'PDAS_FOOTWEAR_VANS_SIZE_MASTER.xlsx', '2017-08-27 13:12:21', 'OK')
 INSERT INTO dbo.pdas_metadata VALUES('staging_pdas_footwear_vans_material_master', 'file', 'PDAS_FOOTWEAR_VANS_MATERIAL_MASTER.xlsx', '2017-08-27 13:12:21', 'OK')
 INSERT INTO dbo.pdas_metadata VALUES('staging_pdas_footwear_vans_ngc_po', 'sql', 'NGC', '2017-08-27 13:12:21', 'OK')
+INSERT INTO dbo.pdas_metadata VALUES('staging_pdas_footwear_vans_capacity_by_week', 'file', 'PDAS_FOOTWEAR_VANS_WEEKLY_CAPACITY.xlsx', '2017-08-27 13:12:21', 'OK')

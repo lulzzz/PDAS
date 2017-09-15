@@ -32,7 +32,7 @@ BEGIN
 	INNER JOIN [dbo].[dim_business] biz ON biz.id = @businessid
 	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = @buying_program_id
 	INNER JOIN [dbo].[dim_product] dp ON nf.dim_product_material_id = dp.material_id
- 	INNER JOIN [dbo].[dim_factory] df ON df.is_placeholder = 1 AND df.placeholder_level = 'Vendor Group'
+ 	INNER JOIN [dbo].[dim_factory] df ON df.is_placeholder = 1 AND df.placeholder_level = 'PLACEHOLDER'
 	INNER JOIN [dbo].[dim_customer] dc ON dc.is_placeholder = 1 AND dc.placeholder_level = 'Region' AND market = 'NORA'
 	INNER JOIN [dbo].[dim_date] dd ON nf.season = dd.season_year_accounting AND nf.plan_month = dd.month_name_short_accounting
 	WHERE dp.is_placeholder = 1 AND dp.placeholder_level = 'material_id'
@@ -56,7 +56,7 @@ BEGIN
 	INNER JOIN [dbo].[dim_business] biz ON biz.id = @businessid
 	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = @buying_program_id
 	INNER JOIN [dbo].[dim_product] dp ON nf.dim_product_material_id = dp.material_id
- 	INNER JOIN [dbo].[dim_factory] df ON df.is_placeholder = 1 AND df.placeholder_level = 'Vendor Group'
+ 	INNER JOIN [dbo].[dim_factory] df ON df.is_placeholder = 1 AND df.placeholder_level = 'PLACEHOLDER'
 	INNER JOIN [dbo].[dim_customer] dc ON dc.is_placeholder = 1 AND dc.placeholder_level = 'Region' AND market = 'EUR'
 	INNER JOIN [dbo].[dim_date] dd ON nf.season = dd.season_year_short_accounting AND nf.plan_month = dd.month_name_short_accounting
 	WHERE dp.is_placeholder = 1 AND dp.placeholder_level = 'material_id'
@@ -80,7 +80,7 @@ BEGIN
 	INNER JOIN [dbo].[dim_business] biz ON biz.id = @businessid
 	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = @buying_program_id
 	INNER JOIN [dbo].[dim_product] dp ON nf.dim_product_material_id = dp.material_id
-	INNER JOIN [dbo].[dim_factory] df ON df.is_placeholder = 1 AND df.placeholder_level = 'Vendor Group'
+	INNER JOIN [dbo].[dim_factory] df ON df.is_placeholder = 1 AND df.placeholder_level = 'PLACEHOLDER'
 	INNER JOIN [dbo].[dim_customer] dc ON dc.is_placeholder = 1 AND dc.placeholder_level = 'Region' AND market = 'APAC'
 	INNER JOIN [dbo].[dim_date] dd ON SUBSTRING(nf.month_label, 1, 4) = dd.season_year_short_accounting AND nf.plan_month = dd.month_name_short_accounting
 	WHERE dp.is_placeholder = 1 AND dp.placeholder_level = 'material_id'
