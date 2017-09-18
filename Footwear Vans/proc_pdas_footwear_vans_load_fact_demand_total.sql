@@ -1,9 +1,5 @@
 USE [VCDWH]
 GO
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 -- ==============================================================
 -- Author:		ebp Global
@@ -11,7 +7,8 @@ GO
 -- Description:	Procedure to load the order and forecast demand in proc_pdas_footwear_vans_load_fact_demand_total.
 -- ==============================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]
-	@pdasid INT
+	@pdasid INT,
+	@businessid INT
 AS
 BEGIN
 
@@ -58,6 +55,9 @@ BEGIN
         ,[quantity] AS [quantity_consumed]
         ,[quantity]
 	FROM [dbo].[fact_order]
+	WHERE
+		[dim_pdas_id] = @pdasid
+		AND [dim_business_id] = @businessid
 	UNION
 	-- fact_forecast
 	SELECT
@@ -75,6 +75,9 @@ BEGIN
         ,[quantity] AS [quantity_consumed]
         ,[quantity]
 	FROM [dbo].[fact_forecast]
+	WHERE
+		[dim_pdas_id] = @pdasid
+		AND [dim_business_id] = @businessid
 	;
 
 END

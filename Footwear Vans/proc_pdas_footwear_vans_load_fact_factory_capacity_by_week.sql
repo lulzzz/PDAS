@@ -1,9 +1,12 @@
+USE [VCDWH]
+GO
+
 -- =======================================================================================
 -- Author:		ebp Global
 -- Create date: 15/9/2017
--- Description:	This procedure updates the fact_factory_capacity table with weekly capacity
+-- Description:	This procedure loads the fact_factory_capacity table with weekly capacity
 -- =======================================================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_updates_fact_factory_capacity]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity_by_week]
     @pdasid INT,
     @businessid INT
 AS

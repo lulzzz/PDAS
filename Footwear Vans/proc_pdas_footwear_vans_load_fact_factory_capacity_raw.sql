@@ -10,12 +10,8 @@ AS
 BEGIN
 
     -- Check if the session has already been loaded
-    IF EXISTS (SELECT 1 FROM [dbo].[fact_factory_capacity] WHERE dim_pdas_id = @pdasid)
-    BEGIN
-        DELETE FROM [dbo].[fact_factory_capacity] WHERE dim_pdas_id = @pdasid;
-    END
-    ;
-
+    DELETE FROM [dbo].[fact_factory_capacity] WHERE dim_pdas_id = @pdasid;
+    
     -- Insert from staging
     INSERT INTO [dbo].[fact_factory_capacity](dim_pdas_id, dim_business_id, dim_factory_id, dim_construction_type_id, dim_date_id, net_capacity_units)
     SELECT

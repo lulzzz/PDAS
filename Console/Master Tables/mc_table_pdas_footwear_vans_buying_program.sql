@@ -26,6 +26,7 @@ BEGIN
 			SELECT TOP 1
                 ISNULL(temp.[Purchasing Organization], '') + ' / ' +
                 ISNULL(temp.[Product Category], '') + ' / ' +
+				ISNULL(temp.[Category], '') + ' / ' +
 				ISNULL(temp.[Name], '')
 			FROM
                 [dbo].[mc_temp_pdas_footwear_vans_buying_program] temp
@@ -66,10 +67,12 @@ BEGIN
 			INSERT INTO [dbo].[dim_buying_program]
             (
                 [dim_business_id]
+				,[category]
                 ,[name]
             )
             SELECT
 				dim_b.[id] AS [dim_business_id]
+				,temp.[Category] AS [category]
 				,temp.[Name] AS [name]
 			FROM
 				[dbo].[mc_temp_pdas_footwear_vans_buying_program] temp
@@ -77,13 +80,14 @@ BEGIN
 					ON 	temp.[Purchasing Organization] = dim_b.[brand]
 						AND temp.[Product Category] = dim_b.[product_line]
 				LEFT JOIN [dbo].[dim_buying_program] dim_bp
-					ON temp.[id] = dim_f.[id]
+					ON temp.[id] = dim_bp.[id]
 			WHERE dim_bp.[id] IS NULL
 
 			-- Update existing rows
 			UPDATE dim
 			SET
                 dim.[dim_business_id] = dim_b.[id]
+				,dim.[category] = temp.[Category]
 				,dim.[name] = temp.[Name]
 			FROM
 				[dbo].[dim_buying_program] dim

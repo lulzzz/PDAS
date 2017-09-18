@@ -27,7 +27,6 @@ BEGIN
 				ISNULL(temp.[Purchasing Organization], '') + ' / ' +
 				ISNULL(temp.[Product Category], '') + ' / ' +
 				ISNULL(temp.[Country], '') + ' / ' +
-				ISNULL(temp.[Vendor Group], '') + ' / ' +
 				ISNULL(temp.[Short Name], '') + ' / ' +
 				ISNULL(temp.[Status], '')
 			FROM
@@ -75,6 +74,8 @@ BEGIN
 				,[dim_location_id]
 				,[vendor_group]
 				,[short_name]
+				,[long_name]
+				,[port]
 				,[is_active]
 				,[is_placeholder]
 				,[placeholder_level]
@@ -84,6 +85,8 @@ BEGIN
 				,dim_l.[id] AS [dim_location_id]
 				,temp.[Vendor Group] AS [vendor_group]
 				,temp.[Short Name] AS [short_name]
+				,temp.[Long Name] AS [long_name]
+				,temp.[Port] AS [port]
 				,CASE UPPER(temp.[Status])
 					WHEN 'ACTIVE' THEN 1
 					ELSE 0
@@ -111,6 +114,8 @@ BEGIN
 				,dim.[dim_location_id] = dim_l.[id]
 				,dim.[vendor_group] = temp.[Vendor Group]
 				,dim.[short_name] = temp.[Short Name]
+				,dim.[long_name] = temp.[Long Name]
+				,dim.[port] = temp.[Port]
 				,dim.[is_active] = 	CASE UPPER(temp.[Status])
 										WHEN 'ACTIVE' THEN 1
 										ELSE 0

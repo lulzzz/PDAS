@@ -1,9 +1,5 @@
 USE [VCDWH]
 GO
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 
 -- ==============================================================
 -- Author:		ebp Global
@@ -11,7 +7,8 @@ GO
 -- Description:	Procedure to do the allocation of demand to factories (decision tree implementation)
 -- ==============================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation]
-	@pdasid INT
+	@pdasid INT,
+	@businessid INT
 AS
 BEGIN
 

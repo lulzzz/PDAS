@@ -28,6 +28,7 @@ BEGIN
                 ISNULL(temp.[Name], '') + ' / ' +
                 ISNULL(temp.[Market], '') + ' / ' +
                 ISNULL(temp.[Sold to Party], '') + ' / ' +
+				ISNULL(temp.[Sold to Category], '') + ' / ' +
                 ISNULL(temp.[Status], '') + ' / ' +
                 ISNULL(temp.[Is Placeholder], '') + ' / ' +
                 ISNULL(temp.[Placeholder Level], '')
@@ -65,6 +66,7 @@ BEGIN
                 ,[name]
                 ,[market]
                 ,[sold_to_party]
+				,[sold_to_category]
                 ,[is_active]
                 ,[is_placeholder]
                 ,[placeholder_level]
@@ -74,6 +76,7 @@ BEGIN
                 ,temp.[Name] AS [name]
                 ,temp.[Market] AS [market]
                 ,temp.[Sold to Party] AS [sold_to_party]
+				,temp.[Sold to Category] AS [sold_to_category]
                 ,CASE UPPER(temp.[Status])
 					WHEN 'ACTIVE' THEN 1
 					ELSE 0
@@ -99,6 +102,7 @@ BEGIN
                 ,dim.[name] = temp.[Name]
                 ,dim.[market] = temp.[Market]
                 ,dim.[sold_to_party] = temp.[Sold to Party]
+				,dim.[sold_to_category] = temp.[Sold to Category]
                 ,dim.[is_active] = CASE UPPER(temp.[Status])
 					WHEN 'ACTIVE' THEN 1
 					ELSE 0

@@ -9,17 +9,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_priority_list]
 AS
 BEGIN
 	-- Check if the session has already been loaded
-	IF EXISTS (
-        SELECT 1 FROM [dbo].[fact_priority_list]
-        WHERE dim_pdas_id = @pdasid
-    )
-	BEGIN
-		DELETE FROM [dbo].[fact_priority_list]
-        WHERE dim_pdas_id = @pdasid
-        ;
-	END
-	;
-
+	DELETE FROM [dbo].[fact_priority_list]
+    WHERE dim_pdas_id = @pdasid
 
 	-- Insert from staging
 	INSERT INTO [dbo].[fact_priority_list](dim_pdas_id, dim_business_id, dim_product_id, dim_factory_id_1, dim_factory_id_2)
@@ -36,4 +27,5 @@ BEGIN
     LEFT OUTER JOIN [dbo].[dim_factory] df2 ON df2.short_name = pl.alloc_2
 	WHERE dp.is_placeholder = 1 AND dp.placeholder_level = 'material_id'
 	;
+	
 END
