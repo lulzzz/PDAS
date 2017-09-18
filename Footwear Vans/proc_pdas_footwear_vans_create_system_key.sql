@@ -23,11 +23,11 @@ BEGIN
 	IF
 		NOT EXISTS (SELECT 1 FROM [dbo].[dim_planning_system] WHERE [name] = @release_name)
 		AND
-		(SELECT [value_string] FROM [dbo].[helper_dpp_parameter] WHERE [type] = 'System' AND [name] = 'system_release_locker') = 'OFF'
+		(SELECT [value_string] FROM [dbo].[helper_PDAS_parameter] WHERE [type] = 'System' AND [name] = 'system_release_locker') = 'OFF'
 	BEGIN
 
 		-- Update configuration table
-		UPDATE [dbo].[helper_dpp_parameter]
+		UPDATE [dbo].[helper_PDAS_parameter]
 		SET [value_string] = 'ON'
 		WHERE
 			[type] = 'System'
@@ -47,7 +47,7 @@ BEGIN
 		IF (@mc_user_name IS NOT NULL)
 		BEGIN
 			INSERT INTO [dbo].[mc_user_log]	(	[mc_user_name],	[message])
-			VALUES							(	@mc_user_name,	'New DPP system release key "' + @release_name + '" inserted successfully')
+			VALUES							(	@mc_user_name,	'New PDAS system release key "' + @release_name + '" inserted successfully')
 		END
 
 	END
@@ -57,10 +57,10 @@ BEGIN
 		IF (@mc_user_name IS NOT NULL)
 		BEGIN
 			INSERT INTO [dbo].[mc_user_log]	(	[mc_user_name],	[message])
-			VALUES							(	@mc_user_name,	'DPP Configuration system lock parameter "system_release_locker" is ON. To create a new release key, please change the value to OFF.')
+			VALUES							(	@mc_user_name,	'PDAS Configuration system lock parameter "system_release_locker" is ON. To create a new release key, please change the value to OFF.')
 		END
 
-		PRINT 'DPP Configuration system lock parameter "system_release_locker" is ON. To create a new release key, please change the value to OFF.';
+		PRINT 'PDAS Configuration system lock parameter "system_release_locker" is ON. To create a new release key, please change the value to OFF.';
 		RETURN -999
 
 	END
