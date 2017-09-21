@@ -1,18 +1,7 @@
-USE [VCDWH]
-GO
+DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
+	DECLARE @businessid int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 
--- ==============================================================
--- Author:		ebp Global
--- Create date: 15/9/2017
--- Description:	Procedure to load the NGC orders in fact_order.
--- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc]
-	@pdasid INT,
-	@businessid INT
-AS
-BEGIN
-
-	-- Placeholder
+-- Placeholder
 	DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
     DECLARE	@buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
     DECLARE	@dim_demand_category_id_open_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Open Order')
@@ -20,40 +9,8 @@ BEGIN
 	DECLARE	@dim_demand_category_id_received_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Received Order')
 	DECLARE	@current_date date = GETDATE()
 
-	-- Check if the session has already been loaded
-	DELETE FROM [dbo].[fact_order]
-    WHERE
-        dim_pdas_id = @pdasid
-        AND dim_demand_category_id IN (@dim_demand_category_id_open_order, @dim_demand_category_id_shipped_order, @dim_demand_category_id_received_order)
-        AND dim_buying_program_id = @buying_program_id
 
-	-- Insert from staging
-	INSERT INTO [dbo].[fact_order](
-        dim_pdas_id,
-        dim_business_id,
-        dim_buying_program_id,
-        order_number,
-        dim_date_id,
-        dim_factory_id,
-        dim_customer_id,
-        dim_product_id,
-        dim_demand_category_id,
-        placed_date_id,
-        customer_requested_xf_date_id,
-        original_factory_confirmed_xf_date_id,
-        current_factory_confirmed_xf_date_id,
-        expected_xf_date_id,actual_xf_date_id,
-        delay_reason,initial_confirmed_date_id,
-        current_vendor_requested_xf_date_id,
-        current_customer_requested_xf_date_id,
-        customer_canceled_date_id,
-        original_customer_requested_date_id,
-        estimated_eta_date_id,
-        release_date_id,
-        lum_quantity,
-        quantity
-    )
-	SELECT
+SELECT
         @pdasid as dim_pdas_id,
         @businessid as dim_business_id,
         @buying_program_id as dim_buying_program_id,
@@ -122,5 +79,3 @@ BEGIN
 			WHEN revised_crd_dt < @current_date THEN @dim_demand_category_id_received_order
 			ELSE @dim_demand_category_id_shipped_order
 		END
-
-END

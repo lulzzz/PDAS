@@ -32,7 +32,7 @@ BEGIN
 			WHERE
 			NOT
 			(
-				UPPER([Region]) IN ('US', 'CASA', 'EU', 'APAC')
+				UPPER([Region]) IN ('NORA', 'CASA', 'EMEA', 'APAC')
 				and LEN([Country]) > 0
 				and LEN([Country Code A2]) = 2
 				and LEN([Country Code A3]) = 3

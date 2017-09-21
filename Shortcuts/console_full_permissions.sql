@@ -7,7 +7,7 @@ insert into [dbo].[mc_user_proc_perm]
 select 'RW', @user, [name]
 from [dbo].[mc_proc]
 where name NOT IN (select mc_proc_name from [dbo].[mc_user_proc_perm] where mc_user_name = @user)
-and left(name, 3) <> 'mc_'
+-- and left(name, 3) <> 'mc_'
 
 insert into [dbo].[mc_user_report_perm]
 ([permission_type]
@@ -16,7 +16,7 @@ insert into [dbo].[mc_user_report_perm]
 select 'RW', @user, [name]
 from [dbo].[mc_report]
 where name NOT IN (select mc_report_name from [dbo].[mc_user_report_perm] where mc_user_name = @user)
-and left(name, 3) <> 'mc_'
+-- and left(name, 3) <> 'mc_'
 
 insert into [dbo].[mc_user_system_perm]
 ([permission_type]
@@ -25,7 +25,7 @@ insert into [dbo].[mc_user_system_perm]
 select 'RW', @user, [name]
 from [dbo].[mc_system]
 where name NOT IN (select mc_system_name from [dbo].[mc_user_system_perm] where mc_user_name = @user)
-and left(name, 3) <> 'mc_'
+-- and left(name, 3) <> 'mc_'
 
 insert into [dbo].[mc_user_table_perm]
 ([permission_type]
@@ -34,4 +34,4 @@ insert into [dbo].[mc_user_table_perm]
 select 'RW', @user, [name]
 from [dbo].[mc_table]
 where name NOT IN (select mc_table_name from [dbo].[mc_user_table_perm] where mc_user_name = @user)
-and left(name, 3) <> 'mc_'
+-- and left(name, 3) <> 'mc_'

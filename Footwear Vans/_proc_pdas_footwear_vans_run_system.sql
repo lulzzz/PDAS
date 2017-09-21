@@ -15,7 +15,7 @@ BEGIN
 	DECLARE	@current_date date = GETDATE()
 	DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
 	DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
-
+	DECLARE	@buying_program_id int
 
 	-- Step 01 - Start new PDAS release
 	-- EXEC [dbo].[proc_pdas_footwear_vans_create_system_key]
@@ -45,63 +45,47 @@ BEGIN
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity_raw]	@pdasid = @pdasid, 	@businessid = dim_business_id_footwear_vans
 
 	-- NTB
-	DECLARE	@buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
+	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
 		@buying_program_id = @buying_program_id,
-		@staging_table_name_apac = 'staging_pdas_footwear_vans_apac_ntb_bulk',
-		@staging_table_name_casa = 'staging_pdas_footwear_vans_casa_ntb_bulk',
-		@staging_table_name_nora = 'staging_pdas_footwear_vans_nora_ntb_bulk',
-		@staging_table_name_emea = 'staging_pdas_footwear_vans_emea_ntb_bulk'
-	DECLARE	@buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Retail Quick Turn')
+		@buying_program_ref = 'bulk'
+	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Retail Quick Turn')
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
 		@buying_program_id = @buying_program_id,
-		@staging_table_name_apac = 'staging_pdas_footwear_vans_apac_ntb_rqt',
-		@staging_table_name_casa = 'staging_pdas_footwear_vans_casa_ntb_rqt',
-		@staging_table_name_nora = 'staging_pdas_footwear_vans_nora_ntb_rqt',
-		@staging_table_name_emea = 'staging_pdas_footwear_vans_emea_ntb_rqt'
-	DECLARE	@buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Scheduled Out of Sync')
+		@buying_program_ref = 'rqt'
+	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Scheduled Out of Sync')
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
 		@buying_program_id = @buying_program_id,
-		@staging_table_name_apac = 'staging_pdas_footwear_vans_apac_ntb_oos_scheduled',
-		@staging_table_name_casa = 'staging_pdas_footwear_vans_casa_ntb_oos_scheduled',
-		@staging_table_name_nora = 'staging_pdas_footwear_vans_nora_ntb_oos_scheduled',
-		@staging_table_name_emea = 'staging_pdas_footwear_vans_emea_ntb_oos_scheduled'
-	DECLARE	@buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = '???')
+		@buying_program_ref = 'oos_scheduled'
+	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Ad-Hoc Out of Sync')
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
 		@buying_program_id = @buying_program_id,
-		@staging_table_name_apac = 'staging_pdas_footwear_vans_apac_ntb_oos_adhoc',
-		@staging_table_name_casa = 'staging_pdas_footwear_vans_casa_ntb_oos_adhoc',
-		@staging_table_name_nora = 'staging_pdas_footwear_vans_nora_ntb_oos_adhoc',
-		@staging_table_name_emea = 'staging_pdas_footwear_vans_emea_ntb_oos_adhoc'
+		@buying_program_ref = 'oos_adhoc'
 
 	-- Forecast
-	DECLARE	@buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
+	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
 		@buying_program_id = @buying_program_id,
-		@staging_table_name_apac = 'staging_pdas_footwear_vans_apac_forecast_bulk',
-		@staging_table_name_nora = 'staging_pdas_footwear_vans_nora_forecast_bulk',
-		@staging_table_name_emea = 'staging_pdas_footwear_vans_emea_forecast_bulk'
-	DECLARE	@buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Retail Quick Turn')
+		@buying_program_ref = 'bulk'
+	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Retail Quick Turn')
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
 		@buying_program_id = @buying_program_id,
-		@staging_table_name_apac = 'staging_pdas_footwear_vans_apac_forecast_rqt',
-		@staging_table_name_nora = 'staging_pdas_footwear_vans_nora_forecast_rqt',
-		@staging_table_name_emea = 'staging_pdas_footwear_vans_emea_forecast_rqt'
+		@buying_program_ref = 'rqt'
 
 	-- NGC
-	EXEC [dbo].[proc_pdas_footwear_vans_validate_ngc_orders] @pdasid = @pdasid, @businessid = dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = dim_business_id_footwear_vans
 
 	-- Combine demand
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = dim_business_id_footwear_vans

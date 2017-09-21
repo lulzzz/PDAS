@@ -10,16 +10,17 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
 	@pdasid INT,
 	@businessid INT,
 	@buying_program_id INT,
-	@staging_table_name_apac NVARCHAR(100) = NULL,
-	@staging_table_name_casa NVARCHAR(100) = NULL,
-	@staging_table_name_nora NVARCHAR(100) = NULL,
-	@staging_table_name_emea NVARCHAR(100) = NULL
+	@buying_program_ref NVARCHAR(100) = NULL
 AS
 BEGIN
 
 	-- Placeholder
 	DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
 
+	-- Converted values
+	DECLARE @pdasid_nvarchar NVARCHAR(10) = @pdasid
+	DECLARE @businessid_nvarchar NVARCHAR(10) = @businessid
+	DECLARE @buying_program_id_nvarchar NVARCHAR(10) = @buying_program_id
 
 	-- Check if the session has already been loaded
 	DELETE FROM [dbo].[fact_order]
@@ -57,9 +58,9 @@ BEGIN
     )
 	-- NORA
 	SELECT
-        ' + CONVERT(NVARCHAR(10), @pdasid) + ' as dim_pdas_id,
-        ' + CONVERT(NVARCHAR(10), @businessid) + ' as dim_business_id,
-        ' + CONVERT(NVARCHAR(10), @buying_program_id) + ' as dim_buying_program_id,
+		' + @pdasid_nvarchar + ' as dim_pdas_id,
+        ' + @businessid_nvarchar + ' as dim_business_id,
+        ' + @buying_program_id_nvarchar + ' as dim_buying_program_id,
         ISNULL(customer_po_code, ''UNDEFINED'') as order_number,
         dd_req.id as dim_date_id,
         df.id as dim_factory_id,
@@ -82,9 +83,9 @@ BEGIN
         MAX(dd_rel.id) as release_date_id,
         SUM(ntb.lum_qty) as lum_quantity,
         SUM(ntb.quantity) as quantity
-	FROM ' + @staging_table_name_nora + ' ntb
-	INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + CONVERT(NVARCHAR(10), @businessid) + '
-	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + CONVERT(NVARCHAR(10), @buying_program_id) + '
+	FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_' + @buying_program_ref + '] ntb
+	INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + @businessid_nvarchar + '
+	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + @buying_program_id_nvarchar + '
     INNER JOIN [dbo].[dim_demand_category] ddc ON ddc.name = ''Need to Buy''
 	INNER JOIN [dbo].[dim_product] dp ON ntb.dim_product_material_id = dp.material_id and ntb.dim_product_size = dp.size
  	INNER JOIN [dbo].[dim_factory] df ON ntb.dim_factory_short_name = df.short_name
@@ -105,9 +106,9 @@ BEGIN
     UNION
         -- CASA
 	SELECT
-		' + CONVERT(NVARCHAR(10), @pdasid) + ' as dim_pdas_id,
-		' + CONVERT(NVARCHAR(10), @businessid) + ' as dim_business_id,
-		' + CONVERT(NVARCHAR(10), @buying_program_id) + ' as dim_buying_program_id,
+		' + @pdasid_nvarchar + ' as dim_pdas_id,
+		' + @businessid_nvarchar + ' as dim_business_id,
+		' + @buying_program_id_nvarchar + ' as dim_buying_program_id,
         ISNULL(pr_code, ''UNDEFINED'') as order_number,
         dd_xfac.id as dim_date_id,
         fpl.dim_factory_id_1 as dim_factory_id,
@@ -130,12 +131,12 @@ BEGIN
         NULL as release_date_id,
         SUM(ntb.lum_qty) as lum_quantity,
         SUM(ntb.sap_qty) as quantity
-	FROM ' + @staging_table_name_casa + ' ntb
-	INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + CONVERT(NVARCHAR(10), @businessid) + '
-	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + CONVERT(NVARCHAR(10), @buying_program_id) + '
+	FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_' + @buying_program_ref + '] ntb
+	INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + @businessid_nvarchar + '
+	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + @buying_program_id_nvarchar + '
     INNER JOIN [dbo].[dim_demand_category] ddc ON ddc.name = ''Need to Buy''
 	INNER JOIN [dbo].[dim_product] dp ON ntb.dim_product_material_id = dp.material_id and ntb.dim_product_size = dp.size
-    INNER JOIN [dbo].[fact_priority_list] fpl ON fpl.dim_pdas_id = ' + CONVERT(NVARCHAR(10), @pdasid) + '
+    INNER JOIN [dbo].[fact_priority_list] fpl ON fpl.dim_pdas_id = ' + @pdasid_nvarchar + '
                                               AND dp.id = fpl.dim_product_id
 	INNER JOIN [dbo].[dim_customer] dc ON dc.name = ntb.dim_customer_name
     INNER JOIN [dbo].[dim_date] dd_xfac ON ntb.xfac_dt = dd_xfac.full_date
@@ -150,9 +151,9 @@ BEGIN
 	UNION
 	-- EMEA
     SELECT
-		' + CONVERT(NVARCHAR(10), @pdasid) + ' as dim_pdas_id,
-		' + CONVERT(NVARCHAR(10), @businessid) + ' as dim_business_id,
-		' + CONVERT(NVARCHAR(10), @buying_program_id) + ' as dim_buying_program_id,
+		' + @pdasid_nvarchar + ' as dim_pdas_id,
+		' + @businessid_nvarchar + ' as dim_business_id,
+		' + @buying_program_id_nvarchar + ' as dim_buying_program_id,
         ISNULL(pr_code, ''UNDEFINED'') as order_number,
         dd_req.id as dim_date_id,
         COALESCE(fpl.dim_factory_id_1, ' + @dim_factory_id_placeholder + ') as dim_factory_id,
@@ -175,12 +176,12 @@ BEGIN
         NULL as release_date_id,
         SUM(ntb.lum_qty) as lum_quantity,
         SUM(ntb.sap_qty) as quantity
-    FROM ' + @staging_table_name_emea + ' ntb
-    INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + CONVERT(NVARCHAR(10), @businessid) + '
-    INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + CONVERT(NVARCHAR(10), @buying_program_id) + '
+    FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_' + @buying_program_ref + '] ntb
+    INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + @businessid_nvarchar + '
+    INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + @buying_program_id_nvarchar + '
     INNER JOIN [dbo].[dim_demand_category] ddc ON ddc.name = ''Need to Buy''
     INNER JOIN [dbo].[dim_product] dp ON ntb.dim_product_material_id = dp.material_id AND ntb.dim_product_size = dp.size
-    INNER JOIN [dbo].[fact_priority_list] fpl ON fpl.dim_pdas_id = ' + CONVERT(NVARCHAR(10), @pdasid) + '
+    INNER JOIN [dbo].[fact_priority_list] fpl ON fpl.dim_pdas_id = ' + @pdasid_nvarchar + '
                                               AND dp.id = fpl.dim_product_id
     INNER JOIN [dbo].[dim_customer] dc ON dc.name = ntb.dim_customer_name
     INNER JOIN [dbo].[dim_date] dd_buy ON ntb.buy_dt = dd_buy.full_date
@@ -201,9 +202,9 @@ BEGIN
 	UNION
 	-- APAC
     SELECT
-		' + CONVERT(NVARCHAR(10), @pdasid) + ' as dim_pdas_id,
-		' + CONVERT(NVARCHAR(10), @businessid) + ' as dim_business_id,
-		' + CONVERT(NVARCHAR(10), @buying_program_id) + ' as dim_buying_program_id,
+		' + @pdasid_nvarchar + ' as dim_pdas_id,
+		' + @businessid_nvarchar + ' as dim_business_id,
+		' + @buying_program_id_nvarchar + ' as dim_buying_program_id,
         ISNULL(pr_code, ''UNDEFINED'') as order_number,
         dd_xfac.id as dim_date_id,
         df.id as dim_factory_id,
@@ -226,9 +227,9 @@ BEGIN
         NULL as release_date_id,
         SUM(ntb.lum_qty) as lum_quantity,
         SUM(ntb.sap_qty) as quantity
-    FROM ' + @staging_table_name_apac + ' ntb
-    INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + CONVERT(NVARCHAR(10), @businessid) + '
-    INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + CONVERT(NVARCHAR(10), @buying_program_id) + '
+    FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_' + @buying_program_ref + '] ntb
+    INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + @businessid_nvarchar + '
+    INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + @buying_program_id_nvarchar + '
     INNER JOIN [dbo].[dim_demand_category] ddc ON ddc.name = ''Need to Buy''
     INNER JOIN [dbo].[dim_product] dp ON ntb.dim_product_material_id = dp.material_id and ntb.dim_product_size = dp.size
     INNER JOIN [dbo].[helper_pdas_footwear_vans_mapping] map ON ntb.dim_factory_reva_vendor = map.child AND map.type = ''Factory Master''

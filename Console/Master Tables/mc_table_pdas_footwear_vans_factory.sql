@@ -39,7 +39,11 @@ BEGIN
 			WHERE
 				ISNULL(dim_b.[flag],0) = 0 OR
 				ISNULL(dim_l.[flag],0) = 0 OR
-				UPPER(temp.[Status]) NOT IN ('ACTIVE', 'INACTIVE')
+				UPPER(temp.[Status]) NOT IN ('ACTIVE', 'INACTIVE') OR
+				(
+						UPPER(temp.[Is Placeholder]) = 'YES' AND
+						temp.[Placeholder Level] NOT IN ('PLACEHOLDER', 'Factory', 'Vendor')
+				)
 		)
 
 		IF @test IS NULL
