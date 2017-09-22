@@ -251,13 +251,13 @@ BEGIN
 			,@dim_customer_country_code_a2_01
 		WHILE @@FETCH_STATUS = 0
 		BEGIN
-			IF [dim_customer_sold_to_party] = 'DC'
+			IF @dim_customer_sold_to_party_01 = 'DC'
 			BEGIN
-				IF [dim_demand_category_name] = 'Bulk Buy'
+				IF @dim_demand_category_name_01 = 'Bulk Buy'
 				BEGIN
-					IF [dim_customer_region] = 'EMEA'
+					IF @dim_customer_country_region_01 = 'EMEA'
 					BEGIN
-						IF [dim_customer_country_code_a2] = 'EU'
+						IF @dim_customer_country_code_a2_01 = 'EU'
 						BEGIN
 
 							print('todo')
@@ -265,61 +265,93 @@ BEGIN
 						END
 					END
 
-					IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+					IF @dim_customer_country_region_01 in ('NORA', 'CASA')	/*TO BE UPDATED*/
 					BEGIN
-						IF [dim_customer_country_code_a2] = 'CA'
+						IF @dim_customer_country_code_a2_01 = 'CA'
 						BEGIN
 
 							print('todo')
 
 						END
 
-						IF [dim_customer_country_code_a2] = 'US'
+						IF @dim_customer_country_code_a2_01 = 'US'
 						BEGIN
 
 							print('todo')
 
 						END
 
-						IF [dim_customer_country_code_a2] = 'BR'
+						IF @dim_customer_country_code_a2_01 = 'BR'
 						BEGIN
 
 							print('todo')
 
 						END
 
-						IF [dim_customer_country_code_a2] = 'CL'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'CL'
+						BEGIN
 
-						IF [dim_customer_country_code_a2] = 'MX'
-						BEGIN print('todo') END
+							print('todo')
+
+						END
+
+						IF @dim_customer_country_code_a2_01 = 'MX'
+						BEGIN
+
+							print('todo')
+
+						END
 					END
 
-					IF [dim_customer_region] = 'APAC'
+					IF @dim_customer_country_region_01 = 'APAC'
 					BEGIN
-						IF [dim_customer_country_code_a2] = 'CN'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'CN'
+						BEGIN
 
-						IF [dim_customer_country_code_a2] = 'KR'
-						BEGIN print('todo') END
+							print('todo')
 
-						IF [dim_customer_country_code_a2] = 'IN'
-						BEGIN print('todo') END
+						END
 
-						IF [dim_customer_country_code_a2] = 'MY'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'KR'
+						BEGIN
 
-						IF [dim_customer_country_code_a2] = 'SG'
-						BEGIN print('todo') END
+							print('todo')
 
-						IF [dim_customer_country_code_a2] = 'HK'
-						BEGIN print('todo') END
+						END
+
+						IF @dim_customer_country_code_a2_01 = 'IN'
+						BEGIN
+
+							print('todo')
+
+						END
+
+						IF @dim_customer_country_code_a2_01 = 'MY'
+						BEGIN
+
+							print('todo')
+
+						END
+
+						IF @dim_customer_country_code_a2_01 = 'SG'
+						BEGIN
+
+							print('todo')
+
+						END
+
+						IF @dim_customer_country_code_a2_01 = 'HK'
+						BEGIN
+
+							print('todo')
+
+						END
 					END
 				END
 
-				IF [dim_demand_category_name] = 'Retail Quick Turn'
+				IF @dim_demand_category_name_01 = 'Retail Quick Turn'
 				BEGIN
-					IF [dim_customer_region] = 'EMEA'
+					IF @dim_customer_country_region_01 = 'EMEA'
 					BEGIN
 						IF [VENDOR] IN ('DTC','SJV')  /*TO BE UPDATED - IS THE PAPER WRONG*/
 						BEGIN
@@ -334,316 +366,401 @@ BEGIN
 						END
 					END
 
-					IF [dim_customer_region] in ('NORA', 'CASA')
+					IF @dim_customer_country_region_01 in ('NORA', 'CASA')
 					BEGIN
 						IF [VENDOR] IN ('DTC','SJV')
-						[ANS] = 'SJV'
+						BEGIN
+							print('todo')
+							[ANS] = 'SJV'
+						END
 						ELSE
-						[ANS] = 'FIXED VENDOR'
+						BEGIN
+							print('todo')
+							[ANS] = 'FIXED VENDOR'
+						END
 					END
 
-					IF [dim_customer_region] = 'APAC'
+					IF @dim_customer_country_region_01 = 'APAC'
 					BEGIN
-						IF [dim_customer_country_code_a2] = 'CN'
-						[ANS] = 'HSC'
+						IF @dim_customer_country_code_a2_01 = 'CN'
+						BEGIN
+							print('todo')
+							[ANS] = 'HSC'
+						END
 						ELSE
-						[ANS] = 'FIXED VENDOR'
+						BEGIN
+							print('todo')
+							[ANS] = 'FIXED VENDOR'
+						END
 					END
 				END
 
-				IF [dim_demand_category_name] = 'Ad Hoc Vendor Quick Turn'  /* TO BE UPDATED*/
+				IF @dim_demand_category_name_01 = 'Ad Hoc Vendor Quick Turn'  /* TO BE UPDATED*/
 				BEGIN
 					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
 					BEGIN
-						IF [dim_customer_region] = 'EMEA'
+						IF @dim_customer_country_region_01 = 'EMEA'
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'EU'
+							IF @dim_customer_country_code_a2_01 = 'EU'
 							BEGIN
+								print('todo')
 							END
 						END
 
-						IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+						IF @dim_customer_country_region_01 in ('NORA', 'CASA')	/*TO BE UPDATED*/
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'CA'
+							IF @dim_customer_country_code_a2_01 = 'CA'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'US'
+							IF @dim_customer_country_code_a2_01 = 'US'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'BR'
+							IF @dim_customer_country_code_a2_01 = 'BR'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'CL'
+							IF @dim_customer_country_code_a2_01 = 'CL'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'MX'
+							IF @dim_customer_country_code_a2_01 = 'MX'
 							BEGIN
+								print('todo')
 							END
 						END
 
-						IF [dim_customer_region] = 'APAC'
+						IF @dim_customer_country_region_01 = 'APAC'
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'CN'
+							IF @dim_customer_country_code_a2_01 = 'CN'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'KR'
+							IF @dim_customer_country_code_a2_01 = 'KR'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'IN'
+							IF @dim_customer_country_code_a2_01 = 'IN'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'MY'
+							IF @dim_customer_country_code_a2_01 = 'MY'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'SG'
+							IF @dim_customer_country_code_a2_01 = 'SG'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'HK'
+							IF @dim_customer_country_code_a2_01 = 'HK'
 							BEGIN
+								print('todo')
 							END
 						END
 					END
 
 					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
-					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
-
+					BEGIN
+						print('todo')
+						[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
+					END
 				END
 
-				IF [dim_demand_category_name] = 'Scheduled Out of Sync'
+				IF @dim_demand_category_name_01 = 'Scheduled Out of Sync'
 				BEGIN
 					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
 					BEGIN
-						IF [dim_customer_region] = 'EMEA'
+						IF @dim_customer_country_region_01 = 'EMEA'
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'EU'
+							IF @dim_customer_country_code_a2_01 = 'EU'
 							BEGIN
+								print('todo')
 							END
 						END
 
-						IF [dim_customer_region] in ('NORA')	/*TO BE UPDATED*/
+						IF @dim_customer_country_region_01 in ('NORA')	/*TO BE UPDATED*/
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'CA'
+							IF @dim_customer_country_code_a2_01 = 'CA'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'US'
+							IF @dim_customer_country_code_a2_01 = 'US'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'BR'
+							IF @dim_customer_country_code_a2_01 = 'BR'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'CL'
+							IF @dim_customer_country_code_a2_01 = 'CL'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'MX'
+							IF @dim_customer_country_code_a2_01 = 'MX'
 							BEGIN
+								print('todo')
 							END
 						END
 
-						IF [dim_customer_region] = 'APAC'
+						IF @dim_customer_country_region_01 = 'APAC'
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'CN'
+							IF @dim_customer_country_code_a2_01 = 'CN'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'KR'
+							IF @dim_customer_country_code_a2_01 = 'KR'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'IN'
+							IF @dim_customer_country_code_a2_01 = 'IN'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'MY'
+							IF @dim_customer_country_code_a2_01 = 'MY'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'SG'
+							IF @dim_customer_country_code_a2_01 = 'SG'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'HK'
+							IF @dim_customer_country_code_a2_01 = 'HK'
 							BEGIN
+								print('todo')
 							END
 						END
 					END
 
 					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
-					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
-
+					BEGIN
+						print('todo')
+						[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
+					END
 				END
 			END
 
-			IF [dim_customer_sold_to_party] = 'DIRECT'
+			IF @dim_customer_sold_to_party_01 = 'DIRECT'
 			BEGIN
-				IF [dim_demand_category_name] = 'Bulk Buy'
+				IF @dim_demand_category_name_01 = 'Bulk Buy'
 				BEGIN
-					IF [dim_customer_region] = 'EMEA'
+					IF @dim_customer_country_region_01 = 'EMEA'
 					BEGIN
-						IF [dim_customer_country_code_a2] = 'EU'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'EU'
+						BEGIN 
+							print('todo') 
+						END
 					END
 
-					IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+					IF @dim_customer_country_region_01 in ('NORA', 'CASA')	/*TO BE UPDATED*/
 					BEGIN
-						IF [dim_customer_country_code_a2] = 'CA'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'CA'
+						BEGIN 
+							print('todo') 
+						END
 
-						IF [dim_customer_country_code_a2] = 'US'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'US'
+						BEGIN 
+							print('todo') 
+						END
 
-						IF [dim_customer_country_code_a2] = 'MX'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'MX'
+						BEGIN 
+							print('todo') 
+						END
 
-						IF [dim_customer_country_code_a2] = 'INTERNATIONAL' /*TO BE UPDATED*/
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'INTERNATIONAL' /*TO BE UPDATED*/
+						BEGIN 
+							print('todo') 
+						END
 					END
 
-					IF [dim_customer_region] = 'APAC'
+					IF @dim_customer_country_region_01 = 'APAC'
 					BEGIN
 
-						IF [dim_customer_country_code_a2] = 'KR'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'KR'
+						BEGIN 
+							print('todo') 
+						END
 
-						IF [dim_customer_country_code_a2] = 'APAC'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'APAC'
+						BEGIN 
+							print('todo') 
+						END
 
 					END
 				END
 
-				IF [dim_demand_category_name] = 'Retail Quick Turn'
+				IF @dim_demand_category_name_01 = 'Retail Quick Turn'
 				BEGIN
-					IF [dim_customer_region] = 'EMEA'
+					IF @dim_customer_country_region_01 = 'EMEA'
 					BEGIN
 						IF [VENDOR] IN ('DTC','SJV')
-						[ANS] = 'DTC' /*TO BE UPDATED - IS THE PAPER WRONG*/
+						BEGIN
+							print('todo')
+							[ANS] = 'DTC' /*TO BE UPDATED - IS THE PAPER WRONG*/
+						END
 						ELSE
-						[ANS] = 'FIXED VENDOR'
+						BEGIN
+							print('todo')
+							[ANS] = 'FIXED VENDOR'
+						END
 					END
 
-					IF [dim_customer_region] in ('NORA', 'CASA', 'APAC')
+					IF @dim_customer_country_region_01 in ('NORA', 'CASA', 'APAC')
 					BEGIN
 						IF [VENDOR] IN ('DTC','SJV')
-						[ANS] = 'SJV'
+						BEGIN
+							print('todo')
+							[ANS] = 'SJV'
+						END
 						ELSE
-						[ANS] = 'FIXED VENDOR'
+						BEGIN
+							print('todo')
+							[ANS] = 'FIXED VENDOR'
+						END
 					END
 
 				END
 
-				IF [dim_demand_category_name] = 'Ad Hoc Vendor Quick Turn'  /* TO BE UPDATED*/
+				IF @dim_demand_category_name_01 = 'Ad Hoc Vendor Quick Turn'  /* TO BE UPDATED*/
 				BEGIN
 					IF (NOT[LEAD_TIME]<73)
 					BEGIN
-						IF [dim_customer_region] = 'EMEA'
+						IF @dim_customer_country_region_01 = 'EMEA'
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'EU'
+							IF @dim_customer_country_code_a2_01 = 'EU'
 							BEGIN
+								print('todo')
 							END
 						END
 					END
 
 					IF ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
 					BEGIN
-						IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+						IF @dim_customer_country_region_01 in ('NORA', 'CASA')	/*TO BE UPDATED*/
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'CA'
+							IF @dim_customer_country_code_a2_01 = 'CA'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'US'
+							IF @dim_customer_country_code_a2_01 = 'US'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'MX'
+							IF @dim_customer_country_code_a2_01 = 'MX'
 							BEGIN
+								print('todo')
 							END
 						END
 
-						IF [dim_customer_region] = 'APAC'
+						IF @dim_customer_country_region_01 = 'APAC'
 						BEGIN
 
-							IF [dim_customer_country_code_a2] = 'KR'
+							IF @dim_customer_country_code_a2_01 = 'KR'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'APAC' /*TO BE UPDATED*/
+							IF @dim_customer_country_code_a2_01 = 'APAC' /*TO BE UPDATED*/
 							BEGIN
+								print('todo')
 							END
 						END
 
 					END
 
 					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
-					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
+					BEGIN
+						print('todo')
+						[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
+					END
 
 				END
 
-				IF [dim_demand_category_name] = 'Scheduled Out of Sync'
+				IF @dim_demand_category_name_01 = 'Scheduled Out of Sync'
 				BEGIN
 					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
 					BEGIN
-						IF [dim_customer_region] = 'EMEA'
+						IF @dim_customer_country_region_01 = 'EMEA'
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'EU'
+							IF @dim_customer_country_code_a2_01 = 'EU'
 							BEGIN
+								print('todo')
 							END
 						END
 
-						IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+						IF @dim_customer_country_region_01 in ('NORA', 'CASA')	/*TO BE UPDATED*/
 						BEGIN
-							IF [dim_customer_country_code_a2] = 'CA'
+							IF @dim_customer_country_code_a2_01 = 'CA'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'US'
+							IF @dim_customer_country_code_a2_01 = 'US'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'MX'
+							IF @dim_customer_country_code_a2_01 = 'MX'
 							BEGIN
+								print('todo')
 							END
 						END
 
-						IF [dim_customer_region] = 'APAC'
+						IF @dim_customer_country_region_01 = 'APAC'
 						BEGIN
 
-							IF [dim_customer_country_code_a2] = 'KR'
+							IF @dim_customer_country_code_a2_01 = 'KR'
 							BEGIN
+								print('todo')
 							END
 
-							IF [dim_customer_country_code_a2] = 'APAC' /*TO BE UPDATED*/
+							IF @dim_customer_country_code_a2_01 = 'APAC' /*TO BE UPDATED*/
 							BEGIN
+								print('todo')
 							END
 						END
 					END
 
 					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
-					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
-
+					BEGIN
+						print('todo')
+						[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
+					END
 				END
 			END
 
-			IF [dim_customer_sold_to_party] = 'CROSSDOCK'
+			IF @dim_customer_sold_to_party_01 = 'CROSSDOCK'
 			BEGIN
-				IF [dim_demand_category_name] = 'Bulk Buy'
+				IF @dim_demand_category_name_01 = 'Bulk Buy'
 				BEGIN
-					IF [dim_customer_region] = 'EMEA'
+					IF @dim_customer_country_region_01 = 'EMEA'
 					BEGIN
-						IF [dim_customer_country_code_a2] = 'EU'
-						BEGIN print('todo') END
+						IF @dim_customer_country_code_a2_01 = 'EU'
+						BEGIN 
+							print('todo') 
+						END
 					END
 				END
 			END
