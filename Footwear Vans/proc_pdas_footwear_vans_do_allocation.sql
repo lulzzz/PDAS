@@ -27,7 +27,7 @@ BEGIN
 		DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 
         DECLARE @etl_month_date_id int
-		SET @etl_month_date_id = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (DATEADD(MONTH, (DATEDIFF(MONTH, 0, (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = (SELECT [etl_date_id] FROM [dbo].[dim_pdas] WHERE id = @dim_pdas_id)))), 0)))
+		SET @etl_month_date_id = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (DATEADD(MONTH, (DATEDIFF(MONTH, 0, (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = (SELECT [etl_date_id] FROM [dbo].[dim_pdas] WHERE id = @pdasid)))), 0)))
 
 		DECLARE @cursor_01 CURSOR
 
@@ -52,7 +52,6 @@ BEGIN
 		DECLARE @dim_customer_sold_to_party_01 NVARCHAR(100)
 		DECLARE @dim_customer_country_region_01 NVARCHAR(100)
 		DECLARE @dim_customer_country_code_a2_01 NVARCHAR(100)
-		TODO
 
 
 		-- Reset allocation
@@ -260,57 +259,61 @@ BEGIN
 					BEGIN
 						IF [dim_customer_country_code_a2] = 'EU'
 						BEGIN
+
+							print('todo')
+
 						END
 					END
-					
+
 					IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
 					BEGIN
 						IF [dim_customer_country_code_a2] = 'CA'
 						BEGIN
+
+							print('todo')
+
 						END
-						
+
 						IF [dim_customer_country_code_a2] = 'US'
 						BEGIN
+
+							print('todo')
+
 						END
-						
+
 						IF [dim_customer_country_code_a2] = 'BR'
 						BEGIN
+
+							print('todo')
+
 						END
-						
+
 						IF [dim_customer_country_code_a2] = 'CL'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'MX'
-						BEGIN
-						END
-					END		
-					
+						BEGIN print('todo') END
+					END
+
 					IF [dim_customer_region] = 'APAC'
 					BEGIN
 						IF [dim_customer_country_code_a2] = 'CN'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'KR'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'IN'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'MY'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'SG'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'HK'
-						BEGIN
-						END
+						BEGIN print('todo') END
 					END
 				END
 
@@ -318,12 +321,19 @@ BEGIN
 				BEGIN
 					IF [dim_customer_region] = 'EMEA'
 					BEGIN
-						IF [VENDOR] IN ('DTC','SJV')
-						[ANS] = 'DTC' /*TO BE UPDATED - IS THE PAPER WRONG*/
+						IF [VENDOR] IN ('DTC','SJV')  /*TO BE UPDATED - IS THE PAPER WRONG*/
+						BEGIN
+							print('todo')
+							[ANS] = 'DTC'
+						END
 						ELSE
-						[ANS] = 'FIXED VENDOR'
+						BEGIN
+							print('todo')
+							[ANS] = 'FIXED VENDOR'
+
+						END
 					END
-					
+
 					IF [dim_customer_region] in ('NORA', 'CASA')
 					BEGIN
 						IF [VENDOR] IN ('DTC','SJV')
@@ -331,7 +341,7 @@ BEGIN
 						ELSE
 						[ANS] = 'FIXED VENDOR'
 					END
-					
+
 					IF [dim_customer_region] = 'APAC'
 					BEGIN
 						IF [dim_customer_country_code_a2] = 'CN'
@@ -340,10 +350,10 @@ BEGIN
 						[ANS] = 'FIXED VENDOR'
 					END
 				END
-				
+
 				IF [dim_demand_category_name] = 'Ad Hoc Vendor Quick Turn'  /* TO BE UPDATED*/
 				BEGIN
-					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')  
+					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
 					BEGIN
 						IF [dim_customer_region] = 'EMEA'
 						BEGIN
@@ -351,63 +361,63 @@ BEGIN
 							BEGIN
 							END
 						END
-						
+
 						IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
 						BEGIN
 							IF [dim_customer_country_code_a2] = 'CA'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'US'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'BR'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'CL'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'MX'
 							BEGIN
 							END
-						END		
-					
+						END
+
 						IF [dim_customer_region] = 'APAC'
 						BEGIN
 							IF [dim_customer_country_code_a2] = 'CN'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'KR'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'IN'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'MY'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'SG'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'HK'
 							BEGIN
 							END
 						END
 					END
-					
+
 					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
 					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
 
 				END
-				
+
 				IF [dim_demand_category_name] = 'Scheduled Out of Sync'
 				BEGIN
 					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
@@ -418,58 +428,58 @@ BEGIN
 							BEGIN
 							END
 						END
-						
+
 						IF [dim_customer_region] in ('NORA')	/*TO BE UPDATED*/
 						BEGIN
 							IF [dim_customer_country_code_a2] = 'CA'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'US'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'BR'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'CL'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'MX'
 							BEGIN
 							END
-						END		
-					
+						END
+
 						IF [dim_customer_region] = 'APAC'
 						BEGIN
 							IF [dim_customer_country_code_a2] = 'CN'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'KR'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'IN'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'MY'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'SG'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'HK'
 							BEGIN
 							END
 						END
 					END
-					
+
 					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
 					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
 
@@ -483,39 +493,32 @@ BEGIN
 					IF [dim_customer_region] = 'EMEA'
 					BEGIN
 						IF [dim_customer_country_code_a2] = 'EU'
-						BEGIN
-						END
+						BEGIN print('todo') END
 					END
-					
+
 					IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
 					BEGIN
 						IF [dim_customer_country_code_a2] = 'CA'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'US'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'MX'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'INTERNATIONAL' /*TO BE UPDATED*/
-						BEGIN
-						END
-					END		
-					
+						BEGIN print('todo') END
+					END
+
 					IF [dim_customer_region] = 'APAC'
 					BEGIN
-						
+
 						IF [dim_customer_country_code_a2] = 'KR'
-						BEGIN
-						END
-						
+						BEGIN print('todo') END
+
 						IF [dim_customer_country_code_a2] = 'APAC'
-						BEGIN
-						END
+						BEGIN print('todo') END
 
 					END
 				END
@@ -529,7 +532,7 @@ BEGIN
 						ELSE
 						[ANS] = 'FIXED VENDOR'
 					END
-					
+
 					IF [dim_customer_region] in ('NORA', 'CASA', 'APAC')
 					BEGIN
 						IF [VENDOR] IN ('DTC','SJV')
@@ -537,9 +540,9 @@ BEGIN
 						ELSE
 						[ANS] = 'FIXED VENDOR'
 					END
-					
+
 				END
-				
+
 				IF [dim_demand_category_name] = 'Ad Hoc Vendor Quick Turn'  /* TO BE UPDATED*/
 				BEGIN
 					IF (NOT[LEAD_TIME]<73)
@@ -551,7 +554,7 @@ BEGIN
 							END
 						END
 					END
-					
+
 					IF ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
 					BEGIN
 						IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
@@ -559,35 +562,35 @@ BEGIN
 							IF [dim_customer_country_code_a2] = 'CA'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'US'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'MX'
 							BEGIN
 							END
-						END		
-					
+						END
+
 						IF [dim_customer_region] = 'APAC'
 						BEGIN
 
 							IF [dim_customer_country_code_a2] = 'KR'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'APAC' /*TO BE UPDATED*/
 							BEGIN
 							END
 						END
-					
+
 					END
-					
+
 					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
 					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
 
 				END
-				
+
 				IF [dim_demand_category_name] = 'Scheduled Out of Sync'
 				BEGIN
 					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
@@ -598,35 +601,35 @@ BEGIN
 							BEGIN
 							END
 						END
-						
+
 						IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
 						BEGIN
 							IF [dim_customer_country_code_a2] = 'CA'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'US'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'MX'
 							BEGIN
 							END
-						END		
-					
+						END
+
 						IF [dim_customer_region] = 'APAC'
 						BEGIN
-							
+
 							IF [dim_customer_country_code_a2] = 'KR'
 							BEGIN
 							END
-							
+
 							IF [dim_customer_country_code_a2] = 'APAC' /*TO BE UPDATED*/
 							BEGIN
 							END
 						END
 					END
-					
+
 					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
 					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
 
@@ -640,8 +643,7 @@ BEGIN
 					IF [dim_customer_region] = 'EMEA'
 					BEGIN
 						IF [dim_customer_country_code_a2] = 'EU'
-						BEGIN
-						END
+						BEGIN print('todo') END
 					END
 				END
 			END
