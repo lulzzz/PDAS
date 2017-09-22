@@ -35,16 +35,16 @@ BEGIN
     -- Check short_name from dim_factory
     SET @type = 'Factory short name not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
-	SELECT DISTINCT @system, @source, @type, ISNULL([Factory Code], '') as [value]
+	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_short_name], '') as [value]
 	FROM
-		(SELECT DISTINCT [Factory Code] FROM [dbo].[staging_pdas_footwear_vans_capacity_by_week]) staging
+		(SELECT DISTINCT [dim_factory_short_name] FROM [dbo].[staging_pdas_footwear_vans_capacity_by_week]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
                 [short_name]
             FROM [dbo].[dim_factory]
         ) dim
-			ON staging.[Factory Code] = dim.[short_name]
+			ON staging.[dim_factory_short_name] = dim.[short_name]
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -53,7 +53,7 @@ BEGIN
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
             WHERE [type] = 'Factory Master'
         ) mapping
-			ON staging.[Factory Code] = mapping.[child]
+			ON staging.[dim_factory_short_name] = mapping.[child]
 	WHERE
 		(dim.[short_name] IS NULL AND mapping.[parent] IS NULL)
 
@@ -61,16 +61,16 @@ BEGIN
 	-- Check name from dim_construction_type
     SET @type = 'Construction type not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
-	SELECT DISTINCT @system, @source, @type, ISNULL([Construction Type], '') as [value]
+	SELECT DISTINCT @system, @source, @type, ISNULL([dim_construction_type_name], '') as [value]
 	FROM
-		(SELECT DISTINCT [Construction Type] FROM [dbo].[staging_pdas_footwear_vans_capacity_by_week]) staging
+		(SELECT DISTINCT [dim_construction_type_name] FROM [dbo].[staging_pdas_footwear_vans_capacity_by_week]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
                 [name]
             FROM [dbo].[dim_construction_type]
         ) dim
-			ON staging.[Construction Type] = dim.[name]
+			ON staging.[dim_construction_type_name] = dim.[name]
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -79,7 +79,7 @@ BEGIN
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
             WHERE [type] = 'Construction Type Master'
         ) mapping
-			ON staging.[Construction Type] = mapping.[child]
+			ON staging.[dim_construction_type_name] = mapping.[child]
 	WHERE
 		(dim.[name] IS NULL AND mapping.[parent] IS NULL)
 

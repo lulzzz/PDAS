@@ -40,12 +40,13 @@ BEGIN
 		df.id as dim_factory_id,
 		sum(quantity) as quantity
 	FROM [dbo].[staging_pdas_footwear_vans_nora_forecast_' + @buying_program_ref + '] nf
-	INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + @pdasid_nvarchar + '
-	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + @buying_program_id + '
 	INNER JOIN [dbo].[dim_product] dp ON nf.dim_product_material_id = dp.material_id
  	INNER JOIN [dbo].[dim_factory] df ON df.is_placeholder = 1 AND df.placeholder_level = ''PLACEHOLDER''
 	INNER JOIN [dbo].[dim_customer] dc ON dc.is_placeholder = 1 AND dc.placeholder_level = ''Region'' AND market = ''NORA''
-	INNER JOIN [dbo].[dim_date] dd ON nf.season = dd.season_year_accounting AND nf.plan_month = dd.month_name_short_accounting
+	INNER JOIN
+	(
+		SELECT [season_year_accounting], [month_name_short_accounting], MIN([id]) as [id] FROM [dbo].[dim_date] GROUP BY [season_year_accounting], [month_name_short_accounting]
+	) dd ON nf.season = dd.season_year_accounting AND nf.plan_month = dd.month_name_short_accounting
 	WHERE dp.is_placeholder = 1 AND dp.placeholder_level = ''material_id''
 	GROUP BY
 		dp.id,
@@ -64,12 +65,13 @@ BEGIN
 		df.id as dim_factory_id,
 		sum(quantity) as quantity
 	FROM [dbo].[staging_pdas_footwear_vans_emea_forecast_' + @buying_program_ref + '] nf
-	INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + @pdasid_nvarchar + '
-	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + @buying_program_id + '
 	INNER JOIN [dbo].[dim_product] dp ON nf.dim_product_material_id = dp.material_id
  	INNER JOIN [dbo].[dim_factory] df ON df.is_placeholder = 1 AND df.placeholder_level = ''PLACEHOLDER''
 	INNER JOIN [dbo].[dim_customer] dc ON dc.is_placeholder = 1 AND dc.placeholder_level = ''Region'' AND market = ''EUR''
-	INNER JOIN [dbo].[dim_date] dd ON nf.season = dd.season_year_short_accounting AND nf.plan_month = dd.month_name_short_accounting
+	INNER JOIN
+	(
+		SELECT [season_year_short_accounting], [month_name_short_accounting], MIN([id]) as [id] FROM [dbo].[dim_date] GROUP BY [season_year_short_accounting], [month_name_short_accounting]
+	) dd ON nf.season = dd.season_year_short_accounting AND nf.plan_month = dd.month_name_short_accounting
 	WHERE dp.is_placeholder = 1 AND dp.placeholder_level = ''material_id''
 	GROUP BY
 		dp.id,
@@ -88,12 +90,13 @@ BEGIN
 		df.id as dim_factory_id,
 		sum(quantity) as quantity
 	FROM [dbo].[staging_pdas_footwear_vans_apac_forecast_' + @buying_program_ref + '] nf
-	INNER JOIN [dbo].[dim_business] biz ON biz.id = ' + @pdasid_nvarchar + '
-	INNER JOIN [dbo].[dim_buying_program] bp ON bp.id = ' + @buying_program_id + '
 	INNER JOIN [dbo].[dim_product] dp ON nf.dim_product_material_id = dp.material_id
 	INNER JOIN [dbo].[dim_factory] df ON df.is_placeholder = 1 AND df.placeholder_level = ''PLACEHOLDER''
 	INNER JOIN [dbo].[dim_customer] dc ON dc.is_placeholder = 1 AND dc.placeholder_level = ''Region'' AND market = ''APAC''
-	INNER JOIN [dbo].[dim_date] dd ON SUBSTRING(nf.month_label, 1, 4) = dd.season_year_short_accounting AND nf.plan_month = dd.month_name_short_accounting
+	INNER JOIN
+	(
+		SELECT [season_year_short_accounting], [month_name_short_accounting], MIN([id]) as [id] FROM [dbo].[dim_date] GROUP BY [season_year_short_accounting], [month_name_short_accounting]
+	) dd ON SUBSTRING(nf.month_label, 1, 4) = dd.season_year_short_accounting AND nf.plan_month = dd.month_name_short_accounting
 	WHERE dp.is_placeholder = 1 AND dp.placeholder_level = ''material_id''
 	GROUP BY
 		dp.id,

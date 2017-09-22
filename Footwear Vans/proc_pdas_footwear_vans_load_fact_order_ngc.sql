@@ -68,8 +68,8 @@ BEGIN
 			ELSE mapping_c.id
 		END as dim_customer_id,
 		CASE
-			WHEN dc_ms.id IS NOT NULL THEN dc_ms.id
-			ELSE dc_m.id
+			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
+			ELSE dp_m.id
 		END as dim_product_id,
         CASE
 		 	WHEN shipped_qty IS NULL THEN @dim_demand_category_id_open_order
@@ -145,12 +145,11 @@ BEGIN
 		CASE
 			WHEN dc.id IS NOT NULL THEN dc.id
 			ELSE mapping_c.id
-		END as dim_customer_id,
+		END,
 		CASE
-			WHEN dc_ms.id IS NOT NULL THEN dc_ms.id
-			ELSE dc_m.id
-		END as dim_product_id,
-		dp.id,
+			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
+			ELSE dp_m.id
+		END,
 		CASE
 			WHEN shipped_qty IS NULL THEN @dim_demand_category_id_open_order
 			WHEN revised_crd_dt < @current_date THEN @dim_demand_category_id_received_order

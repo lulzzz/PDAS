@@ -41,8 +41,7 @@ BEGIN
 
 	-- Step 04 - Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
 	-- Capacity
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity_by_week]	@pdasid = @pdasid, 	@businessid = dim_business_id_footwear_vans
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity_raw]	@pdasid = @pdasid, 	@businessid = dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = dim_business_id_footwear_vans
 
 	-- NTB
 	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
