@@ -34,6 +34,24 @@ BEGIN
 
 		DECLARE @dim_buying_program_id_01 int
 		DECLARE @dim_product_id_01 int
+		DECLARE @dim_date_id_01 int
+		DECLARE @dim_factory_id_original_01 int
+		DECLARE @dim_customer_id_01 int
+		DECLARE @dim_demand_category_id_01 int
+		DECLARE @order_number_01 int
+		DECLARE @quantity_01 int
+		DECLARE @dim_buying_program_name_01 NVARCHAR(100)
+		DECLARE @dim_demand_category_name_01 NVARCHAR(100)
+		DECLARE @dim_product_material_id_01 NVARCHAR(100)
+		DECLARE @dim_product_style_complexity_01 NVARCHAR(100)
+		DECLARE @dim_construction_type_name_01 NVARCHAR(100)
+		DECLARE @dim_factory_short_name_01 NVARCHAR(100)
+		DECLARE @dim_factory_region_01 NVARCHAR(100)
+		DECLARE @dim_factory_country_code_a2_01 NVARCHAR(2)
+		DECLARE @dim_customer_name_01 NVARCHAR(100)
+		DECLARE @dim_customer_sold_to_party_01 NVARCHAR(100)
+		DECLARE @dim_customer_country_region_01 NVARCHAR(100)
+		DECLARE @dim_customer_country_code_a2_01 NVARCHAR(100)
 		TODO
 
 
@@ -214,10 +232,419 @@ BEGIN
 		FETCH NEXT FROM @cursor_01
 		INTO
 			@dim_buying_program_id_01
-			,TODO
+			,@dim_date_id_01
+			,@dim_factory_id_original_01
+			,@dim_customer_id_01
+			,@dim_demand_category_id_01
+			,@order_number_01
+			,@quantity_01
+			,@dim_buying_program_name_01
+			,@dim_demand_category_name_01
+			,@dim_product_material_id_01
+			,@dim_product_style_complexity_01
+			,@dim_construction_type_name_01
+			,@dim_factory_short_name_01
+			,@dim_factory_region_01
+			,@dim_factory_country_code_a2_01
+			,@dim_customer_name_01
+			,@dim_customer_sold_to_party_01
+			,@dim_customer_country_region_01
+			,@dim_customer_country_code_a2_01
 		WHILE @@FETCH_STATUS = 0
 		BEGIN
+			IF [dim_customer_sold_to_party] = 'DC'
+			BEGIN
+				IF [dim_demand_category_name] = 'Bulk Buy'
+				BEGIN
+					IF [dim_customer_region] = 'EMEA'
+					BEGIN
+						IF [dim_customer_country_code_a2] = 'EU'
+						BEGIN
+						END
+					END
+					
+					IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+					BEGIN
+						IF [dim_customer_country_code_a2] = 'CA'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'US'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'BR'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'CL'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'MX'
+						BEGIN
+						END
+					END		
+					
+					IF [dim_customer_region] = 'APAC'
+					BEGIN
+						IF [dim_customer_country_code_a2] = 'CN'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'KR'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'IN'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'MY'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'SG'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'HK'
+						BEGIN
+						END
+					END
+				END
 
+				IF [dim_demand_category_name] = 'Retail Quick Turn'
+				BEGIN
+					IF [dim_customer_region] = 'EMEA'
+					BEGIN
+						IF [VENDOR] IN ('DTC','SJV')
+						[ANS] = 'DTC' /*TO BE UPDATED - IS THE PAPER WRONG*/
+						ELSE
+						[ANS] = 'FIXED VENDOR'
+					END
+					
+					IF [dim_customer_region] in ('NORA', 'CASA')
+					BEGIN
+						IF [VENDOR] IN ('DTC','SJV')
+						[ANS] = 'SJV'
+						ELSE
+						[ANS] = 'FIXED VENDOR'
+					END
+					
+					IF [dim_customer_region] = 'APAC'
+					BEGIN
+						IF [dim_customer_country_code_a2] = 'CN'
+						[ANS] = 'HSC'
+						ELSE
+						[ANS] = 'FIXED VENDOR'
+					END
+				END
+				
+				IF [dim_demand_category_name] = 'Ad Hoc Vendor Quick Turn'  /* TO BE UPDATED*/
+				BEGIN
+					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')  
+					BEGIN
+						IF [dim_customer_region] = 'EMEA'
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'EU'
+							BEGIN
+							END
+						END
+						
+						IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'CA'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'US'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'BR'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'CL'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'MX'
+							BEGIN
+							END
+						END		
+					
+						IF [dim_customer_region] = 'APAC'
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'CN'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'KR'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'IN'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'MY'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'SG'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'HK'
+							BEGIN
+							END
+						END
+					END
+					
+					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
+					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
+
+				END
+				
+				IF [dim_demand_category_name] = 'Scheduled Out of Sync'
+				BEGIN
+					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
+					BEGIN
+						IF [dim_customer_region] = 'EMEA'
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'EU'
+							BEGIN
+							END
+						END
+						
+						IF [dim_customer_region] in ('NORA')	/*TO BE UPDATED*/
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'CA'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'US'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'BR'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'CL'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'MX'
+							BEGIN
+							END
+						END		
+					
+						IF [dim_customer_region] = 'APAC'
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'CN'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'KR'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'IN'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'MY'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'SG'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'HK'
+							BEGIN
+							END
+						END
+					END
+					
+					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
+					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
+
+				END
+			END
+
+			IF [dim_customer_sold_to_party] = 'DIRECT'
+			BEGIN
+				IF [dim_demand_category_name] = 'Bulk Buy'
+				BEGIN
+					IF [dim_customer_region] = 'EMEA'
+					BEGIN
+						IF [dim_customer_country_code_a2] = 'EU'
+						BEGIN
+						END
+					END
+					
+					IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+					BEGIN
+						IF [dim_customer_country_code_a2] = 'CA'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'US'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'MX'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'INTERNATIONAL' /*TO BE UPDATED*/
+						BEGIN
+						END
+					END		
+					
+					IF [dim_customer_region] = 'APAC'
+					BEGIN
+						
+						IF [dim_customer_country_code_a2] = 'KR'
+						BEGIN
+						END
+						
+						IF [dim_customer_country_code_a2] = 'APAC'
+						BEGIN
+						END
+
+					END
+				END
+
+				IF [dim_demand_category_name] = 'Retail Quick Turn'
+				BEGIN
+					IF [dim_customer_region] = 'EMEA'
+					BEGIN
+						IF [VENDOR] IN ('DTC','SJV')
+						[ANS] = 'DTC' /*TO BE UPDATED - IS THE PAPER WRONG*/
+						ELSE
+						[ANS] = 'FIXED VENDOR'
+					END
+					
+					IF [dim_customer_region] in ('NORA', 'CASA', 'APAC')
+					BEGIN
+						IF [VENDOR] IN ('DTC','SJV')
+						[ANS] = 'SJV'
+						ELSE
+						[ANS] = 'FIXED VENDOR'
+					END
+					
+				END
+				
+				IF [dim_demand_category_name] = 'Ad Hoc Vendor Quick Turn'  /* TO BE UPDATED*/
+				BEGIN
+					IF (NOT[LEAD_TIME]<73)
+					BEGIN
+						IF [dim_customer_region] = 'EMEA'
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'EU'
+							BEGIN
+							END
+						END
+					END
+					
+					IF ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
+					BEGIN
+						IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'CA'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'US'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'MX'
+							BEGIN
+							END
+						END		
+					
+						IF [dim_customer_region] = 'APAC'
+						BEGIN
+
+							IF [dim_customer_country_code_a2] = 'KR'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'APAC' /*TO BE UPDATED*/
+							BEGIN
+							END
+						END
+					
+					END
+					
+					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
+					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
+
+				END
+				
+				IF [dim_demand_category_name] = 'Scheduled Out of Sync'
+				BEGIN
+					IF (NOT[LEAD_TIME]<73) AND ([LEAD_TIME]<73 AND [VQT_VENDOR]='N')
+					BEGIN
+						IF [dim_customer_region] = 'EMEA'
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'EU'
+							BEGIN
+							END
+						END
+						
+						IF [dim_customer_region] in ('NORA', 'CASA')	/*TO BE UPDATED*/
+						BEGIN
+							IF [dim_customer_country_code_a2] = 'CA'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'US'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'MX'
+							BEGIN
+							END
+						END		
+					
+						IF [dim_customer_region] = 'APAC'
+						BEGIN
+							
+							IF [dim_customer_country_code_a2] = 'KR'
+							BEGIN
+							END
+							
+							IF [dim_customer_country_code_a2] = 'APAC' /*TO BE UPDATED*/
+							BEGIN
+							END
+						END
+					END
+					
+					IF [LEAD_TIME]<73 AND [VQT_VENDOR]='Y'
+					[ANS] = [VQT_VENDOR] /*TO BE UPDATED - COLUMN NAME*/
+
+				END
+			END
+
+			IF [dim_customer_sold_to_party] = 'CROSSDOCK'
+			BEGIN
+				IF [dim_demand_category_name] = 'Bulk Buy'
+				BEGIN
+					IF [dim_customer_region] = 'EMEA'
+					BEGIN
+						IF [dim_customer_country_code_a2] = 'EU'
+						BEGIN
+						END
+					END
+				END
+			END
 
 			FETCH NEXT FROM @cursor_01
 			INTO
