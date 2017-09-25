@@ -28,8 +28,8 @@ BEGIN
                 ISNULL([Season Year], '') + ' / ' +
                 ISNULL([Factory], '')
 			FROM [dbo].[mc_temp_pdas_footwear_vans_fty_qt]  temp
-                LEFT JOIN (SELECT DISTINCT [season_year_accounting], 1 as flag FROM [dbo].[dim_date]) dim_d
-                    ON 	UPPER(temp.[Season Year]) = UPPER(dim_d.[season_year_accounting])
+                LEFT JOIN (SELECT DISTINCT [season_year_short_accounting], 1 as flag FROM [dbo].[dim_date]) dim_d
+                    ON 	UPPER(temp.[Season Year]) = UPPER(dim_d.[season_year_short_accounting])
 				LEFT JOIN (SELECT DISTINCT [short_name], 1 as flag FROM [dbo].[dim_factory]) dim_f
                     ON 	UPPER(temp.[Factory]) = UPPER(dim_f.[short_name])
                 LEFT JOIN (SELECT DISTINCT [material_id], 1 as flag FROM [dbo].[dim_product]) dim_p

@@ -25,7 +25,7 @@ BEGIN
 
 	-- Step 02 - Transfer product master data and Priority List
 	EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product]
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_priority_list] @pdasid = @pdasid, @businessid = dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_priority_list] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 
 	-- Step 03 - Validate source data (need to check the Vans Footwear Validation Report afterwards)
@@ -41,56 +41,50 @@ BEGIN
 
 	-- Step 04 - Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
 	-- Capacity
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- NTB
 	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb_bulk]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
-		@buying_program_id = @buying_program_id,
-		@buying_program_ref = 'bulk'
+		@buying_program_id = @buying_program_id
 	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Retail Quick Turn')
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb_rqt]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
-		@buying_program_id = @buying_program_id,
-		@buying_program_ref = 'rqt'
+		@buying_program_id = @buying_program_id
 	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Scheduled Out of Sync')
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb_oos_scheduled]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
-		@buying_program_id = @buying_program_id,
-		@buying_program_ref = 'oos_scheduled'
+		@buying_program_id = @buying_program_id
 	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Ad-Hoc Out of Sync')
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb_oos_adhoc]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
-		@buying_program_id = @buying_program_id,
-		@buying_program_ref = 'oos_adhoc'
+		@buying_program_id = @buying_program_id
 
 	-- Forecast
 	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast_bulk]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
-		@buying_program_id = @buying_program_id,
-		@buying_program_ref = 'bulk'
+		@buying_program_id = @buying_program_id
 	SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Retail Quick Turn')
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast_rqt]
 		@pdasid = @pdasid,
 		@businessid = @dim_business_id_footwear_vans,
-		@buying_program_id = @buying_program_id,
-		@buying_program_ref = 'rqt'
+		@buying_program_id = @buying_program_id
 
 	-- NGC
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- Combine demand
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- Step 05 - Run decision tree allocation algorithm
-	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation]	@pdasid = @pdasid, @businessid = dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 
 END

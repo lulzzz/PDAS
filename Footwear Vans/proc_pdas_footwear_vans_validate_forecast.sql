@@ -141,8 +141,8 @@ BEGIN
 	WHERE
 		dim.[material_id] IS NULL
 
-    -- Check season_year_accounting and month_name_short_accounting from dim_date
-    SET @type = 'Season/Plan Month combination not in master data';
+    -- Intro month
+    SET @type = 'Intro month not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL(staging.[season], '') + '/' + ISNULL(staging.[plan_month], '') as [value]
 	FROM
@@ -150,14 +150,14 @@ BEGIN
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
-                [season_year_accounting]
+                [season_year_intro]
                 ,[month_name_short_accounting]
             FROM [dbo].[dim_date]
         ) dim
-			ON   staging.[season] = dim.[season_year_accounting]
+			ON   staging.[season] = dim.[season_year_intro]
                 AND staging.[plan_month] = dim.[month_name_short_accounting]
 	WHERE
-		dim.[season_year_accounting] IS NULL
+		dim.[season_year_intro] IS NULL
 
 
     /* EMEA */
@@ -181,8 +181,8 @@ BEGIN
 	WHERE
 		dim.[material_id] IS NULL
 
-    -- Check season_year_accounting and month_name_short_accounting from dim_date
-    SET @type = 'Season/Plan Month combination not in master data';
+    -- CRD month
+    SET @type = 'CRD Month not in master data';
   	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
   	SELECT DISTINCT @system, @source, @type, ISNULL(staging.[season], '') + '/' + ISNULL(staging.[plan_month], '') as [value]
   	FROM
@@ -190,14 +190,14 @@ BEGIN
           LEFT OUTER JOIN
           (
               SELECT DISTINCT
-                  [season_year_short_accounting]
+                  [season_year_short_crd]
                   ,[month_name_short_accounting]
               FROM [dbo].[dim_date]
           ) dim
-  			ON   staging.[season] = dim.[season_year_short_accounting]
+  			ON   staging.[season] = dim.[season_year_short_crd]
                   AND staging.[plan_month] = dim.[month_name_short_accounting]
   	WHERE
-  		dim.[season_year_short_accounting] IS NULL
+  		dim.[season_year_short_crd] IS NULL
 
 
 END

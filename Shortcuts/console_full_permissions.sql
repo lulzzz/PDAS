@@ -1,4 +1,4 @@
-declare @user nvarchar(100) = 'ebpglobal'
+declare @user nvarchar(100) = 'FGAMPER'
 
 insert into [dbo].[mc_user_proc_perm]
 ([permission_type]

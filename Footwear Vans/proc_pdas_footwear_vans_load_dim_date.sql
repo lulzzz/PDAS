@@ -34,8 +34,12 @@ BEGIN
 	DECLARE @NewCalendar as table (
 	    id INT,
 		full_date DATE,
-        season_accounting NVARCHAR(45),
-		season_year_short_accounting NVARCHAR(45),
+        season_buy NVARCHAR(45),
+		season_year_short_buy NVARCHAR(45),
+		season_crd NVARCHAR(45),
+		season_year_short_crd NVARCHAR(45),
+		season_intro NVARCHAR(45),
+		season_year_short_intro NVARCHAR(45),
 		year_accounting INT,
         year_cw_accounting NVARCHAR(45),
 		year_month_accounting NVARCHAR(45),
@@ -50,7 +54,9 @@ BEGIN
 
 	DECLARE
 		@WorkPeriodSeed INT = 1 ,
-		@WorkSeasonSeed NVARCHAR(2),
+		@WorkSeasonSeedBuy NVARCHAR(2),
+		@WorkSeasonSeedCRD NVARCHAR(2),
+		@WorkSeasonSeedIntro NVARCHAR(2),
 		@WorkWeekSeed INT = 1 ,
 		@WeekOfMonth INT = 1 ,
 		@IsLeapYear  INT = 0 ,
@@ -91,9 +97,19 @@ BEGIN
 								WHEN (@FiscalYearSeed % 4 = 0 AND @FiscalYearSeed % 100 <> 0) OR @FiscalYearSeed % 400 = 0 THEN 2
 								ELSE 1
 							 END,
-		@WorkSeasonSeed = CASE
+		@WorkSeasonSeedBuy = CASE
 							WHEN MONTH(@CurrentDate) IN (9, 10, 11, 12, 1) THEN 'SP'
 							WHEN MONTH(@CurrentDate) IN (2, 3, 4, 5) THEN 'FA'
+							ELSE 'HO'
+						  END,
+		@WorkSeasonSeedCRD = CASE
+							WHEN MONTH(@CurrentDate) IN (11, 12, 1, 2, 3) THEN 'SP'
+							WHEN MONTH(@CurrentDate) IN (4, 5, 6, 7) THEN 'FA'
+							ELSE 'HO'
+						  END,
+		@WorkSeasonSeedIntro = CASE
+							WHEN MONTH(@CurrentDate) IN (1, 2, 3, 4, 5) THEN 'SP'
+							WHEN MONTH(@CurrentDate) IN (6, 7 ,8, 9) THEN 'FA'
 							ELSE 'HO'
 						  END
 
@@ -102,14 +118,24 @@ BEGIN
 	WHILE @CurrentDate <= @FiscalCalendarEnd
 		BEGIN
 
-			INSERT INTO @NewCalendar (id, full_date, season_accounting, season_year_short_accounting, year_accounting, year_cw_accounting, year_month_accounting, month_name_accounting, day_of_week, day_name_of_week, is_last_day_of_month, is_weekend_day)
+			INSERT INTO @NewCalendar (id, full_date, season_buy, season_year_short_buy, season_crd, season_year_short_crd, season_intro, season_year_short_intro, year_accounting, year_cw_accounting, year_month_accounting, month_name_accounting, day_of_week, day_name_of_week, is_last_day_of_month, is_weekend_day)
 				SELECT
 					CAST(CONVERT(VARCHAR(8),@CurrentDate,112) AS INT) as id,
 					FORMAT(@CurrentDate,'yyyy-MM-dd') as full_date,
-					@WorkSeasonSeed as season_accounting,
-					@WorkSeasonSeed + SUBSTRING(CONVERT(VARCHAR(4),@FiscalYearSeed),3,2) season_year_short_accounting,
+					@WorkSeasonSeedBuy as season_buy,
+					CASE
+						WHEN @WorkPeriodSeed IN (9, 10, 11, 12) THEN @WorkSeasonSeedBuy + SUBSTRING(CONVERT(VARCHAR(4),@FiscalYearSeed + 1),3,2)
+						ELSE @WorkSeasonSeedBuy + SUBSTRING(CONVERT(VARCHAR(4),@FiscalYearSeed),3,2)
+					END AS season_year_short_buy,
+					@WorkSeasonSeedCRD as season_crd,
+					CASE
+						WHEN @WorkPeriodSeed IN (11, 12) THEN @WorkSeasonSeedCRD + SUBSTRING(CONVERT(VARCHAR(4),@FiscalYearSeed + 1),3,2)
+						ELSE @WorkSeasonSeedCRD + SUBSTRING(CONVERT(VARCHAR(4),@FiscalYearSeed),3,2)
+					END AS season_year_short_crd,
+					@WorkSeasonSeedIntro as season_intro,
+					@WorkSeasonSeedIntro + SUBSTRING(CONVERT(VARCHAR(4),@FiscalYearSeed),3,2) AS season_year_short_intro,
 				    @FiscalYearSeed as year_accounting,
-					CONVERT(VARCHAR(4),@FiscalYearSeed) + 'CW' + CONVERT(VARCHAR(2),@WorkWeekSeed) as year_cw_accounting,
+					CONVERT(VARCHAR(4),@FiscalYearSeed) + 'CW' + RIGHT('00'+CAST(@WorkWeekSeed AS VARCHAR(2)),2) as year_cw_accounting,
 					CONVERT(VARCHAR(4),@FiscalYearSeed) + '-' + RIGHT('00'+CAST(@WorkPeriodSeed AS VARCHAR(2)),2) as year_month_accounting,
 					CASE @WorkPeriodSeed
 						WHEN 1 THEN 'January'
@@ -248,11 +274,11 @@ BEGIN
 				  Fill the season variable
 			  */
 				  IF @WorkPeriodSeed IN (9, 10, 11, 12, 1)
-				  	SELECT @WorkSeasonSeed = 'SP'
+				  	SELECT @WorkSeasonSeedBuy = 'SP'
 				  IF @WorkPeriodSeed IN (2, 3, 4, 5)
-				  	SELECT @WorkSeasonSeed = 'FA'
+				  	SELECT @WorkSeasonSeedBuy = 'FA'
 				  IF @WorkPeriodSeed IN (6, 7, 8)
-		   		   SELECT @WorkSeasonSeed = 'HO'
+		   		   SELECT @WorkSeasonSeedBuy = 'HO'
 			END
 	END
 			-- TO BE USED FOR DEBUG
@@ -269,17 +295,31 @@ BEGIN
 		Finally we insert the new calendar in the dim_date table
 	*/
 
-	INSERT INTO [dbo].[dim_date] (id, full_date, season_accounting, season_year_accounting, season_year_short_accounting, year_accounting, year_cw_accounting, year_month_accounting, month_name_accounting, month_name_short_accounting, day_of_week, day_name_of_week, is_last_day_of_month, is_weekend_day)
+	INSERT INTO [dbo].[dim_date] (id, full_date, season_buy, season_year_buy, season_year_short_buy, season_crd, season_year_crd, season_year_short_crd, season_intro, season_year_intro, season_year_short_intro, year_accounting, year_cw_accounting, year_month_accounting, month_name_accounting, month_name_short_accounting, day_of_week, day_name_of_week, is_last_day_of_month, is_weekend_day)
 	SELECT
 		id,
 		full_date,
-		season_accounting,
-		CASE season_accounting
+		season_buy,
+		CASE season_buy
 			WHEN 'SP' THEN 'Spring ' + CONVERT(VARCHAR(4), year_accounting)
 			WHEN 'FA' THEN 'Fall ' + CONVERT(VARCHAR(4), year_accounting)
 			ELSE 'Holiday ' + CONVERT(VARCHAR(4), year_accounting)
-		END as season_year_accounting,
-		season_year_short_accounting,
+		END as season_year_buy,
+		season_year_short_buy,
+		season_crd,
+		CASE season_crd
+			WHEN 'SP' THEN 'Spring ' + CONVERT(VARCHAR(4), year_accounting)
+			WHEN 'FA' THEN 'Fall ' + CONVERT(VARCHAR(4), year_accounting)
+			ELSE 'Holiday ' + CONVERT(VARCHAR(4), year_accounting)
+		END as season_year_crd,
+		season_year_short_crd,
+		season_intro,
+		CASE season_intro
+			WHEN 'SP' THEN 'Spring ' + CONVERT(VARCHAR(4), year_accounting)
+			WHEN 'FA' THEN 'Fall ' + CONVERT(VARCHAR(4), year_accounting)
+			ELSE 'Holiday ' + CONVERT(VARCHAR(4), year_accounting)
+		END as season_year_intro,
+		season_year_short_intro,
 		year_accounting,
 		year_cw_accounting,
 		year_month_accounting,
@@ -301,13 +341,29 @@ BEGIN
 	UPDATE dt
 	SET
 		dt.full_date = new.full_date,
-		dt.season_accounting = new.season_accounting,
-		dt.season_year_accounting = CASE new.season_accounting
+		dt.season_buy = new.season_buy,
+		dt.season_year_buy = CASE
+										WHEN new.season_buy = 'SP' AND month_name_short_accounting IN ('Sep', 'Oct', 'Nov', 'Dec') THEN 'Spring ' + CONVERT(VARCHAR(4), CONVERT(INT, new.year_accounting)+1)
+										WHEN new.season_buy = 'SP' AND month_name_short_accounting NOT IN ('Sep', 'Oct', 'Nov', 'Dec') THEN 'Spring ' + CONVERT(VARCHAR(4), new.year_accounting)
+										WHEN new.season_buy = 'FA' THEN 'Fall ' + CONVERT(VARCHAR(4), new.year_accounting)
+										ELSE 'Holiday ' + CONVERT(VARCHAR(4), new.year_accounting)
+									END,
+		dt.season_year_short_buy = new.season_year_short_buy,
+		dt.season_crd = new.season_crd,
+		dt.season_year_crd = CASE
+										WHEN new.season_crd = 'SP' AND month_name_short_accounting IN ('Nov', 'Dec') THEN 'Spring ' + CONVERT(VARCHAR(4), CONVERT(INT, new.year_accounting)+1)
+										WHEN new.season_crd = 'SP' AND month_name_short_accounting NOT IN ('Nov', 'Dec') THEN 'Spring ' + CONVERT(VARCHAR(4), new.year_accounting)
+										WHEN new.season_crd = 'FA' THEN 'Fall ' + CONVERT(VARCHAR(4), new.year_accounting)
+										ELSE 'Holiday ' + CONVERT(VARCHAR(4), new.year_accounting)
+									END,
+		dt.season_year_short_crd = new.season_year_short_crd,
+		dt.season_intro = new.season_intro,
+		dt.season_year_intro = CASE new.season_intro
 										WHEN 'SP' THEN 'Spring ' + CONVERT(VARCHAR(4), new.year_accounting)
 										WHEN 'FA' THEN 'Fall ' + CONVERT(VARCHAR(4), new.year_accounting)
 										ELSE 'Holiday ' + CONVERT(VARCHAR(4), new.year_accounting)
 									END,
-		dt.season_year_short_accounting = new.season_year_short_accounting,
+		dt.season_year_short_intro = new.season_year_short_intro,
 		dt.year_accounting = new.year_accounting,
 		dt.year_cw_accounting = new.year_cw_accounting,
 		dt.year_month_accounting = new.year_month_accounting,

@@ -39,7 +39,6 @@ BEGIN
     FROM
         [dbo].[staging_pdas_footwear_vans_raw_capacity] cap
         INNER JOIN [dbo].[dim_date] dd ON cap.dim_date_id = dd.full_date
-
         LEFT OUTER JOIN [dbo].[dim_construction_type] cons ON cap.dim_construction_type_name = cons.name
 		LEFT OUTER JOIN
 		(
