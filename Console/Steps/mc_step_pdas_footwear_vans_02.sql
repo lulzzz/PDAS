@@ -41,9 +41,13 @@ BEGIN
 
 		-- Stored procedure(s) to run
 		/* START */
-		-- Step 02 - Transfer product master data
+		DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
+		DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 
-		-- EXEC [proc_rccp_footwear_load_factory_ranking] @mc_user_name = @mc_user_name
+		-- Step 02 - Transfer product master data and Priority List
+		EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product]
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_priority_list] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
 		/* END */
 
 		-- Update Console procedure table

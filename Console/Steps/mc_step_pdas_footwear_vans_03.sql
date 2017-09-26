@@ -41,9 +41,14 @@ BEGIN
 
 		-- Stored procedure(s) to run
 		/* START */
-		-- Step 03 - Transfer product master data
+		-- Step 03 - Validate source data (need to check the Vans Footwear Validation Report afterwards)
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_priority_list] @mc_user_name = NULL
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_capacity_by_week] @mc_user_name = NULL
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_forecast] @mc_user_name = NULL
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_ngc_orders] @mc_user_name = NULL
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_ntb] @mc_user_name = NULL
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_raw_capacity] @mc_user_name = NULL
 
-		-- EXEC [proc_rccp_footwear_load_factory_ranking] @mc_user_name = @mc_user_name
 		/* END */
 
 		-- Update Console procedure table
