@@ -15,9 +15,9 @@ BEGIN
 
 	-- Placeholder
 	DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
-	DECLARE @dim_customer_id_placeholder_nora int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'NORA')
 	DECLARE @dim_customer_id_placeholder_emea int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'EMEA')
 	DECLARE @dim_customer_id_placeholder_apac int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'APAC')
+	DECLARE @dim_product_id_placeholder int = (SELECT [id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'FUAC/SMU' and [material_id] = 'FUAC/SMU' and [size] = 'FUAC/SMU')
 
 
 	-- Check if the session has already been loaded
@@ -35,14 +35,17 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-		dp.id as dim_product_id,
+		CASE
+			WHEN dp.id IS NOT NULL THEN dp.id
+			ELSE @dim_product_id_placeholder
+		END as dim_product_id,
 		dd.id as dim_date_id,
 		@dim_customer_id_placeholder_apac as dim_customer_id,
 		@dim_factory_id_placeholder as dim_factory_id,
 		sum(quantity) as quantity
 	FROM
 		[dbo].[staging_pdas_footwear_vans_apac_forecast_bulk] nf
-		INNER JOIN
+		LEFT OUTER JOIN
 		(
 			SELECT id, material_id
 			FROM [dbo].[dim_product] dp
@@ -76,7 +79,10 @@ BEGIN
 	WHERE
 		quantity IS NOT NULL
 	GROUP BY
-		dp.id,
+		CASE
+			WHEN dp.id IS NOT NULL THEN dp.id
+			ELSE @dim_product_id_placeholder
+		END,
 		dd.id
 
 
@@ -87,14 +93,17 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-		dp.id as dim_product_id,
+		CASE
+			WHEN dp.id IS NOT NULL THEN dp.id
+			ELSE @dim_product_id_placeholder
+		END as dim_product_id,
 		dd.id as dim_date_id,
 		@dim_customer_id_placeholder_emea as dim_customer_id,
 		@dim_factory_id_placeholder as dim_factory_id,
 		sum(quantity) as quantity
 	FROM
 		[dbo].[staging_pdas_footwear_vans_emea_forecast_bulk] nf
-		INNER JOIN
+		LEFT OUTER JOIN
 		(
 			SELECT id, material_id
 			FROM [dbo].[dim_product] dp
@@ -132,7 +141,10 @@ BEGIN
 		WHERE
 			quantity IS NOT NULL
 		GROUP BY
-			dp.id,
+			CASE
+				WHEN dp.id IS NOT NULL THEN dp.id
+				ELSE @dim_product_id_placeholder
+			END,
 			dd.id
 
 	-- NORA (we pull intro month 2 months forward to reach CRD)
@@ -141,20 +153,32 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-		dp.id as dim_product_id,
+		CASE
+			WHEN dp.id IS NOT NULL THEN dp.id
+			ELSE @dim_product_id_placeholder
+		END as dim_product_id,
 		dd.id as dim_date_id,
-		@dim_customer_id_placeholder_nora as dim_customer_id,
+		dc.id as dim_customer_id,
 		@dim_factory_id_placeholder as dim_factory_id,
 		sum(quantity) as quantity
 	FROM
 		[dbo].[staging_pdas_footwear_vans_nora_forecast_bulk] nf
 		INNER JOIN
 		(
-			SELECT id, material_id
-			FROM [dbo].[dim_product] dp
+			SELECT [id], [name]
+			FROM [dbo].[dim_customer]
 			WHERE
-				dp.is_placeholder = 1 AND
-				dp.placeholder_level = 'material_id'
+				is_placeholder = 1 AND
+				placeholder_level = 'Market'
+		) dc
+			ON nf.[dim_region_region] = dc.[name]
+		LEFT OUTER JOIN
+		(
+			SELECT id, material_id
+			FROM [dbo].[dim_product]
+			WHERE
+				is_placeholder = 1 AND
+				placeholder_level = 'material_id'
 		) dp
 			ON nf.dim_product_material_id = dp.material_id
 		INNER JOIN
@@ -182,7 +206,11 @@ BEGIN
 	WHERE
 		quantity IS NOT NULL
 	GROUP BY
-		dp.id,
-		dd.id
+		CASE
+			WHEN dp.id IS NOT NULL THEN dp.id
+			ELSE @dim_product_id_placeholder
+		END,
+		dd.id,
+		dc.id
 
 END
