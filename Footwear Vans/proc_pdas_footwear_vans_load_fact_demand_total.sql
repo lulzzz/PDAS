@@ -16,13 +16,12 @@ BEGIN
     DECLARE @dim_demand_category_id_forecast int = (SELECT [id] FROM [dbo].[dim_demand_category] WHERE [name] = 'Forecast')
 
 	-- Check if the session has already been loaded
-	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid)
+	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid and dim_business_id = @businessid)
 	BEGIN
-		DELETE FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid;
+		DELETE FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid and dim_business_id = @businessid;
 	END
-	;
 
-	-- Insert from staging
+	-- Insert from other facts
 	INSERT INTO [dbo].[fact_demand_total]
     (
         [dim_pdas_id]
@@ -51,9 +50,9 @@ BEGIN
         ,[dim_customer_id]
         ,[dim_demand_category_id]
         ,[order_number]
-        ,[quantity] AS [quantity_unconsumed]
-        ,[quantity] AS [quantity_consumed]
-        ,[quantity]
+        ,[lum_quantity] AS [quantity_unconsumed]
+        ,[lum_quantity] AS [quantity_consumed]
+        ,[lum_quantity]
 	FROM [dbo].[fact_order]
 	WHERE
 		[dim_pdas_id] = @pdasid
