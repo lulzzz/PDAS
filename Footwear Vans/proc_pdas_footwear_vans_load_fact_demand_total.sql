@@ -14,6 +14,7 @@ BEGIN
 
     -- Variable declarations
     DECLARE @dim_demand_category_id_forecast int = (SELECT [id] FROM [dbo].[dim_demand_category] WHERE [name] = 'Forecast')
+	DECLARE @dim_demand_category_id_ntb int = (SELECT [id] FROM [dbo].[dim_demand_category] WHERE [name] = 'Need to Buy')
 
 	-- Check if the session has already been loaded
 	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid and dim_business_id = @businessid)
@@ -50,9 +51,18 @@ BEGIN
         ,[dim_customer_id]
         ,[dim_demand_category_id]
         ,[order_number]
-        ,[lum_quantity] AS [quantity_unconsumed]
-        ,[lum_quantity] AS [quantity_consumed]
-        ,[lum_quantity]
+        ,CASE [dim_demand_category_id]
+			WHEN @dim_demand_category_id_ntb THEN [lum_quantity]
+			ELSE [quantity]
+		END AS [quantity_unconsumed]
+		,CASE [dim_demand_category_id]
+			WHEN @dim_demand_category_id_ntb THEN [lum_quantity]
+			ELSE [quantity]
+		END AS [quantity_consumed]
+		,CASE [dim_demand_category_id]
+			WHEN @dim_demand_category_id_ntb THEN [lum_quantity]
+			ELSE [quantity]
+		END AS [quantity]
 	FROM [dbo].[fact_order]
 	WHERE
 		[dim_pdas_id] = @pdasid
