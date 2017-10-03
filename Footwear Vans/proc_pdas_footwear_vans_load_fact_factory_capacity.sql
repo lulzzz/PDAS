@@ -9,22 +9,84 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]
 AS
 BEGIN
 
+    -- Placeholder
+    DECLARE @dim_customer_id_placeholder int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER' and [name] = 'PLACEHOLDER')
+
+    -- Temp tables
+    DECLARE @temp_capacity TABLE(
+		[dim_pdas_id] INT
+		,[dim_business_id] INT
+		,[dim_factory_id] INT
+        ,[dim_customer_id] INT
+		,[dim_construction_type_id] INT
+		,[dim_date_id] INT
+		,[capacity_daily] INT
+		,[capacity_weekly]	INT
+        ,[available_capacity_weekly] INT
+        ,[percentage_region] INT
+        ,[percentage_from_original] INT
+	)
+
+    DECLARE @temp_percentage_region TABLE(
+		[dim_factory_id] INT
+		,[dim_customer_id] INT
+		,[percentage] FLOAT
+    )
+    INSERT INTO @temp_percentage_region
+	SELECT
+		u.[dim_factory_id]
+		,dc.[id] as [dim_customer_id]
+		,u.[percentage]
+	FROM
+	(
+		SELECT
+			df.[id] as [dim_factory_id]
+			,MAX([APAC]) as [APAC]
+			,MAX([EMEA]) as [EMEA]
+			,MAX([CASA]) as [CASA]
+			,MAX([NORA]) as [NORA]
+		FROM
+			[dbo].[helper_pdas_footwear_vans_factory_capacity_by_region] helper
+			INNER JOIN [dbo].[dim_factory] df ON helper.[Factory] = df.short_name
+		GROUP BY
+			df.[id]
+	) c
+	UNPIVOT
+	(
+		[percentage]
+		for [region] in
+		(
+			[APAC]
+			,[EMEA]
+			,[CASA]
+			,[NORA]
+		)
+	) u
+	INNER JOIN
+	(
+		SELECT [id], [name] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 and [placeholder_level] = 'Region'
+	) dc
+		ON u.[region] = dc.[name]
+
     -- Check if the session has already been loaded
     DELETE FROM [dbo].[fact_factory_capacity]
     WHERE dim_pdas_id = @pdasid and dim_business_id = @businessid;
 
-    -- Insert from staging
+    -- Insert daily capacity from staging area
     INSERT INTO [dbo].[fact_factory_capacity]
     (
         [dim_pdas_id]
         ,[dim_business_id]
         ,[dim_factory_id]
+        ,[dim_customer_id]
         ,[dim_construction_type_id]
         ,[dim_date_id]
         ,[capacity_daily]
         ,[capacity_weekly]
+        ,[available_capacity_weekly]
+        ,[percentage_region]
+        ,[percentage_from_original]
     )
-    -- Daily capacity
     SELECT
         @pdasid as dim_pdas_id,
         @businessid as dim_business_id,
@@ -32,13 +94,17 @@ BEGIN
 			WHEN df.id IS NOT NULL THEN df.id
 			ELSE mapping_f.id
 		END as dim_factory_id,
+        ISNULL(cap_region.[dim_customer_id], @dim_customer_id_placeholder) as dim_customer_id,
 		CASE
 			WHEN cons.[id] IS NOT NULL THEN cons.[id]
 			ELSE mapping_cons.id
 		END as dim_construction_type_id,
         dd.[id] as dim_date_id,
-        sum(ISNULL(cap.[quantity], 0)) as capacity_daily,
-        0 as capacity_weekly
+        sum(ISNULL(cap.[quantity], 0)) * max(ISNULL(cap_region.[percentage], 1)) * max(ISNULL(cap_adj.[Percentage], 1)) as capacity_daily,
+		0 AS [capacity_weekly],
+        0 AS [available_capacity_weekly],
+        max(ISNULL(cap_region.[percentage], 1)) AS [percentage_region],
+        max(ISNULL(cap_adj.[Percentage], 1)) as percentage_from_original
     FROM
         [dbo].[staging_pdas_footwear_vans_raw_capacity] cap
         INNER JOIN [dbo].[dim_date] dd ON cap.dim_date_id = dd.full_date
@@ -64,6 +130,13 @@ BEGIN
 					ON m.parent = df.short_name
 			WHERE type = 'Factory Master'
 		) mapping_f ON cap.dim_factory_short_name = mapping_f.child
+
+        LEFT OUTER JOIN [dbo].[helper_pdas_footwear_vans_factory_capacity_adjustment] cap_adj
+            ON cap_adj.[Factory] = df.short_name
+
+        LEFT OUTER JOIN @temp_percentage_region cap_region
+            ON cap_region.[dim_factory_id] = df.[id]
+
     WHERE
         (df.id IS NOT NULL OR mapping_f.id IS NOT NULL) AND
 		(cons.id IS NOT NULL OR mapping_cons.id IS NOT NULL)
@@ -72,23 +145,59 @@ BEGIN
 			WHEN df.id IS NOT NULL THEN df.id
 			ELSE mapping_f.id
 		END,
+		        ISNULL(cap_region.[dim_customer_id], @dim_customer_id_placeholder),
 		CASE
 			WHEN cons.[id] IS NOT NULL THEN cons.[id]
 			ELSE mapping_cons.id
 		END,
         dd.[id]
 
-    -- Weekly capacity (pivot)
+	-- Update available_capacity_weekly field with daily capacity aggregated by accounting week
+    UPDATE f
+	SET
+		f.[available_capacity_weekly] = f_aggr.[available_capacity_weekly]
+	FROM
+		(SELECT * FROM [fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
+        INNER JOIN
+        (
+			SELECT
+				[dim_factory_id]
+				,[dim_customer_id]
+				,[dim_construction_type_id]
+				,dd2.[id] as [dim_date_id]
+				,sum([capacity_daily]) as [available_capacity_weekly]
+			FROM
+				[fact_factory_capacity] cap
+				INNER JOIN
+				(
+					SELECT [id], [year_cw_accounting]
+					FROM [dbo].[dim_date]
+				) dd1
+					ON dd1.[id] = cap.[dim_date_id]
+				INNER JOIN
+				(
+					SELECT
+						[year_cw_accounting],
+						MIN([id]) as [id]
+					FROM [dbo].[dim_date]
+					GROUP BY [year_cw_accounting]
+				) dd2
+					ON dd1.[year_cw_accounting] = dd2.[year_cw_accounting]
+			WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid
+			GROUP BY
+				[dim_factory_id]
+				,[dim_customer_id]
+				,[dim_construction_type_id]
+				,dd2.[id]
+		) f_aggr
+			ON	f.[dim_factory_id] = f_aggr.[dim_factory_id] and
+				f.[dim_customer_id] = f_aggr.[dim_customer_id] and
+				f.[dim_construction_type_id] = f_aggr.[dim_construction_type_id] and
+				f.[dim_date_id] = f_aggr.[dim_date_id]
 
-	DECLARE @temp_capacity TABLE(
-		[dim_pdas_id] INT
-		,[dim_business_id] INT
-		,[dim_factory_id] INT
-		,[dim_construction_type_id] INT
-		,[dim_date_id] INT
-		,[capacity_daily] INT
-		,[capacity_weekly]	INT
-	)
+
+    /*
+    -- Insert/update capacity (pivot)
 
 	;WITH [pivoted_factory_capacity] AS (
 	SELECT
@@ -184,6 +293,7 @@ BEGIN
 						ON m.parent = cons.name
 				WHERE type = 'Construction Type Master'
 			) mapping_cons ON cap.dim_construction_type_name = mapping_cons.child
+
 		WHERE
 			(df.id IS NOT NULL OR mapping_f.id IS NOT NULL) AND
 			(cons.id IS NOT NULL OR mapping_cons.id IS NOT NULL)
@@ -276,6 +386,7 @@ BEGIN
 		,[dim_date_id]
 		,[capacity_daily]
 		,[capacity_weekly]
+        ,[available_capacity_weekly]
 	)
 	SELECT
 		@pdasid as dim_pdas_id,
@@ -284,10 +395,10 @@ BEGIN
 		temp.[dim_construction_type_id],
 		temp.[dim_date_id],
 		0 as [capacity_daily],
-		temp.[capacity_weekly]
+		temp.[capacity_weekly],
+        0 as [available_capacity_weekly]
 	FROM
 		[target_factory_capacity] temp
-
 
 	-- Insert on non-match
 	INSERT INTO [dbo].[fact_factory_capacity]
@@ -312,5 +423,6 @@ BEGIN
 				temp.[dim_construction_type_id] = f.[dim_construction_type_id] AND
 				temp.[dim_date_id] = f.[dim_date_id]
 
+    */
 
 END
