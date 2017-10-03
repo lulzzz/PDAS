@@ -20,13 +20,34 @@ BEGIN
 	IF (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]) > 0
 	BEGIN
 
-			DECLARE @dim_pdas_id int
-			SELECT @dim_pdas_id = MAX([id]) FROM [dbo].[dim_pdas]
+		-- Validate submitted data based on pre-defined business rules
+		DECLARE @test nvarchar(500) =
+		(
+			SELECT TOP 1
+				ISNULL([type], '')  + ' / ' +
+				ISNULL([variable], '')
+			FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]  temp
+			WHERE
+				[type] NOT IN (
+					'System'
+				) OR
+				[variable] NOT IN (
+					'Release Locker',
+					'Release Note'
+				)
+				OR
+				([variable] = 'Release Locker' AND [value] NOT IN ('ON', 'OFF'))
+		)
+
+		IF @test IS NULL
+		BEGIN
+
+			DECLARE @dim_pdas_id int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
 
 			-- Remove duplicates
             DECLARE @table_count_before int = (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_configuration])
 			DELETE x FROM (
-				SELECT *, rn=row_number() OVER (PARTITION BY [variable] ORDER BY [variable])
+				SELECT *, rn=row_number() OVER (PARTITION BY [type], [variable] ORDER BY [type], [variable])
 				FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
 			) x
 			WHERE rn > 1;
@@ -36,23 +57,29 @@ BEGIN
             BEGIN
 
     			-- Delete removed rows (secured by PK constraint)
-    			DELETE FROM [dbo].[fact_configuration]
-				WHERE [dim_pdas_id] = @dim_pdas_id
+    			DELETE FROM [dbo].[helper_pdas_footwear_vans_configuration]
 
     			-- Insert new rows
-    			INSERT INTO [dbo].[fact_configuration]
+    			INSERT INTO [dbo].[helper_pdas_footwear_vans_configuration]
 				(
-					[dim_pdas_id],
 					[type],
 					[variable],
 					[value]
 				)
     			SELECT
-					@dim_pdas_id,
 					[type],
 					[variable],
 					[value]
     			FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
+
+				UPDATE [dbo].[dim_pdas]
+				SET [comment] =
+				(
+					SELECT TOP 1 [value]
+					FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
+					WHERE [type] = 'System' AND [variable] = 'Release Note'
+				)
+				WHERE [id] = @dim_pdas_id
 
             END
     		ELSE
@@ -62,6 +89,16 @@ BEGIN
     			RETURN -999
 
     		END
+
+		END
+		ELSE
+		BEGIN
+
+			SET @output_param = 'Row ' + @test + ' is invalid.' + '<br />' +
+			'Please review the business rules of this table for more details.'
+			RETURN -999
+
+		END
 
 	END
 	ELSE
