@@ -14,7 +14,7 @@ ALTER PROCEDURE [dbo].[]
 	@mc_user_name nvarchar(100) = NULL
 AS
 BEGIN
-	SET NOCOUNT ON;
+	SET NOCOUNT ON;f df
 
     /* Declare variables */
 
@@ -23,7 +23,7 @@ BEGIN
 	DECLARE @dim_pdas_id int
 	SELECT @dim_pdas_id = MAX(id) FROM [dbo].[dim_pdas];
 
-
+fd
 	DECLARE @system nvarchar(15) = 'pdas_ftw_vans'
 	DECLARE @source	nvarchar(45)
 	DECLARE @type nvarchar(100)
