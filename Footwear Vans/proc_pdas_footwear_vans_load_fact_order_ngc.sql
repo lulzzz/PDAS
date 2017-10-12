@@ -15,6 +15,7 @@ BEGIN
 	-- Placeholder
 	DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
     DECLARE	@buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
+	DECLARE @dim_customer_id_placeholder int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [name] = 'PLACEHOLDER' AND [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
     DECLARE	@dim_demand_category_id_open_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Open Order')
 	DECLARE	@dim_demand_category_id_shipped_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Shipped Order')
 	DECLARE	@dim_demand_category_id_received_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Received Order')
@@ -68,7 +69,7 @@ BEGIN
 		END as dim_factory_id,
 		CASE
 			WHEN dc.id IS NOT NULL THEN dc.id
-			ELSE mapping_c.id
+			ELSE @dim_customer_id_placeholder
 		END as dim_customer_id,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
@@ -119,7 +120,7 @@ BEGIN
 					ON m.parent = df.short_name
 			WHERE type = 'Factory Master'
 		) mapping_f ON ngc.dim_factory_factory_code = mapping_f.child
-		LEFT OUTER JOIN [dbo].[dim_customer] dc ON ngc.dc_name = dc.name
+		LEFT OUTER JOIN [dbo].[dim_customer] dc ON ngc.notes LIKE '%'+ dc.name +'%'
 		INNER JOIN [dbo].[dim_date] dd_revised_crd ON ngc.revised_crd_dt = dd_revised_crd.full_date
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_po_issue ON ngc.po_issue_dt = dd_po_issue.full_date
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_original_crd ON ngc.original_crd_dt = dd_original_crd.full_date
@@ -127,18 +128,20 @@ BEGIN
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_shipment_closed_on ON ngc.shipment_closed_on_dt = dd_shipment_closed_on.full_date
 	WHERE
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
-		(df.id IS NOT NULL OR mapping_f.id IS NOT NULL) AND
-		(dc.id IS NOT NULL OR mapping_c.id IS NOT NULL)
+		(df.id IS NOT NULL OR mapping_f.id IS NOT NULL)
     GROUP BY
 		ISNULL(po_code, 'UNDEFINED'),
-		dd_revised_crd.id,
+		CASE ngc.shipment_status
+			WHEN 1 THEN dd_original_crd.id
+			ELSE dd_revised_crd.id
+		END,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
 			ELSE mapping_f.id
 		END,
 		CASE
 			WHEN dc.id IS NOT NULL THEN dc.id
-			ELSE mapping_c.id
+			ELSE @dim_customer_id_placeholder
 		END,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id

@@ -218,6 +218,7 @@ BEGIN
 			and [dim_business_id] = @businessid
 			and [dim_date_id] >= @pdas_release_month_date_id
 			and [edit_username] IS NULL
+			and ddc.[name] IN ('Forecast', 'Need to Buy')
 
 
 		/* Decision tree algorithm */
