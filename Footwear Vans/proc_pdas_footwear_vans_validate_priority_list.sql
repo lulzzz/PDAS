@@ -29,11 +29,11 @@ BEGIN
 	DECLARE @type nvarchar(100)
 
 
-	SET @source = 'Priority List';
+	SET @source = 'PDAS_FTW_VANS_PRIORITY_LIST.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
-	SET @type = 'Market not in master data';
+	SET @type = 'Customer not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([customer], '') as [value]
 	FROM

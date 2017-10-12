@@ -120,15 +120,6 @@ BEGIN
 			WHERE type = 'Factory Master'
 		) mapping_f ON ngc.dim_factory_factory_code = mapping_f.child
 		LEFT OUTER JOIN [dbo].[dim_customer] dc ON ngc.dc_name = dc.name
-		LEFT OUTER JOIN
-		(
-			SELECT df.id, m.child
-			FROM
-				[dbo].[helper_pdas_footwear_vans_mapping] m
-				INNER JOIN (SELECT id, name FROM [dbo].[dim_customer]) df
-					ON m.parent = df.name
-			WHERE type = 'Customer Master'
-		) mapping_c ON ngc.dc_name = mapping_c.child
 		INNER JOIN [dbo].[dim_date] dd_revised_crd ON ngc.revised_crd_dt = dd_revised_crd.full_date
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_po_issue ON ngc.po_issue_dt = dd_po_issue.full_date
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_original_crd ON ngc.original_crd_dt = dd_original_crd.full_date

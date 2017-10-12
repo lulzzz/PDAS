@@ -31,11 +31,11 @@ BEGIN
 
     /* APAC */
 
-	SET @source = 'APAC Forecast Bulk';
+	SET @source = 'PDAS_FTW_VANS_APAC_FORECAST_BULK.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
-	SET @type = 'Market not in master data';
+	SET @type = 'Customer not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_market_name], '') as [value]
 	FROM
@@ -94,7 +94,7 @@ BEGIN
 
     /* US */
 
-    SET @source = 'NORA Forecast Bulk';
+    SET @source = 'PDAS_FTW_VANS_NORA_FORECAST_BULK.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
@@ -162,7 +162,7 @@ BEGIN
 
     /* EMEA */
 
-    SET @source = 'EMEA Forecast Bulk';
+    SET @source = 'PDAS_FTW_VANS_EMEA_FORECAST_BULK.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check material_id from dim_product

@@ -29,11 +29,11 @@ BEGIN
 	DECLARE @type nvarchar(100)
 
 
-	SET @source = 'NGC FGPO';
+	SET @source = 'NGC SQL Extract';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
-	SET @type = 'Market not in master data';
+	SET @type = 'Customer not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_dc_code_brio], '') as [value]
 	FROM

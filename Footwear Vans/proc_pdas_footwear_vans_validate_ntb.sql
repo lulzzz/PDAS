@@ -31,11 +31,11 @@ BEGIN
 
     /* APAC */
 
-	SET @source = 'APAC NTB Bulk';
+	SET @source = 'PDAS_FTW_VANS_APAC_NTB_BULK.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
-	SET @type = 'Market not in master data';
+	SET @type = 'Customer not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
@@ -104,11 +104,11 @@ BEGIN
 
     /* NORA */
 
-	SET @source = 'NORA NTB Bulk';
+	SET @source = 'PDAS_FTW_VANS_NORA_NTB_BULK.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
-	SET @type = 'Market not in master data';
+	SET @type = 'Customer not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
@@ -177,11 +177,11 @@ BEGIN
 
     /* CASA */
 
-	SET @source = 'CASA NTB Bulk';
+	SET @source = 'PDAS_FTW_VANS_CASA_NTB_BULK.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
-	SET @type = 'Market not in master data';
+	SET @type = 'Customer not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
@@ -250,11 +250,11 @@ BEGIN
 
     /* EMEA */
 
-	SET @source = 'EMEA NTB Bulk';
+	SET @source = 'PDAS_FTW_VANS_EMEA_NTB_BULK.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
-	SET @type = 'Market not in master data';
+	SET @type = 'Customer not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM

@@ -29,7 +29,7 @@ BEGIN
 	DECLARE @type nvarchar(100)
 
 
-	SET @source = 'Raw Factory Capacity by Week';
+	SET @source = 'PDAS_FTW_VANS_WEEKLY_CAPACITY.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check short_name from dim_factory
