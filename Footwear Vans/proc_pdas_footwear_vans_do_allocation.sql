@@ -160,7 +160,7 @@ BEGIN
 			,df.[country_code_a2] AS [dim_factory_country_code_a2]
 			,dc.[name] AS [dim_customer_name]
 			,dc.[sold_to_party] AS [dim_customer_sold_to_party]
-			,dc.[sold_to_category] AS [dim_customer_sold_to_category
+			,dc.[sold_to_category] AS [dim_customer_sold_to_category]
 			,dc.[region] AS [dim_customer_country_region]
 			,dc.[country_code_a2] AS [dim_customer_country_code_a2]
 		FROM
@@ -289,7 +289,7 @@ BEGIN
 				@order_number = @order_number_01,
 				@allocation_logic = @allocation_logic
 
-			IF @dim_customer_sold_to_party_01 = 'DC'
+			IF @dim_customer_sold_to_category_01 = 'DC'
 			BEGIN
 				SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
 				IF @dim_buying_program_name_01 = 'Bulk Buy'

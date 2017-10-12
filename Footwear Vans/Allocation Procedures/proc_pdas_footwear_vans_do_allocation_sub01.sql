@@ -25,10 +25,15 @@ BEGIN
 	SET NOCOUNT ON;
 
     /* Variable declarations */
-	DECLARE @dim_factory_id_original_02 int = NULL
+	DECLARE @dim_factory_id_original_02 INT = NULL
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
+	DECLARE @dim_product_style_complexity_02 NVARCHAR(45)
+	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
+	DECLARE @dim_product_material_id_02 NVARCHAR(45)
+	DECLARE @fact_priority_list_source_count_02 INT = 0
+	DECLARE @dim_location_country_code_a2_02 NVARCHAR(2)
+	DECLARE @dim_factory_name_priority_list_secondary_02 NVARCHAR(45)
 
-	print('sub proc')
 	/* Variable assignments */
 
 	SET @dim_factory_name_priority_list_primary_02 =
@@ -39,11 +44,62 @@ BEGIN
 				SELECT [dim_factory_id_1]
 				FROM [dbo].[fact_priority_list]
 				WHERE [dim_product_id] = @dim_product_id
-			) AS fpl
+			) fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_1] = df.[id]
 	)
 
+	SET @dim_product_style_complexity_02 = (SELECT [style_complexity] FROM [dbo].[dim_product] WHERE [id] = @dim_product_id)
+
+	SET @dim_product_material_id_02 = (SELECT [material_id] FROM [dbo].[dim_product] WHERE [id] = @dim_product_id)
+
+	SET @helper_retail_qt_rqt_vendor_02 =
+	(
+		SELECT [Factory]
+		FROM [dbo].[helper_pdas_footwear_vans_retail_qt]
+		WHERE [MTL] = @dim_product_material_id_02
+	)
+
+	IF (SELECT [dim_factory_id_1] FROM [dbo].[fact_priority_list] WHERE [dim_product_id] = @dim_product_id) IS NOT NULL
+	BEGIN
+		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
+	END
+	IF (SELECT [dim_factory_id_2] FROM [dbo].[fact_priority_list] WHERE [dim_product_id] = @dim_product_id) IS NOT NULL
+	BEGIN
+		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
+	END
+
+	SET @dim_location_country_code_a2_02 =
+	(
+		SELECT dfl.[dim_location_country_code_a2]
+		FROM
+			(
+				SELECT [dim_factory_id_1]
+				FROM [dbo].[fact_priority_list]
+				WHERE [dim_product_id] = @dim_product_id
+			) AS fpl
+			INNER JOIN
+			(
+				SELECT df.[id], dl.[country_code_a2] AS [dim_location_country_code_a2]
+				FROM [dbo].[dim_factory] df
+				INNER JOIN [dbo].[dim_location] dl
+					ON df.[dim_location_id] = dl.[id]
+			) dfl
+				ON fpl.[dim_factory_id_1] = dfl.[id]
+	)
+
+	SET @dim_factory_name_priority_list_secondary_02 =
+	(
+		SELECT df.[short_name]
+		FROM
+			(
+				SELECT [dim_factory_id_2]
+				FROM [dbo].[fact_priority_list]
+				WHERE [dim_product_id] = @dim_product_id
+			) AS fpl
+			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
+				ON fpl.[dim_factory_id_2] = df.[id]
+	)
 
 	/* Sub decision tree logic */
 
@@ -55,27 +111,56 @@ BEGIN
 	END
 
 	-- DTP MTL?
-
-
-	IF @dim_factory_id_original_02 IS NOT NULL
+	ELSE IF @dim_factory_name_priority_list_primary_02 = 'DTP'
 	BEGIN
-
-		/* Update the dim_factory_id_original (PDAS recommendation) and dim_factory_id (value that user can overwrite in Console) */
-		UPDATE [dbo].[fact_demand_total]
-		SET [dim_factory_id_original] = @dim_factory_id_original_02,
-			[dim_factory_id] = @dim_factory_id_original_02,
-			[allocation_logic] = @allocation_logic
-		WHERE
-			[dim_pdas_id] = @pdasid AND
-			[dim_business_id] = @businessid AND
-			[dim_buying_program_id] = @dim_buying_program_id AND
-			[dim_product_id] = @dim_product_id AND
-			[dim_date_id] = @dim_date_id AND
-			[dim_customer_id] = @dim_customer_id AND
-			[dim_demand_category_id] = @dim_demand_category_id AND
-			[order_number] = @order_number AND
-			[edit_dt] IS NULL
-
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' MTL'
 	END
 
+	-- Flex?
+	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
+	END
+
+	-- RQT MTL?
+	 /* If material_id from dim_product is in MTL from helper_..._retail_qt */
+	ELSE IF @dim_product_material_id_02 IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+		SET @allocation_logic = @allocation_logic +'\n' + 'RQT MTL'
+	END
+
+	-- Single Source?
+	ELSE IF @fact_priority_list_source_count_02 = 1
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + 'Single Source'
+	END
+
+	-- 1st priority = COO China?
+	ELSE IF @dim_location_country_code_a2_02 = 'CN'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_secondary_02 + ' 1st priority = COO China'  /* TO DO */
+	END
+
+	ELSE
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO not China'  /* TO DO */
+	END
+
+	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
+		@pdasid = @pdasid,
+		@businessid = @businessid,
+		@dim_buying_program_id = @dim_buying_program_id,
+		@dim_product_id = @dim_product_id,
+		@dim_date_id = @dim_date_id,
+		@dim_customer_id = @dim_customer_id,
+		@dim_demand_category_id = @dim_demand_category_id,
+		@order_number = @order_number,
+		@allocation_logic = @allocation_logic,
+		@dim_factory_id_original_02 = @dim_factory_id_original_02
 END
