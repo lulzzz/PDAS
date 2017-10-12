@@ -65,12 +65,14 @@ BEGIN
 		END as dim_date_id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
-			ELSE mapping_f.id
+			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
+			ELSE @dim_factory_id_placeholder
 		END as dim_factory_id,
-		CASE
-			WHEN dc.id IS NOT NULL THEN dc.id
-			ELSE @dim_customer_id_placeholder
-		END as dim_customer_id,
+		@dim_customer_id_placeholder as dim_customer_id,
+		-- CASE
+		-- 	WHEN dc.id IS NOT NULL THEN dc.id
+		-- 	ELSE @dim_customer_id_placeholder
+		-- END as dim_customer_id,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
@@ -97,7 +99,24 @@ BEGIN
         SUM(ngc.lum_qty) as lum_quantity,
         SUM(ngc.order_qty) as quantity
 	FROM
-		[dbo].[staging_pdas_footwear_vans_ngc_po] ngc
+		(
+			SELECT
+				REPLACE(dim_product_style_id, ' ', '') as dim_product_style_id
+				,LTRIM(RTRIM(dim_product_size)) as dim_product_size
+				,REPLACE([dim_factory_factory_code], ' ', '') as dim_factory_factory_code
+				,notes
+				,revised_crd_dt
+				,original_crd_dt
+				,po_issue_dt
+			    ,shipped_dt
+			    ,shipment_closed_on_dt
+				,po_code
+				,shipment_status
+				,shipped_qty
+				,lum_qty
+				,order_qty
+			FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
+		) ngc
 		LEFT OUTER JOIN
 		(
 			SELECT [id], [material_id]
@@ -120,15 +139,14 @@ BEGIN
 					ON m.parent = df.short_name
 			WHERE type = 'Factory Master'
 		) mapping_f ON ngc.dim_factory_factory_code = mapping_f.child
-		LEFT OUTER JOIN [dbo].[dim_customer] dc ON ngc.notes LIKE '%'+ dc.name +'%'
+		-- LEFT OUTER JOIN [dbo].[dim_customer] dc ON ngc.notes LIKE '%'+ dc.name +'%'
 		INNER JOIN [dbo].[dim_date] dd_revised_crd ON ngc.revised_crd_dt = dd_revised_crd.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_po_issue ON ngc.po_issue_dt = dd_po_issue.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_original_crd ON ngc.original_crd_dt = dd_original_crd.full_date
+		INNER JOIN [dbo].[dim_date] dd_original_crd ON ngc.original_crd_dt = dd_original_crd.full_date
+		LEFT OUTER JOIN [dbo].[dim_date] dd_po_issue ON ngc.po_issue_dt = dd_po_issue.full_date
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_shipped ON ngc.shipped_dt = dd_shipped.full_date
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_shipment_closed_on ON ngc.shipment_closed_on_dt = dd_shipment_closed_on.full_date
 	WHERE
-		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
-		(df.id IS NOT NULL OR mapping_f.id IS NOT NULL)
+		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL)
     GROUP BY
 		ISNULL(po_code, 'UNDEFINED'),
 		CASE ngc.shipment_status
@@ -137,12 +155,13 @@ BEGIN
 		END,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
-			ELSE mapping_f.id
+			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
+			ELSE @dim_factory_id_placeholder
 		END,
-		CASE
-			WHEN dc.id IS NOT NULL THEN dc.id
-			ELSE @dim_customer_id_placeholder
-		END,
+		-- CASE
+		-- 	WHEN dc.id IS NOT NULL THEN dc.id
+		-- 	ELSE @dim_customer_id_placeholder
+		-- END,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id

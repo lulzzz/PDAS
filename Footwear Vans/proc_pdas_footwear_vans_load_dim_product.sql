@@ -7,6 +7,7 @@ GO
 -- Description:	This procedure loads the dim_product table
 -- =======================================================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_dim_product]
+    @businessid INT
 AS
 BEGIN
 
@@ -22,9 +23,9 @@ BEGIN
 
     -- Deduplicate the key pair (material_id, size)
     IF OBJECT_ID('tempdb..#material_size') IS NOT NULL
-	 BEGIN
-		DROP TABLE #material_size;
-	 END
+    BEGIN
+        DROP TABLE #material_size;
+    END
 
     SELECT
         dim_product_material_id,
@@ -34,10 +35,10 @@ BEGIN
     ;
 
 	DELETE x FROM (
-				SELECT *, rn=row_number() OVER (PARTITION BY dim_product_material_id, dim_product_size ORDER BY dim_product_material_id asc)
-				FROM #material_size
-			) x
-			WHERE rn > 1;
+		SELECT *, rn=row_number() OVER (PARTITION BY dim_product_material_id, dim_product_size ORDER BY dim_product_material_id asc)
+		FROM #material_size
+	) x
+	WHERE rn > 1;
 
 
     -- Prepare Insert / Update Keys
@@ -52,8 +53,9 @@ BEGIN
         CASE ISNULL(flag, 0) WHEN 0 THEN 'Insert' ELSE 'Update' END as mode
     INTO #split_ins_upd
     FROM #material_size ms
-    LEFT OUTER JOIN (SELECT material_id, size, 1 as flag FROM [dbo].[dim_product]) dp ON  ms.dim_product_material_id = dp.material_id
-                                                                                      AND ms.dim_product_size = dp.size
+    LEFT OUTER JOIN (SELECT material_id, size, 1 as flag FROM [dbo].[dim_product]) dp
+        ON  ms.dim_product_material_id = dp.material_id
+            AND ms.dim_product_size = dp.size
     WHERE dim_product_material_id NOT IN (SELECT DISTINCT material_id FROM [dbo].[dim_product])
     ;
 
@@ -61,9 +63,25 @@ BEGIN
         INSERT
     */
 
-    INSERT INTO [dbo].[dim_product] (dim_business_id, material_id, size, style_id, color_description, style_name, material_description, type, gender, lifecycle, style_complexity, dim_construction_type_id, is_placeholder, placeholder_level)
+    INSERT INTO [dbo].[dim_product]
+    (
+        dim_business_id,
+        material_id,
+        size,
+        style_id,
+        color_description,
+        style_name,
+        material_description,
+        type,
+        gender,
+        lifecycle,
+        style_complexity,
+        dim_construction_type_id,
+        is_placeholder,
+        placeholder_level
+    )
     SELECT
-        biz.id as dim_business_id,
+        @businessid,
         mat.dim_product_material_id  as material_id,
         siz.dim_product_size as size,
         mat.dim_product_style_id as style_id,
@@ -77,14 +95,48 @@ BEGIN
         1 as dim_construction_type_id,
         0 as is_placeholder,
         NULL as placeholder_level
-    FROM [dbo].[staging_pdas_footwear_vans_material_master] mat
-    INNER JOIN #material_size siz ON mat.dim_product_material_id = siz.dim_product_material_id
-    INNER JOIN #split_ins_upd siu ON siz.dim_product_material_id = siu.dim_product_material_id
-                                AND siz.dim_product_size = siu.dim_product_size
-                                AND siu.mode = 'Insert'
-    INNER JOIN [dbo].[dim_business] biz ON biz.brand = 'Vans' AND biz.product_line = 'Footwear'
-    --INNER JOIN dbo.dim_construction_type cons ON mat.capacity_group = cons.code
-    ;
+    FROM
+        [dbo].[staging_pdas_footwear_vans_material_master] mat
+        INNER JOIN #material_size siz
+            ON mat.dim_product_material_id = siz.dim_product_material_id
+        INNER JOIN #split_ins_upd siu
+            ON  siz.dim_product_material_id = siu.dim_product_material_id
+                AND siz.dim_product_size = siu.dim_product_size
+                AND siu.mode = 'Insert'
+    UNION
+    SELECT
+        @businessid,
+        ngc.dim_product_style_id as material_id,
+        ngc.dim_product_size as size,
+        ngc.dim_product_style_id as style_id,
+        ngc.dim_product_color_description as color_description,
+        NULL as style_name,
+        NULL as material_description,
+        NULL as type,
+        NULL as gender,
+        'Active' as lifecycle,
+        'N/A' as style_complexity,
+        1 as dim_construction_type_id,
+        0 as is_placeholder,
+        NULL as placeholder_level
+    FROM
+        (
+            SELECT
+                REPLACE([dim_product_style_id], ' ', '') as [dim_product_style_id],
+                LTRIM(RTRIM([dim_product_size])) as [dim_product_size],
+                MAX([dim_product_sbu]) as [dim_product_sbu],
+                MAX([dim_product_color_description]) as [dim_product_color_description],
+                MAX([dimension]) as [dimension]
+            FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
+            GROUP BY
+                [dim_product_style_id],
+                [dim_product_size]
+        ) AS ngc
+        LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product]) dp
+            ON  ngc.[dim_product_style_id] = dp.[material_id]
+                AND ngc.[dim_product_size] = dp.[size]
+    WHERE
+        dp.[id] IS NULL
 
       /*
           UPDATE
@@ -97,12 +149,17 @@ BEGIN
         dp.material_description = mat.dim_product_material_description,
         dp.type = mat.dim_product_material_type,
         dp.gender = mat.dim_product_gender
-    FROM [dbo].[dim_product] dp
-    INNER JOIN [dbo].[staging_pdas_footwear_vans_material_master] mat ON dp.material_id = mat.dim_product_material_id
-    INNER JOIN #material_size siz ON mat.dim_product_material_id = siz.dim_product_material_id
-    INNER JOIN #split_ins_upd siu ON siz.dim_product_material_id = siu.dim_product_material_id
-                                 AND siz.dim_product_size = siu.dim_product_size
-                                 AND siu.mode = 'Update'
+    FROM
+        [dbo].[dim_product] dp
+        INNER JOIN [dbo].[staging_pdas_footwear_vans_material_master] mat
+            ON dp.material_id = mat.dim_product_material_id
+        INNER JOIN #material_size siz
+            ON mat.dim_product_material_id = siz.dim_product_material_id
+        INNER JOIN #split_ins_upd siu
+            ON  siz.dim_product_material_id = siu.dim_product_material_id
+                AND siz.dim_product_size = siu.dim_product_size
+                AND siu.mode = 'Update'
+    WHERE dim_business_id = @businessid
     ;
     /*
         Update attributes with Priority List data
@@ -127,7 +184,7 @@ BEGIN
     -- Level Material
     INSERT INTO [dbo].[dim_product] (dim_business_id, material_id, size, style_id, color_description, style_name, material_description, type, gender, lifecycle, style_complexity, dim_construction_type_id, is_placeholder, placeholder_level)
     SELECT DISTINCT
-        biz.id as dim_business_id,
+        @businessid as dim_business_id,
         dp.material_id  as material_id,
         dp.material_id as size,
         dp.style_id as style_id,
@@ -142,7 +199,6 @@ BEGIN
         1 as is_placeholder,
         'material_id' as placeholder_level
       FROM [dbo].[dim_product] dp
-      INNER JOIN [dbo].[dim_business] biz ON biz.brand = 'Vans' AND biz.product_line = 'Footwear'
       LEFT OUTER JOIN (SELECT DISTINCT material_id, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'material_id') pla
         ON dp.material_id = pla.material_id
       WHERE ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
@@ -170,7 +226,7 @@ BEGIN
 
     INSERT INTO [dbo].[dim_product] (dim_business_id, material_id, size, style_id, color_description, style_name, material_description, type, gender, lifecycle, style_complexity, dim_construction_type_id, is_placeholder, placeholder_level)
     SELECT DISTINCT
-        biz.id as dim_business_id,
+        @businessid as dim_business_id,
         dp.style_id  as material_id,
         dp.style_id as size,
         dp.style_id as style_id,
@@ -184,18 +240,24 @@ BEGIN
         1 as dim_construction_type_id,
         1 as is_placeholder,
         'style_id' as placeholder_level
-      FROM [dbo].[dim_product] dp
-      INNER JOIN [dbo].[dim_business] biz ON biz.brand = 'Vans' AND biz.product_line = 'Footwear'
-      LEFT OUTER JOIN (SELECT DISTINCT style_id, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'style_id') pla
-        ON dp.style_id = pla.style_id
-      WHERE ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
+      FROM
+		[dbo].[dim_product] dp
+		LEFT OUTER JOIN (SELECT DISTINCT style_id, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'style_id') pla
+			ON dp.style_id = pla.style_id
+		LEFT OUTER JOIN (SELECT id, material_id, size FROM [dbo].[dim_product]) dp_test
+			ON	dp.material_id = dp_test.material_id
+				AND dp.size = dp_test.size
+      WHERE
+		ISNULL(pla.flag, 0) = 0 AND
+		ISNULL(dp_test.id, 0) = 0 AND
+		dp.is_placeholder = 0
       ;
 
       -- Level Style Complexity
 
       INSERT INTO [dbo].[dim_product] (dim_business_id, material_id, size, style_id, color_description, style_name, material_description, type, gender, lifecycle, style_complexity, dim_construction_type_id, is_placeholder, placeholder_level)
       SELECT DISTINCT
-          biz.id as dim_business_id,
+          @businessid as dim_business_id,
           dp.style_complexity  as material_id,
           dp.style_complexity as size,
           dp.style_complexity as style_id,
@@ -209,10 +271,10 @@ BEGIN
           1 as dim_construction_type_id,
           1 as is_placeholder,
           'style_complexity' as placeholder_level
-        FROM [dbo].[dim_product] dp
-        INNER JOIN [dbo].[dim_business] biz ON biz.brand = 'Vans' AND biz.product_line = 'Footwear'
-        LEFT OUTER JOIN (SELECT DISTINCT style_complexity, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'style_complexity') pla
-          ON dp.style_complexity = pla.style_complexity
+        FROM
+			[dbo].[dim_product] dp
+			LEFT OUTER JOIN (SELECT DISTINCT style_complexity, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'style_complexity') pla
+				ON dp.style_complexity = pla.style_complexity
         WHERE ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
         ;
 
@@ -221,7 +283,7 @@ BEGIN
 
         INSERT INTO [dbo].[dim_product] (dim_business_id, material_id, size, style_id, color_description, style_name, material_description, type, gender, lifecycle, style_complexity, dim_construction_type_id, is_placeholder, placeholder_level)
         SELECT DISTINCT
-            biz.id as dim_business_id,
+            @businessid as dim_business_id,
             cons.name as material_id,
             cons.name as size,
             cons.name as style_id,
@@ -235,19 +297,20 @@ BEGIN
             dp.dim_construction_type_id as dim_construction_type_id,
             1 as is_placeholder,
             'dim_construction_type_id' as placeholder_level
-          FROM [dbo].[dim_product] dp
-          INNER JOIN [dbo].[dim_business] biz ON biz.brand = 'Vans' AND biz.product_line = 'Footwear'
-          INNER JOIN [dbo].[dim_construction_type] cons ON dp.dim_construction_type_id = cons.id
-          LEFT OUTER JOIN (SELECT DISTINCT dim_construction_type_id, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'dim_construction_type_id') pla
-            ON dp.dim_construction_type_id = pla.dim_construction_type_id
-          WHERE ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
+          FROM
+			[dbo].[dim_product] dp
+			  INNER JOIN [dbo].[dim_construction_type] cons ON dp.dim_construction_type_id = cons.id
+			  LEFT OUTER JOIN (SELECT DISTINCT dim_construction_type_id, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'dim_construction_type_id') pla
+				ON dp.dim_construction_type_id = pla.dim_construction_type_id
+          WHERE
+			ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
           ;
 
     -- Level Gender
 
     INSERT INTO [dbo].[dim_product] (dim_business_id, material_id, size, style_id, color_description, style_name, material_description, type, gender, lifecycle, style_complexity, dim_construction_type_id, is_placeholder, placeholder_level)
     SELECT DISTINCT
-        biz.id as dim_business_id,
+        @businessid as dim_business_id,
         dp.gender  as material_id,
         dp.gender as size,
         dp.gender as style_id,
@@ -261,11 +324,13 @@ BEGIN
         1 as dim_construction_type_id,
         1 as is_placeholder,
         'gender' as placeholder_level
-      FROM [dbo].[dim_product] dp
-      INNER JOIN [dbo].[dim_business] biz ON biz.brand = 'Vans' AND biz.product_line = 'Footwear'
-      LEFT OUTER JOIN (SELECT DISTINCT gender, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'gender') pla
-        ON dp.gender = pla.gender
-      WHERE ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
+      FROM
+		[dbo].[dim_product] dp
+		LEFT OUTER JOIN (SELECT DISTINCT gender, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'gender') pla
+			ON dp.gender = pla.gender
+      WHERE
+		ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
+		and dp.gender IS NOT NULL
       ;
 
 

@@ -24,7 +24,7 @@ BEGIN
 
 
 	-- Step 02 - Transfer product master data and Priority List
-	EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product]
+	EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product] @businessid = @dim_business_id_footwear_vans
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_priority_list] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 
