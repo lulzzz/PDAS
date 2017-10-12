@@ -62,6 +62,7 @@ BEGIN
 		DECLARE @dim_factory_country_code_a2_01 NVARCHAR(2)
 		DECLARE @dim_customer_name_01 NVARCHAR(100)
 		DECLARE @dim_customer_sold_to_party_01 NVARCHAR(100)
+		DECLARE @dim_customer_sold_to_category_01 NVARCHAR(100)
 		DECLARE @dim_customer_country_region_01 NVARCHAR(100)
 		DECLARE @dim_customer_country_code_a2_01 NVARCHAR(100)
 		DECLARE @allocation_logic NVARCHAR(1000)
@@ -98,6 +99,7 @@ BEGIN
 			,[dim_factory_country_code_a2] NVARCHAR(2)
 			,[dim_customer_name]  NVARCHAR(100)
 			,[dim_customer_sold_to_party] NVARCHAR(100)
+			,[dim_customer_sold_to_category] NVARCHAR(100)
 			,[dim_customer_country_region] NVARCHAR(100)
 			,[dim_customer_country_code_a2] NVARCHAR(2)
 		)
@@ -135,6 +137,7 @@ BEGIN
 			,[dim_factory_country_code_a2]
 			,[dim_customer_name]
 			,[dim_customer_sold_to_party]
+			,[dim_customer_sold_to_category]
 			,[dim_customer_country_region]
 			,[dim_customer_country_code_a2]
 		)
@@ -157,6 +160,7 @@ BEGIN
 			,df.[country_code_a2] AS [dim_factory_country_code_a2]
 			,dc.[name] AS [dim_customer_name]
 			,dc.[sold_to_party] AS [dim_customer_sold_to_party]
+			,dc.[sold_to_category] AS [dim_customer_sold_to_category
 			,dc.[region] AS [dim_customer_country_region]
 			,dc.[country_code_a2] AS [dim_customer_country_code_a2]
 		FROM
@@ -199,6 +203,7 @@ BEGIN
 					f.[id]
 					,f.[name]
 					,f.[sold_to_party]
+					,f.[sold_to_category]
 					,f.[is_placeholder]
 					,dl.[region]
 					,dl.[country_code_a2]
@@ -238,6 +243,7 @@ BEGIN
 			,[dim_factory_country_code_a2]
 			,[dim_customer_name]
 			,[dim_customer_sold_to_party]
+			,[dim_customer_sold_to_category]
 			,[dim_customer_country_region]
 			,[dim_customer_country_code_a2]
 		FROM #select_cursor01
@@ -262,6 +268,7 @@ BEGIN
 			,@dim_factory_country_code_a2_01
 			,@dim_customer_name_01
 			,@dim_customer_sold_to_party_01
+			,@dim_customer_sold_to_category_01
 			,@dim_customer_country_region_01
 			,@dim_customer_country_code_a2_01
 		WHILE @@FETCH_STATUS = 0
@@ -318,6 +325,7 @@ BEGIN
 				,@dim_factory_country_code_a2_01
 				,@dim_customer_name_01
 				,@dim_customer_sold_to_party_01
+				,@dim_customer_sold_to_category_01
 				,@dim_customer_country_region_01
 				,@dim_customer_country_code_a2_01
 		END

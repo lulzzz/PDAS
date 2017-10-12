@@ -7,9 +7,7 @@ GO
 -- Description:	Procedure to transfer the NGC data into the staging area
 --              This procedure is ment to run on a nightly basis (SQL job agent task)
 -- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]
-	@pdasid INT,
-	@businessid INT
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_etl_ngc_po]
 AS
 BEGIN
 
@@ -60,8 +58,8 @@ BEGIN
         Prbunhea.plan_date AS [po_issue_dt],
 		Shipment.closed AS [shipment_status],
         Prbunhea.misc6 AS [source],
-        SUM(nbbundet.qty) AS [order_qty],
-        SUM(Shipped.unitship) AS [shipped_qty],
+        nbbundet.qty AS [order_qty],
+        Shipped.unitship AS [shipped_qty],
         Prbunhea.style AS [dim_product_style_id],
         Shshipto.ship_to_1 AS [ship_to_address],
         Shshipto_2.ship_to_1 AS [ship_to_address_bis],
@@ -72,10 +70,10 @@ BEGIN
         Shipped.Actual_CRD AS [original_crd_dt], -- instead of Prbunhea.origdd
         Prbunhea.revdd AS [revised_crd_dt],
         Shipped.shipdate AS [shipped_dt],
-        NULL AS [notes], -- PO Type
+        CONVERT(VARCHAR(8000), Prbunhea.notes) AS [notes], -- PO Type
         Prbunhea.misc18 AS [delay_reason],
         Shipped.shipment AS [discharge_port],
-        SUM(nbbundet.qty) AS [lum_qty],
+        nbbundet.qty AS [lum_qty],
         Prbunhea.misc21 AS [source_system],
         Shipment.firstclosedon AS [shipment_closed_on_dt],
         Prbunhea.done AS [is_po_completed],
@@ -106,14 +104,15 @@ BEGIN
             ON (nbbundet.size=prscale.scale)
 
     WHERE
-           Prbunhea.ModifiedOn >= '2017-01-01'
-           AND Prbunhea.Misc21 IN ('CONDOR', 'JBA-VF', 'JBA-VS', 'REVA', 'S65')
-           AND Prbunhea.Misc6 IN ('OCN', 'OIN', 'OSA', 'VF ASIA', 'VF INDIA', 'VF Thailand', 'VFA', 'VFA Bangladesh', 'VFA Guangzhou', 'VFA HongKong', 'VFA India', 'VFA Indonesia', 'VFA Qingdao', 'VFA Shanghai', 'VFA Vietnam', 'VFA Zhuhai', 'VFI')
-           AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
-           AND Prbunhea.Misc25 IN ('DS', 'DYO', 'PG', 'REGULAR', 'ZCS', 'ZCUS', 'ZDIR', 'ZFGP', 'ZOT', 'ZRDS', 'ZTP', 'ZVFL', 'ZVFS')
-           AND NOT (Prbunhea.Qtyship=0 AND Prbunhea.Done=1)
-           AND Prbunhea.POLocation NOT IN('CANCELED')
-           AND NOT (Nbbundet.qty=0)
+        -- Prbunhea.ModifiedOn >= '2017-01-01'
+		Shipped.Actual_CRD >= '2016-01-01'
+		AND Prbunhea.Misc21 IN ('CONDOR', 'JBA-VF', 'JBA-VS', 'REVA', 'S65')
+		AND Prbunhea.Misc6 IN ('OCN', 'OIN', 'OSA', 'VF ASIA', 'VF INDIA', 'VF Thailand', 'VFA', 'VFA Bangladesh', 'VFA Guangzhou', 'VFA HongKong', 'VFA India', 'VFA Indonesia', 'VFA Qingdao', 'VFA Shanghai', 'VFA Vietnam', 'VFA Zhuhai', 'VFI')
+		AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
+		AND Prbunhea.Misc25 IN ('DS', 'DYO', 'PG', 'REGULAR', 'ZCS', 'ZCUS', 'ZDIR', 'ZFGP', 'ZOT', 'ZRDS', 'ZTP', 'ZVFL', 'ZVFS')
+		AND NOT (Prbunhea.Qtyship=0 AND Prbunhea.Done=1)
+		AND Prbunhea.POLocation NOT IN('CANCELED')
+		AND NOT (Nbbundet.qty=0)
 
     GROUP BY
         Prbunhea.rdacode,

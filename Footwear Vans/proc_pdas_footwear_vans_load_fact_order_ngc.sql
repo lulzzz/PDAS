@@ -58,7 +58,10 @@ BEGIN
         @businessid as dim_business_id,
         @buying_program_id as dim_buying_program_id,
         ISNULL(po_code, 'UNDEFINED') as order_number,
-        dd_revised_crd.id as dim_date_id,
+		CASE ngc.shipment_status
+			WHEN 1 THEN dd_original_crd.id
+			ELSE dd_revised_crd.id
+		END as dim_date_id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
 			ELSE mapping_f.id
