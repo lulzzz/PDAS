@@ -7,10 +7,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- =============================================
 -- Author:		ebp Global
--- Create date: 9/6/2017
--- Description:	Allocation sub procedure EU DC (T902) and EU Cross Dock (T902)
+-- Create date: 13/10/2017
+-- Description:	Allocation sub procedure Chile DC (C0005)
 -- =============================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub09]
 	@pdasid INT,
 	@businessid INT,
 	@dim_buying_program_id INT,
@@ -31,7 +31,8 @@ BEGIN
 	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
 	DECLARE @dim_product_material_id_02 NVARCHAR(45)
 	DECLARE @fact_priority_list_source_count_02 INT = 0
-	DECLARE @dim_location_country_code_a2_02 NVARCHAR(2)
+	DECLARE @dim_location_country_code_a2_primary_02 NVARCHAR(2)
+	DECLARE @dim_location_country_code_a2_secondary_02 NVARCHAR(2)
 	DECLARE @dim_factory_name_priority_list_secondary_02 NVARCHAR(45)
 
 	/* Variable assignments */
@@ -69,7 +70,7 @@ BEGIN
 		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
 	END
 
-	SET @dim_location_country_code_a2_02 =
+	SET @dim_location_country_code_a2_primary_02 =
 	(
 		SELECT dfl.[dim_location_country_code_a2]
 		FROM
@@ -88,6 +89,25 @@ BEGIN
 				ON fpl.[dim_factory_id_1] = dfl.[id]
 	)
 
+	SET @dim_location_country_code_a2_secondary_02 =
+	(
+		SELECT dfl.[dim_location_country_code_a2]
+		FROM
+			(
+				SELECT [dim_factory_id_2]
+				FROM [dbo].[fact_priority_list]
+				WHERE [dim_product_id] = @dim_product_id
+			) AS fpl
+			INNER JOIN
+			(
+				SELECT df.[id], dl.[country_code_a2] AS [dim_location_country_code_a2]
+				FROM [dbo].[dim_factory] df
+				INNER JOIN [dbo].[dim_location] dl
+					ON df.[dim_location_id] = dl.[id]
+			) dfl
+				ON fpl.[dim_factory_id_2] = dfl.[id]
+	)
+
 	SET @dim_factory_name_priority_list_secondary_02 =
 	(
 		SELECT df.[short_name]
@@ -103,24 +123,22 @@ BEGIN
 
 	/* Sub decision tree logic */
 
-	-- CLK MTL?
-	IF @dim_factory_name_priority_list_primary_02 = 'CLK'
-	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' MTL'
-	END
-
-	-- DTP MTL?
-	ELSE IF @dim_factory_name_priority_list_primary_02 = 'DTP'
-	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' MTL'
-	END
-
 	-- Flex?
-	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%'
+	IF @dim_product_style_complexity_02 LIKE '%Flex%' AND @dim_factory_name_priority_list_primary_02 = 'ICC'
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
+	END
+
+	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%' AND @dim_factory_name_priority_list_primary_02 = 'DTC'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
+	END
+
+	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%' AND @dim_factory_name_priority_list_primary_02 = 'SJV'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
 		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
 	END
 
@@ -139,16 +157,37 @@ BEGIN
 	END
 
 	-- 1st priority = COO China?
-	ELSE IF @dim_location_country_code_a2_02 = 'CN'
+	ELSE IF @dim_location_country_code_a2_primary_02 = 'CN'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO China'
+	END
+
+	-- 2nd priority = COO China?
+	ELSE IF @dim_location_country_code_a2_secondary_02 = 'CN'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_secondary_02 + ' 1st priority = COO China'
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_secondary_02 + ' 2nd priority = COO China'
+	END
+
+	-- 1st priority = COO Vietnam?
+	ELSE IF @dim_location_country_code_a2_primary_02 = 'VN'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO Vietnam'
+	END
+
+	-- 2nd priority = COO Vietnam?
+	ELSE IF @dim_location_country_code_a2_secondary_02 = 'VN'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_secondary_02 + ' 2nd priority = COO Vietnam'
 	END
 
 	ELSE
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO not China'
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 2nd priority = COO not Vietnam'
 	END
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]

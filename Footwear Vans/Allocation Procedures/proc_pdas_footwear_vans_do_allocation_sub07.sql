@@ -7,10 +7,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- =============================================
 -- Author:		ebp Global
--- Create date: 9/6/2017
--- Description:	Allocation sub procedure EU DC (T902) and EU Cross Dock (T902)
+-- Create date: 13/10/2017
+-- Description:	Allocation sub procedure China DC (W100)
 -- =============================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub07]
 	@pdasid INT,
 	@businessid INT,
 	@dim_buying_program_id INT,
@@ -103,24 +103,22 @@ BEGIN
 
 	/* Sub decision tree logic */
 
-	-- CLK MTL?
-	IF @dim_factory_name_priority_list_primary_02 = 'CLK'
-	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' MTL'
-	END
-
-	-- DTP MTL?
-	ELSE IF @dim_factory_name_priority_list_primary_02 = 'DTP'
-	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' MTL'
-	END
-
 	-- Flex?
-	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%'
+	IF @dim_product_style_complexity_02 LIKE '%Flex%' AND @dim_factory_name_priority_list_primary_02 = 'ICC'
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
+	END
+
+	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%' AND @dim_factory_name_priority_list_primary_02 = 'DTC'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
+	END
+
+	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%' AND @dim_factory_name_priority_list_primary_02 = 'SJV'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
 		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
 	END
 
@@ -141,14 +139,21 @@ BEGIN
 	-- 1st priority = COO China?
 	ELSE IF @dim_location_country_code_a2_02 = 'CN'
 	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO China'
+	END
+
+	-- 2nd priority = CLK?
+	ELSE IF @dim_factory_name_priority_list_secondary_02 = 'CLK'
+	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_secondary_02 + ' 1st priority = COO China'
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_secondary_02 + ' 2nd priority = CLK'
 	END
 
 	ELSE
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO not China'
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 2nd priority = not CLK'
 	END
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
