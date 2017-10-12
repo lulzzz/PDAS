@@ -11,7 +11,10 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_etl_ngc_po]
 AS
 BEGIN
 
+	-- Clear staging area table
+	DELETE FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
 
+	-- Insert new data from NGC
 	INSERT INTO [dbo].[staging_pdas_footwear_vans_ngc_po]
     (
         [shipment]
