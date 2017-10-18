@@ -41,13 +41,61 @@ BEGIN
 
 		-- Stored procedure(s) to run
 		/* START */
-		-- Step 03 - Validate source data (need to check the Vans Footwear Validation Report afterwards)
-		EXEC [dbo].[proc_pdas_footwear_vans_validate_priority_list] @mc_user_name = @mc_user_name
-		EXEC [dbo].[proc_pdas_footwear_vans_validate_capacity_by_week] @mc_user_name = @mc_user_name
-		EXEC [dbo].[proc_pdas_footwear_vans_validate_forecast] @mc_user_name = @mc_user_name
-		EXEC [dbo].[proc_pdas_footwear_vans_validate_ngc_orders] @mc_user_name = @mc_user_name
-		EXEC [dbo].[proc_pdas_footwear_vans_validate_ntb] @mc_user_name = @mc_user_name
-		EXEC [dbo].[proc_pdas_footwear_vans_validate_raw_capacity] @mc_user_name = @mc_user_name
+
+		DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
+		DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
+		DECLARE	@buying_program_id int
+
+		-- Step 03 - Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
+		-- Capacity
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
+		-- NTB
+		SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb_bulk]
+			@pdasid = @pdasid,
+			@businessid = @dim_business_id_footwear_vans,
+			@buying_program_id = @buying_program_id
+		/*
+		SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Retail Quick Turn')
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb_rqt]
+			@pdasid = @pdasid,
+			@businessid = @dim_business_id_footwear_vans,
+			@buying_program_id = @buying_program_id
+		SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Scheduled Out of Sync')
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb_oos_scheduled]
+			@pdasid = @pdasid,
+			@businessid = @dim_business_id_footwear_vans,
+			@buying_program_id = @buying_program_id
+		SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Ad-Hoc Out of Sync')
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb_oos_adhoc]
+			@pdasid = @pdasid,
+			@businessid = @dim_business_id_footwear_vans,
+			@buying_program_id = @buying_program_id
+		*/
+
+		-- Forecast
+		SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast_bulk]
+			@pdasid = @pdasid,
+			@businessid = @dim_business_id_footwear_vans,
+			@buying_program_id = @buying_program_id
+		/*
+		SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Retail Quick Turn')
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast_rqt]
+			@pdasid = @pdasid,
+			@businessid = @dim_business_id_footwear_vans,
+			@buying_program_id = @buying_program_id
+		*/
+
+		-- NGC
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
+		-- Combine demand
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
+		-- Decision tree algorithm
+		EXEC [dbo].[proc_pdas_footwear_vans_do_allocation]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 		/* END */
 

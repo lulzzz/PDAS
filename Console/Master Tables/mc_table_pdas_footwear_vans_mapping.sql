@@ -40,7 +40,6 @@ BEGIN
                 [Type] NOT IN (
                     'Factory Master',
                     'Customer Master',
-					'Buying Program Master',
 					'Construction Type Master'
                 )
 				OR temp.[Parent] = temp.[Child]

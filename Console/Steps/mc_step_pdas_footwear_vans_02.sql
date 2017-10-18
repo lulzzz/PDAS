@@ -37,7 +37,7 @@ BEGIN
 			,[status_start] = 1
 		WHERE
 			[mc_system_name] = @mc_system_name
-			AND [name] =@mc_proc_name
+			AND [name] = @mc_proc_name
 
 		-- Stored procedure(s) to run
 		/* START */
@@ -47,6 +47,14 @@ BEGIN
 		-- Step 02 - Transfer product master data and Priority List
 		EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product]
 		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_priority_list] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
+		-- Step 03 - Validate source data (need to check the Vans Footwear Validation Report afterwards)
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_priority_list] @mc_user_name = @mc_user_name
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_capacity_by_week] @mc_user_name = @mc_user_name
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_forecast] @mc_user_name = @mc_user_name
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_ngc_orders] @mc_user_name = @mc_user_name
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_ntb] @mc_user_name = @mc_user_name
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_raw_capacity] @mc_user_name = @mc_user_name
 
 		/* END */
 

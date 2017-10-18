@@ -20,6 +20,14 @@ BEGIN
 	IF (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_retail_qt]) > 0
 	BEGIN
 
+		-- Update buying program name in case user used short name
+		UPDATE temp
+		SET temp.[Buying Program] = dim_bp.[name]
+		FROM
+			[dbo].[mc_temp_pdas_footwear_vans_retail_qt] temp
+			INNER JOIN [dbo].[dim_buying_program] dim_bp
+				ON LTRIM(RTRIM(temp.[Buying Program])) = dim_bp.[name_short]
+
 		-- Validate submitted data based on pre-defined business rules
 		DECLARE @test nvarchar(500) =
 		(

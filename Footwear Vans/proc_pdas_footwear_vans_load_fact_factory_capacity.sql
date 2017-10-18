@@ -423,6 +423,19 @@ BEGIN
 
 	-- Insert on non-match
 	INSERT INTO [dbo].[fact_factory_capacity]
+	(
+		[dim_pdas_id]
+		,[dim_business_id]
+		,[dim_factory_id]
+		,[dim_customer_id]
+		,[dim_construction_type_id]
+		,[dim_date_id]
+		,[capacity_daily]
+		,[capacity_weekly]
+		,[available_capacity_weekly]
+		,[percentage_region]
+		,[percentage_from_original]
+	)
 	SELECT temp.*
 	FROM
 		@temp_capacity temp
@@ -449,5 +462,16 @@ BEGIN
 				temp.[dim_construction_type_id] = f.[dim_construction_type_id] AND
 				temp.[dim_date_id] = f.[dim_date_id]
 
+
+    -- Update adjusted capacity (80% second capacity line)
+    UPDATE f
+    SET
+        f.[available_capacity_weekly_adjusted] = f.[available_capacity_weekly] * h.[Percentage Adjustment]
+    FROM
+        (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
+        INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
+            ON f.[dim_factory_id] = df.[id]
+        INNER JOIN [dbo].[helper_pdas_footwear_vans_factory_capacity_adjustment] h
+            ON df.[short_name] = h.[Factory]
 
 END
