@@ -7,10 +7,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- =============================================
 -- Author:		ebp Global
--- Create date: 9/6/2017
--- Description:	Allocation sub procedure EU DC (T902) and EU Cross Dock (T902)
+-- Create date: 13/10/2017
+-- Description:	Allocation sub procedure India DC (W800)
 -- =============================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub03]
 	@pdasid INT,
 	@businessid INT,
 	@dim_buying_program_id INT,
@@ -110,13 +110,6 @@ BEGIN
 		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' MTL'
 	END
 
-	-- DTP MTL?
-	ELSE IF @dim_factory_name_priority_list_primary_02 = 'DTP'
-	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' MTL'
-	END
-
 	-- Flex?
 	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%'
 	BEGIN
@@ -125,6 +118,7 @@ BEGIN
 	END
 
 	-- RQT MTL?
+	 /* If material_id from dim_product is in MTL from helper_..._retail_qt */
 	ELSE IF @dim_product_material_id_02 IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
@@ -142,13 +136,13 @@ BEGIN
 	ELSE IF @dim_location_country_code_a2_02 = 'CN'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_secondary_02 + ' 1st priority = COO China'
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_secondary_02 + ' 1st priority = COO China'  /* TO DO */
 	END
 
 	ELSE
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO not China'
+		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO not China'  /* TO DO */
 	END
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
