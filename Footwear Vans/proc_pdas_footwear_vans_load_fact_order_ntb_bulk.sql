@@ -23,6 +23,10 @@ BEGIN
 	DECLARE @dim_date_id_pdas_release_day int = (SELECT MAX(dd.[id]) FROM [dbo].[dim_date] dd INNER JOIN [dbo].[dim_pdas] pdas ON pdas.date_id = dd.id)
 	DECLARE @dim_date_id_pdas_release_day_future int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(yy, 1, full_date) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
 
+	DECLARE @dim_date_id_asap_73 int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(day, 73, [full_date]) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
+	-- Is it possible to keep it as “ASAP” as request week?
+	-- But change it to CW+73 / CW+103 (depending on the LT of the particular MTL) when you bounce it against available capacity?
+
 
 	-- Check if the session has already been loaded
 	IF EXISTS (SELECT 1 FROM [dbo].[fact_order] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id AND dim_demand_category_id = @demand_category_id_ntb)
@@ -68,7 +72,10 @@ BEGIN
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
 		ISNULL(pr_code, 'UNDEFINED') as order_number,
-		dd_xfw.id as dim_date_id,
+		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
+			WHEN 'ASAP' THEN @dim_date_id_asap_73
+			ELSE dd_xfw.id
+		END as dim_date_id,
 		@dim_factory_id_placeholder as dim_factory_id,
 		dc.id as dim_customer_id,
 		CASE
@@ -96,7 +103,7 @@ BEGIN
 		[dbo].[staging_pdas_footwear_vans_emea_ntb_bulk] ntb
 		INNER JOIN (SELECT [id], [name], [sold_to_party] FROM [dbo].[dim_customer] WHERE is_placeholder = 0) dc
 			ON ntb.dim_customer_name = dc.name
-		INNER JOIN
+		LEFT OUTER JOIN
 		(
 			SELECT
 				[id],
@@ -121,10 +128,14 @@ BEGIN
 				ntb.dim_product_size = dp_ms.size
 		LEFT OUTER JOIN [dbo].[dim_date] dd_buy ON ntb.buy_dt = dd_buy.full_date
 	WHERE
-		ntb.lum_qty IS NOT NULL
+		ntb.lum_qty IS NOT NULL AND
+		(UPPER(ntb.[exp_delivery_no_constraint_dt]) = 'ASAP' OR dd_xfw.[cw] IS NOT NULL)
 	GROUP BY
 		ISNULL(pr_code, 'UNDEFINED'),
-		dd_xfw.id,
+		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
+			WHEN 'ASAP' THEN @dim_date_id_asap_73
+			ELSE dd_xfw.id
+		END,
 		dc.id,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
