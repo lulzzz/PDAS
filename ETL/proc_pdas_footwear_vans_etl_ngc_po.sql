@@ -81,15 +81,15 @@ BEGIN
         Shipment.firstclosedon AS [shipment_closed_on_dt],
         Prbunhea.done AS [is_po_completed],
         Shipmast.shipname AS [dc_name]
-    FROM
-        [ITGC2W000187].[ESPSODV14RPT].[dbo].[Prbunhea_view] AS Prbunhea
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[Nbbundet_view] AS Nbbundet WITH (nolock)
+	FROM
+		(SELECT * FROM OPENQUERY ([ITGC2W000187], 'SELECT * FROM [ESPSODV14RPT].[dbo].[Prbunhea_view]')) AS Prbunhea
+        LEFT OUTER JOIN (SELECT * FROM OPENQUERY ([ITGC2W000187], 'SELECT * FROM [ESPSODV14RPT].[dbo].[Nbbundet_view] WITH (NOLOCK)')) AS Nbbundet
             ON (Prbunhea.Id_Cut=Nbbundet.Id_Cut)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[Shshipto] AS Shshipto WITH (nolock)
+		LEFT OUTER JOIN (SELECT * FROM OPENQUERY ([ITGC2W000187], 'SELECT * FROM [ESPSODV14RPT].[dbo].[Shshipto] WITH (NOLOCK)')) AS Shshipto
             ON (Prbunhea.Rdacode=Shshipto.Factory)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[shshipto] AS Shshipto_2 WITH (nolock)
+		LEFT OUTER JOIN (SELECT * FROM OPENQUERY ([ITGC2W000187], 'SELECT * FROM [ESPSODV14RPT].[dbo].[Shshipto] WITH (NOLOCK)')) AS Shshipto_2
             ON (Prbunhea.Rfactory=Shshipto_2.Factory)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[Shipped_view] AS Shipped WITH (nolock)
+		LEFT OUTER JOIN (SELECT * FROM OPENQUERY ([ITGC2W000187], 'SELECT * FROM [ESPSODV14RPT].[dbo].[Shipped_view] WITH (NOLOCK)')) AS Shipped
             ON
             (
                 Prbunhea.Season=Shipped.Season AND
@@ -99,11 +99,11 @@ BEGIN
                 Nbbundet.Size=Shipped.Size AND
                 Nbbundet.Dimension=Shipped.Dimension
             )
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[Shipment_view] AS Shipment WITH (nolock)
+		LEFT OUTER JOIN (SELECT * FROM OPENQUERY ([ITGC2W000187], 'SELECT * FROM [ESPSODV14RPT].[dbo].[Shipment_view] WITH (NOLOCK)')) AS Shipment
             ON (Shipped.Shipment=Shipment.Shipment)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipmast WITH (nolock)
+		LEFT OUTER JOIN (SELECT * FROM OPENQUERY ([ITGC2W000187], 'SELECT * FROM [ESPSODV14RPT].[dbo].[Shipmast] WITH (NOLOCK)')) AS Shipmast
             ON (Shipmast.shipno=Prbunhea.Store_No)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].prscale WITH (nolock)
+		LEFT OUTER JOIN (SELECT * FROM OPENQUERY ([ITGC2W000187], 'SELECT * FROM [ESPSODV14RPT].[dbo].[prscale] WITH (NOLOCK)')) AS prscale
             ON (nbbundet.size=prscale.scale)
 
     WHERE
