@@ -22,18 +22,6 @@ BEGIN
 	) > 0
 	BEGIN
 
-		/* Reset allocation */
-
-		/*
-		UPDATE [dbo].[fact_demand_total]
-		SET
-			[dim_factory_id_original] = @dim_factory_id_placeholder
-		WHERE
-			[dim_pdas_id] = @pdasid
-			and [dim_business_id] = @businessid
-		*/
-
-
 		/* Variable declarations */
 
 		-- Placeholders
@@ -42,6 +30,24 @@ BEGIN
 		-- Release month date_id
 		DECLARE @pdas_release_month_date_id int
 		SET @pdas_release_month_date_id = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (DATEADD(MONTH, (DATEDIFF(MONTH, 0, (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = (SELECT [date_id] FROM [dbo].[dim_pdas] WHERE id = @pdasid)))), 0)))
+
+		-- Release full date_id
+		DECLARE @pdas_release_full_date_id int
+		SET @pdas_release_full_date_id = (SELECT [date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
+
+		/* Reset allocation */
+
+
+		UPDATE [dbo].[fact_demand_total]
+		SET
+			[dim_factory_id_original] = @dim_factory_id_placeholder,
+			[allocation_logic] = NULL
+		WHERE
+			[dim_pdas_id] = @pdasid
+			and [dim_business_id] = @businessid
+
+
+
 
 		-- Decision tree variables level 1 (top level decision tree)
 		DECLARE @dim_buying_program_id_01 int
@@ -66,6 +72,11 @@ BEGIN
 		DECLARE @dim_customer_country_region_01 NVARCHAR(100)
 		DECLARE @dim_customer_country_code_a2_01 NVARCHAR(100)
 		DECLARE @allocation_logic NVARCHAR(1000)
+		DECLARE @date_buy_01 DATE
+		DECLARE @date_crd_01 DATE
+		DECLARE @helper_fty_qt_rqt_vendor_01 NVARCHAR(45)
+		/* DECLARE @dim_product_id  */
+
 
 		-- Cursors
 		DECLARE @cursor_01 CURSOR
@@ -277,32 +288,1124 @@ BEGIN
 			-- Reset allocation logic
 			SET @allocation_logic = ''
 
-			-- Test sub proc
-			EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
-				@pdasid = @pdasid,
-				@businessid = @businessid,
-				@dim_buying_program_id = @dim_buying_program_id_01,
-				@dim_product_id = @dim_product_id_01,
-				@dim_date_id = @dim_date_id_01,
-				@dim_customer_id = @dim_customer_id_01,
-				@dim_demand_category_id = @dim_demand_category_id_01,
-				@order_number = @order_number_01,
-				@allocation_logic = @allocation_logic
+			-- Get full dates
+			SET @date_buy_01 = (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_01)
+			SET @date_crd_01 = (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = @pdas_release_full_date_id)
+			SET @helper_fty_qt_rqt_vendor_01 =
+			(
+				SELECT [Factory]
+				FROM [dbo].[helper_pdas_footwear_vans_fty_qt]
+				WHERE [MTL] =
+				(
+					SELECT [material_id] FROM [dbo].[dim_product] WHERE [id] = @dim_product_id_01
+				)
+			)
+
+			--PRINT('Sold to category: ' + @dim_customer_sold_to_category_01 + ' - Buying program: ' + @dim_buying_program_name_01 + ' - Region: ' + @dim_customer_country_region_01 + ' - Sold to party: ' + @dim_customer_sold_to_party_01)
 
 			IF @dim_customer_sold_to_category_01 = 'DC'
 			BEGIN
-				SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+				SET @allocation_logic = @allocation_logic +'\n' + 'Sold to category: ' + @dim_customer_sold_to_category_01
 				IF @dim_buying_program_name_01 = 'Bulk Buy'
 				BEGIN
 					SET @allocation_logic = @allocation_logic +'\n' + 'Buying program: ' + @dim_buying_program_name_01
 					IF @dim_customer_country_region_01 = 'EMEA'
 					BEGIN
 						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic
+					END
 
-						print('put sub proc 01 here')
+					IF @dim_customer_country_region_01 in ('NORA', 'CASA')
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						IF @dim_customer_sold_to_party_01 LIKE 'CAN%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub02]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'US%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'Brazil%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+
+							print('todo Brasil')
+
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'Chile%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub09]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'MX%' OR @dim_customer_sold_to_party_01 LIKE 'Mex%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+					END
+
+					IF @dim_customer_country_region_01 = 'APAC'
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						IF @dim_customer_sold_to_party_01 LIKE 'China%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub07]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'Korea%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub06]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'India%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub03]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'MY%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'Singapore%' OR @dim_customer_sold_to_party_01 LIKE 'SG%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'Hong Kong%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+					END
+				END
+
+				IF @dim_buying_program_name_01 = 'Retail Quick Turn'
+				BEGIN
+					SET @allocation_logic = @allocation_logic +'\n' + 'Buying program: ' + @dim_buying_program_name_01
+					IF @dim_customer_country_region_01 = 'EMEA'
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_dtc]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic
+					END
+
+					IF @dim_customer_country_region_01 in ('NORA', 'CASA')
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_sjv]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic
+					END
+
+					IF @dim_customer_country_region_01 = 'APAC'
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						IF @dim_customer_sold_to_party_01 LIKE 'China%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_hsc]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+						ELSE
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_other]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+					END
+				END
+
+				IF @dim_buying_program_name_01 = 'Ad-Hoc Out of Sync'
+				BEGIN
+					SET @allocation_logic = @allocation_logic +'\n' + 'Buying program: ' + @dim_buying_program_name_01
+					IF (DATEDIFF(day,@date_buy_01,@date_crd_01) >= 73) OR (DATEDIFF(day,@date_buy_01,@date_crd_01) < 73 AND @helper_fty_qt_rqt_vendor_01 IS NULL)
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Lead time: ' + (DATEDIFF(day,@date_buy_01,@date_crd_01)) + 'VQT: ' + @helper_fty_qt_rqt_vendor_01
+						IF @dim_customer_country_region_01 = 'EMEA'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+
+						END
+
+						IF @dim_customer_country_region_01 in ('NORA', 'CASA')
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							IF @dim_customer_sold_to_party_01 LIKE 'CAN%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub02]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'US%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Brazil%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								print('todo Brasil') /*TO BE UPDATED*/
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Chile%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub09]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'MX%' OR @dim_customer_sold_to_party_01 LIKE 'MEX%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+						END
+
+						IF @dim_customer_country_region_01 = 'APAC'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							IF @dim_customer_sold_to_party_01 LIKE 'China%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub07]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Korea%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub06]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'India%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub03]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'MY%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Singapore%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 = 'Hong Kong%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+						END
+					END
+
+					ELSE
+					BEGIN
+						SET @dim_factory_id_original_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
+						SET @allocation_logic = @allocation_logic +'\n' + 'VQT Vendor'
+
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic,
+							@dim_factory_id_original = @dim_factory_id_original_01
+					END
+				END
+
+				IF @dim_buying_program_name_01 = 'Scheduled Out of Sync'
+				BEGIN
+					SET @allocation_logic = @allocation_logic +'\n' + 'Buying program: ' + @dim_buying_program_name_01
+					IF (DATEDIFF(day,@date_buy_01,@date_crd_01) >= 73) OR (DATEDIFF(day,@date_buy_01,@date_crd_01) < 73 AND @helper_fty_qt_rqt_vendor_01 IS NULL)
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Lead time: ' + (DATEDIFF(day,@date_buy_01,@date_crd_01)) + 'VQT: ' + @helper_fty_qt_rqt_vendor_01
+						IF @dim_customer_country_region_01 = 'EMEA'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+
+						IF @dim_customer_country_region_01 in ('NORA')	/*TO BE UPDATED*/
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							IF @dim_customer_sold_to_party_01 LIKE 'CAN%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub02]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'US%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Brazil%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								print('todo Brasil')
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Chile%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub09]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'MX%' OR @dim_customer_sold_to_party_01 LIKE 'MEX%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+						END
+
+						IF @dim_customer_country_region_01 = 'APAC'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							IF @dim_customer_sold_to_party_01 LIKE 'China%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub07]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Korea%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub06]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'India%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub03]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'MY%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Singapore%' OR @dim_customer_sold_to_party_01 LIKE 'SG%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Hong Kong%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+						END
+					END
+
+					ELSE
+					BEGIN
+						SET @dim_factory_id_original_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
+						SET @allocation_logic = @allocation_logic +'\n' + 'VQT Vendor'
+
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic,
+							@dim_factory_id_original = @dim_factory_id_original_01
+					END
+				END
+			END
+
+			IF @dim_customer_sold_to_category_01 = 'Direct+International'
+			BEGIN
+				SET @allocation_logic = @allocation_logic +'\n' + 'Sold to category: ' + @dim_customer_sold_to_category_01
+				IF @dim_buying_program_name_01 = 'Bulk Buy'
+				BEGIN
+					SET @allocation_logic = @allocation_logic +'\n' + 'Buying program: ' + @dim_buying_program_name_01
+					IF @dim_customer_country_region_01 = 'EMEA'
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic
+					END
+
+					IF @dim_customer_country_region_01 in ('NORA', 'CASA')
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						IF @dim_customer_sold_to_party_01 LIKE 'Canada%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub02]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'US%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'Mexico%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'International%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+					END
+
+					IF @dim_customer_country_region_01 = 'APAC'
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						IF @dim_customer_sold_to_party_01 LIKE 'Korea%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub06]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+
+						IF @dim_customer_sold_to_party_01 LIKE 'APAC Direct%'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+							PRINT 'helloworld'
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+					END
+				END
+
+				IF @dim_buying_program_name_01 = 'Retail Quick Turn'
+				BEGIN
+					SET @allocation_logic = @allocation_logic +'\n' + 'Buying program: ' + @dim_buying_program_name_01
+					IF @dim_customer_country_region_01 = 'EMEA'
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_dtc]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic
+					END
+
+					IF @dim_customer_country_region_01 in ('NORA', 'CASA', 'APAC')
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_sjv]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic
+					END
+				END
+
+				IF @dim_buying_program_name_01 = 'Ad Hoc Vendor Quick Turn'
+				BEGIN
+					SET @allocation_logic = @allocation_logic +'\n' + 'Buying program: ' + @dim_buying_program_name_01
+					IF (DATEDIFF(day,@date_buy_01,@date_crd_01) >= 73) OR (DATEDIFF(day,@date_buy_01,@date_crd_01) < 73 AND @helper_fty_qt_rqt_vendor_01 IS NULL)
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Lead time: ' + (DATEDIFF(day,@date_buy_01,@date_crd_01)) + ' VQT: ' + @helper_fty_qt_rqt_vendor_01
+						IF @dim_customer_country_region_01 = 'EMEA'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+
+						IF @dim_customer_country_region_01 in ('NORA', 'CASA')
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							IF @dim_customer_sold_to_party_01 LIKE 'Canada%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub02]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'US%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Mexico%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+						END
+
+						IF @dim_customer_country_region_01 = 'APAC'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							IF @dim_customer_sold_to_party_01 LIKE 'Korea%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub06]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'APAC Direct%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+						END
 
 					END
 
+					ELSE
+					BEGIN
+						SET @dim_factory_id_original_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
+						SET @allocation_logic = @allocation_logic +'\n' + 'VQT Vendor'
+
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic,
+							@dim_factory_id_original = @dim_factory_id_original_01
+					END
+
+				END
+
+				IF @dim_buying_program_name_01 = 'Scheduled Out of Sync'
+				BEGIN
+					SET @allocation_logic = @allocation_logic +'\n' + 'Buying program: ' + @dim_buying_program_name_01
+					IF (DATEDIFF(day,@date_buy_01,@date_crd_01) >= 73) OR (DATEDIFF(day,@date_buy_01,@date_crd_01) < 73 AND @helper_fty_qt_rqt_vendor_01 IS NULL)
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Lead time: ' + (DATEDIFF(day,@date_buy_01,@date_crd_01)) + ' VQT ' + @helper_fty_qt_rqt_vendor_01
+						IF @dim_customer_country_region_01 = 'EMEA'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
+						END
+
+						IF @dim_customer_country_region_01 in ('NORA', 'CASA')
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							IF @dim_customer_sold_to_party_01 LIKE 'Canada%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub02]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'US%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'Mexico%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+						END
+
+						IF @dim_customer_country_region_01 = 'APAC'
+						BEGIN
+							SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+							IF @dim_customer_sold_to_party_01 LIKE 'Korea%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub06]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+
+							IF @dim_customer_sold_to_party_01 LIKE 'APAC Direct%'
+							BEGIN
+								SET @allocation_logic = @allocation_logic +'\n' + 'Sold to party: ' + @dim_customer_sold_to_party_01
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
+							END
+						END
+					END
+
+					ELSE
+					BEGIN
+						SET @dim_factory_id_original_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
+						SET @allocation_logic = @allocation_logic +'\n' + 'VQT Vendor'
+
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic,
+							@dim_factory_id_original = @dim_factory_id_original_01
+					END
+				END
+			END
+
+			IF @dim_customer_sold_to_category_01 = 'Crossdock'
+			BEGIN
+				SET @allocation_logic = @allocation_logic +'\n' + 'Sold to category: ' + @dim_customer_sold_to_category_01
+				IF @dim_buying_program_name_01 = 'Bulk Buy'
+				BEGIN
+					SET @allocation_logic = @allocation_logic +'\n' + 'Buying program: ' + @dim_buying_program_name_01
+					IF @dim_customer_country_region_01 = 'EMEA'
+					BEGIN
+						SET @allocation_logic = @allocation_logic +'\n' + 'Region: ' + @dim_customer_country_region_01
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic
+					END
 				END
 			END
 
@@ -332,8 +1435,5 @@ BEGIN
 		END
 		CLOSE @cursor_01
 		DEALLOCATE @cursor_01
-
-
-	END
-
+    END
 END

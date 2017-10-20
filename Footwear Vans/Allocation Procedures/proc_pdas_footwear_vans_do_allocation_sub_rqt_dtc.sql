@@ -8,9 +8,9 @@ GO
 -- =============================================
 -- Author:		ebp Global
 -- Create date: 13/10/2017
--- Description:	Allocation sub procedure US Direct (1009)
+-- Description:	Allocation sub procedure under RQT Program branch (DTC priority)
 -- =============================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_dtc]
 	@pdasid INT,
 	@businessid INT,
 	@dim_buying_program_id INT,
@@ -27,7 +27,6 @@ BEGIN
     /* Variable declarations */
 	DECLARE @dim_factory_id_original_02 INT = NULL
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
-	DECLARE @dim_customer_name_02 NVARCHAR(100)
 	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
 	DECLARE @dim_product_material_id_02 NVARCHAR(45)
 
@@ -46,8 +45,6 @@ BEGIN
 				ON fpl.[dim_factory_id_1] = df.[id]
 	)
 
-	SET @dim_customer_name_02 = (SELECT [name] FROM [dbo].[dim_customer] WHERE [id] = @dim_customer_id)
-
 	SET @dim_product_material_id_02 = (SELECT [material_id] FROM [dbo].[dim_product] WHERE [id] = @dim_product_id)
 
 	SET @helper_retail_qt_rqt_vendor_02 =
@@ -59,25 +56,17 @@ BEGIN
 
 	/* Sub decision tree logic */
 
-	-- SJD MTL and customer is Zumiez or Kohls or Journeys?
-	IF @dim_factory_name_priority_list_primary_02 = 'SJD'
-	AND (@dim_customer_name_02 LIKE '%ZUMIEZ%' OR @dim_customer_name_02 LIKE '%KOHLS%' OR @dim_customer_name_02 LIKE '%JOURNEYS%')
+	-- Vendor = DTC or SJV?
+	IF @dim_factory_name_priority_list_primary_02 in ('DTC', 'SJV')
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTC')
 		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' MTL'
-	END
-
-	-- RQT MTL?
-	ELSE IF @dim_product_material_id_02 IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
-	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-		SET @allocation_logic = @allocation_logic +'\n' + 'RQT MTL'
 	END
 
 	ELSE
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' not RQT MTL'
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+		SET @allocation_logic = @allocation_logic +'\n' + 'RQT MTL'
 	END
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
