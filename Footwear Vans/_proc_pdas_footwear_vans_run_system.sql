@@ -37,7 +37,7 @@ BEGIN
 	SELECT * FROM [dbo].[system_log_file] WHERE [system] = 'pdas_ftw_vans' ORDER BY [source], [type]
 
 
-	-- Step 04 - Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
+	-- Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
 	-- Capacity
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
@@ -81,11 +81,13 @@ BEGIN
 	-- Combine demand
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-	-- Net demand signals
+	-- Consume high level demand signal with low level demand signal
 	EXEC [dbo].[proc_pdas_footwear_vans_do_demand_signal_netting]
 
-	-- Step 05 - Run decision tree allocation algorithm and adjust EMEA NTB based on Cutoff days
+	-- Run decision tree allocation algorithm
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
+	-- Adjust EMEA NTB based on Cutoff days
 	EXEC [dbo].[proc_pdas_footwear_vans_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- Prepare report tables for Excel frontend
