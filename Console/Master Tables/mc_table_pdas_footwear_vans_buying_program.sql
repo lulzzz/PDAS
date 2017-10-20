@@ -69,11 +69,13 @@ BEGIN
                 [dim_business_id]
 				,[category]
                 ,[name]
+				,[name_short]
             )
             SELECT
 				dim_b.[id] AS [dim_business_id]
 				,temp.[Category] AS [category]
 				,temp.[Name] AS [name]
+				,temp.[Short Name] AS [name_short]
 			FROM
 				[dbo].[mc_temp_pdas_footwear_vans_buying_program] temp
 				INNER JOIN (SELECT [id], [brand], [product_line] FROM [dbo].[dim_business]) dim_b
@@ -89,6 +91,7 @@ BEGIN
                 dim.[dim_business_id] = dim_b.[id]
 				,dim.[category] = temp.[Category]
 				,dim.[name] = temp.[Name]
+				,dim.[name_short] = temp.[Short Name]
 			FROM
 				[dbo].[dim_buying_program] dim
 				INNER JOIN [dbo].[mc_temp_pdas_footwear_vans_buying_program] temp

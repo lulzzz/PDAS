@@ -141,7 +141,8 @@ BEGIN
         dd_xfac.id as dim_date_id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
-			ELSE mapping_f.id
+			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
+			ELSE @dim_factory_id_placeholder
 		END as dim_factory_id,
 		dc.id as dim_customer_id,
 		CASE
@@ -193,14 +194,14 @@ BEGIN
 		) mapping_f ON ntb.dim_factory_reva_vendor = mapping_f.child
     WHERE
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
-		(df.id IS NOT NULL OR mapping_f.id IS NOT NULL) AND
 		ntb.lum_qty IS NOT NULL
     GROUP BY
         ISNULL(pr_code, 'UNDEFINED'),
         dd_xfac.id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
-			ELSE mapping_f.id
+			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
+			ELSE @dim_factory_id_placeholder
 		END,
 		dc.id,
 		CASE

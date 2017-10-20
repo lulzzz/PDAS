@@ -23,12 +23,10 @@ BEGIN
 	SELECT * FROM [dbo].[dim_pdas] ORDER BY [id] DESC
 
 
-	-- Step 02 - Transfer product master data and Priority List
+	-- Step 02 - Transfer product master data and Priority List and Validate source data (need to check the Vans Footwear Validation Report afterwards)
 	EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product] @businessid = @dim_business_id_footwear_vans
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_priority_list] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-
-	-- Step 03 - Validate source data (need to check the Vans Footwear Validation Report afterwards)
 	EXEC [dbo].[proc_pdas_footwear_vans_validate_priority_list] @mc_user_name = NULL
 	EXEC [dbo].[proc_pdas_footwear_vans_validate_capacity_by_week] @mc_user_name = NULL
 	EXEC [dbo].[proc_pdas_footwear_vans_validate_forecast] @mc_user_name = NULL
@@ -86,5 +84,8 @@ BEGIN
 	-- Step 05 - Run decision tree allocation algorithm and adjust EMEA NTB based on Cutoff days
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 	EXEC [dbo].[proc_pdas_footwear_vans_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
+	-- Prepare report tables for Excel frontend
+	EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 END

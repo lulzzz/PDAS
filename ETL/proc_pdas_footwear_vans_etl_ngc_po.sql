@@ -82,14 +82,14 @@ BEGIN
         Prbunhea.done AS [is_po_completed],
         Shipmast.shipname AS [dc_name]
     FROM
-        [ITGC2W000187].[ESPSODV14RPT].[dbo].Prbunhea
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Nbbundet WITH (nolock)
+        [ITGC2W000187].[ESPSODV14RPT].[dbo].[Prbunhea_view] AS Prbunhea
+        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[Nbbundet_view] AS Nbbundet WITH (nolock)
             ON (Prbunhea.Id_Cut=Nbbundet.Id_Cut)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shshipto WITH (nolock)
+        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[Shshipto] AS Shshipto WITH (nolock)
             ON (Prbunhea.Rdacode=Shshipto.Factory)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].shshipto as Shshipto_2 WITH (nolock)
+        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[shshipto] AS Shshipto_2 WITH (nolock)
             ON (Prbunhea.Rfactory=Shshipto_2.Factory)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipped WITH (nolock)
+        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[Shipped_view] AS Shipped WITH (nolock)
             ON
             (
                 Prbunhea.Season=Shipped.Season AND
@@ -99,7 +99,7 @@ BEGIN
                 Nbbundet.Size=Shipped.Size AND
                 Nbbundet.Dimension=Shipped.Dimension
             )
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipment WITH (nolock)
+        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].[Shipment_view] AS Shipment WITH (nolock)
             ON (Shipped.Shipment=Shipment.Shipment)
         LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipmast WITH (nolock)
             ON (Shipmast.shipno=Prbunhea.Store_No)
@@ -108,7 +108,7 @@ BEGIN
 
     WHERE
         -- Prbunhea.ModifiedOn >= '2017-01-01'
-		Shipped.Actual_CRD >= '2016-01-01'
+		Shipped.Actual_CRD >= '2014-01-01'
 		AND Prbunhea.Misc21 IN ('CONDOR', 'JBA-VF', 'JBA-VS', 'REVA', 'S65')
 		AND Prbunhea.Misc6 IN ('OCN', 'OIN', 'OSA', 'VF ASIA', 'VF INDIA', 'VF Thailand', 'VFA', 'VFA Bangladesh', 'VFA Guangzhou', 'VFA HongKong', 'VFA India', 'VFA Indonesia', 'VFA Qingdao', 'VFA Shanghai', 'VFA Vietnam', 'VFA Zhuhai', 'VFI')
 		AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
@@ -116,36 +116,6 @@ BEGIN
 		AND NOT (Prbunhea.Qtyship=0 AND Prbunhea.Done=1)
 		AND Prbunhea.POLocation NOT IN('CANCELED')
 		AND NOT (Nbbundet.qty=0)
-
-    GROUP BY
-        Prbunhea.rdacode,
-        Prbunhea.rfactory,
-        Prbunhea.lot,
-        Prbunhea.misc1,
-        Nbbundet.size,
-        Nbbundet.color,
-        Nbbundet.dimension,
-        Prbunhea.plan_date,
-        Prbunhea.misc6,
-        Prbunhea.style,
-        Shshipto.ship_to_1,
-        Shshipto_2.ship_to_1,
-        Prbunhea.ship_no,
-        Prbunhea.misc25,
-        Prbunhea.misc41,
-        Prbunhea.store_no,
-        Prbunhea.origdd,
-        Prbunhea.revdd,
-        Prbunhea.misc18,
-        Prbunhea.misc21,
-        Prbunhea.done,
-        Shipped.shipment,
-        Shipped.shipdate,
-        Shipment.closed,
-        Shipment.misc2,
-        Shipment.firstclosedon,
-        Shipmast.shipname,
-        Prscale.desce
 
 
 END

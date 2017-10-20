@@ -113,8 +113,7 @@ BEGIN
 							ELSE 'HO'
 						  END
 
-		-- The loop is iterated once for each day
-
+	-- The loop is iterated once for each day
 	WHILE @CurrentDate <= @FiscalCalendarEnd
 		BEGIN
 
@@ -270,15 +269,33 @@ BEGIN
 																	ELSE @CountMissingDays + 1
 																 END
 														END
-			/*
-				  Fill the season variable
-			  */
-				  IF @WorkPeriodSeed IN (9, 10, 11, 12, 1)
-				  	SELECT @WorkSeasonSeedBuy = 'SP'
-				  IF @WorkPeriodSeed IN (2, 3, 4, 5)
-				  	SELECT @WorkSeasonSeedBuy = 'FA'
-				  IF @WorkPeriodSeed IN (6, 7, 8)
-		   		   SELECT @WorkSeasonSeedBuy = 'HO'
+				/*
+			  	Fill the season variable
+			  	*/
+				-- Buy season
+				IF @WorkPeriodSeed IN (9, 10, 11, 12, 1)
+				SELECT @WorkSeasonSeedBuy = 'SP'
+				IF @WorkPeriodSeed IN (2, 3, 4, 5)
+				SELECT @WorkSeasonSeedBuy = 'FA'
+				IF @WorkPeriodSeed IN (6, 7, 8)
+		   		SELECT @WorkSeasonSeedBuy = 'HO'
+
+				-- CRD season
+				IF @WorkPeriodSeed IN (11, 12, 1, 2, 3)
+				SELECT @WorkSeasonSeedCRD = 'SP'
+				IF @WorkPeriodSeed IN (4, 5, 6, 7)
+				SELECT @WorkSeasonSeedCRD = 'FA'
+				IF @WorkPeriodSeed IN (8, 9, 10)
+		   		SELECT @WorkSeasonSeedCRD = 'HO'
+
+				-- Intro season
+				IF @WorkPeriodSeed IN (1, 2, 3, 4, 5)
+				SELECT @WorkSeasonSeedIntro = 'SP'
+				IF @WorkPeriodSeed IN (6, 7 ,8, 9)
+				SELECT @WorkSeasonSeedIntro = 'FA'
+				IF @WorkPeriodSeed IN (10, 11, 12)
+		   		SELECT @WorkSeasonSeedIntro = 'HO'
+
 			END
 	END
 			-- TO BE USED FOR DEBUG
