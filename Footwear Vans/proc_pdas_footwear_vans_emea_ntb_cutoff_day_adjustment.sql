@@ -16,24 +16,35 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_emea_ntb_cutoff_day_adjustment]
 AS
 BEGIN
 
+	-- Declare variables
+	DECLARE @dim_demand_category_id_ntb int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Need to Buy')
 
     -- Update the date based on cutoff day table (default day is Monday)
-	CASE
-		WHEN dc.[sold_to_party] = 'EU DC' AND dd_xfd.[id] IS NOT NULL THEN dd_xfd.[id]
-		ELSE '2017-09-27'
-	END as dim_date_id,
 	UPDATE target
-        target.[dim_date_id] = dd.[id]
+        target.[dim_date_id] =
+			CASE target.[sold_to_party]
+				WHEN 'EU DC' THEN dd_xfd.[id]
+				ELSE
+			END
 	FROM
     	(
             SELECT *
-            FROM [dbo].[fact_demand_total]
-            WHERE dim_pdas_id = @pdasid and dim_business_id = @businessid
+            FROM
+				[dbo].[fact_demand_total] f
+				INNER JOIN
+				(
+					SELECT
+						[id]
+					FROM
+						[dbo].[dim_customer] dc
+					WHERE [sold_to_party] IN ('EU DC', 'EU Crossdock')
+				) as dc
+					ON f.[dim_customer_id] = dc.[id]
+            WHERE
+				[dim_pdas_id] = @pdasid and
+				[dim_business_id] = @businessid and
+				[dim_demand_category_id] = @dim_demand_category_id_ntb
         ) target
-        INNER JOIN
-		[dbo].[staging_pdas_footwear_vans_emea_ntb_bulk] ntb
-		INNER JOIN (SELECT [id], [name], [sold_to_party] FROM [dbo].[dim_customer] WHERE is_placeholder = 0) dc
-			ON ntb.dim_customer_name = dc.name
 		INNER JOIN
 		(
 			SELECT [id], [short_name], [port], cut.[Cutoff Weekday] as [cutoff_day], cut.[Season Year] as [cutoff_season]
@@ -44,7 +55,6 @@ BEGIN
 			WHERE is_placeholder = 0
 		) df
 			ON ntb.vfa_allocation = df.short_name
-		LEFT OUTER JOIN [dbo].[dim_date] dd_buy ON ntb.buy_dt = dd_buy.full_date
 		LEFT OUTER JOIN -- Cutoff join
 		(
 			SELECT

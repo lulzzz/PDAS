@@ -82,20 +82,20 @@ BEGIN
 		END
 		,f.[consumed_quantity] = ABS(t.[quantity] - f.[quantity_unconsumed])
 	FROM
-	(
-		SELECT *
-		FROM [dbo].[fact_demand_total]
-		WHERE
-			[dim_pdas_id] = @pdasid and
-			[dim_business_id] = @businessid and
-			[dim_demand_category_id] = @dim_demand_category_id_ntb
-	) AS f
-	INNER JOIN #temp_order_ngc t
-	ON
-		f.[dim_product_id] = t.[dim_product_id] and
-		f.[dim_date_id] = t.[dim_date_id] and
-		f.[dim_customer_id] = t.[dim_customer_id] and
-		f.[order_number] = t.[order_number]
+		(
+			SELECT *
+			FROM [dbo].[fact_demand_total]
+			WHERE
+				[dim_pdas_id] = @pdasid and
+				[dim_business_id] = @businessid and
+				[dim_demand_category_id] = @dim_demand_category_id_ntb
+		) AS f
+		INNER JOIN #temp_order_ngc t
+		ON
+			f.[dim_product_id] = t.[dim_product_id] and
+			f.[dim_date_id] = t.[dim_date_id] and
+			f.[dim_customer_id] = t.[dim_customer_id] and
+			f.[order_number] = t.[order_number]
 
 
 	-- Message to be displayed in the Console

@@ -87,7 +87,7 @@ BEGIN
 	-- Run decision tree allocation algorithm
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-	-- Adjust EMEA NTB based on Cutoff days
+	-- Adjust EMEA NTB based on cutoff days
 	EXEC [dbo].[proc_pdas_footwear_vans_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- Prepare report tables for Excel frontend
