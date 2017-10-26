@@ -25,7 +25,7 @@ BEGIN
         ,[dim_customer_id] INT
         ,[dim_construction_type_id] INT
         ,[dim_date_id] INT
-        ,[capacity_daily] INT
+        ,[capacity_raw_daily] INT
         ,[capacity_weekly]	INT
         ,[available_capacity_weekly] INT
         ,[percentage_region] INT
@@ -86,7 +86,7 @@ BEGIN
         ,[dim_customer_id]
         ,[dim_construction_type_id]
         ,[dim_date_id]
-        ,[capacity_daily]
+        ,[capacity_raw_daily]
         ,[capacity_weekly]
         ,[available_capacity_weekly]
         ,[percentage_region]
@@ -105,7 +105,7 @@ BEGIN
             ELSE mapping_cons.id
         END as dim_construction_type_id,
         dd.[id] as dim_date_id,
-        sum(ISNULL(cap.[quantity], 0)) * max(ISNULL(cap_region.[percentage], 1)) * max(ISNULL(cap_adj.[Percentage], 1)) as capacity_daily,
+        sum(ISNULL(cap.[quantity], 0)) * max(ISNULL(cap_region.[percentage], 1)) * max(ISNULL(cap_adj.[Percentage], 1)) as capacity_raw_daily,
         0 AS [capacity_weekly],
         0 AS [available_capacity_weekly],
         max(ISNULL(cap_region.[percentage], 1)) AS [percentage_region],
@@ -170,7 +170,7 @@ BEGIN
                 ,[dim_customer_id]
                 ,[dim_construction_type_id]
                 ,dd2.[id] as [dim_date_id]
-                ,sum([capacity_daily]) as [available_capacity_weekly]
+                ,sum([capacity_raw_daily]) as [available_capacity_weekly]
             FROM
                 [dbo].[fact_factory_capacity] cap
                 INNER JOIN
@@ -411,7 +411,7 @@ BEGIN
         ,[dim_customer_id]
         ,[dim_construction_type_id]
         ,[dim_date_id]
-        ,[capacity_daily]
+        ,[capacity_raw_daily]
         ,[capacity_weekly]
         ,[available_capacity_weekly]
         ,[percentage_region]
@@ -424,7 +424,7 @@ BEGIN
         temp.[dim_customer_id],
         temp.[dim_construction_type_id],
         temp.[dim_date_id],
-        0 as [capacity_daily],
+        0 as [capacity_raw_daily],
         temp.[capacity_weekly],
         0 as [available_capacity_weekly],
         temp.[percentage_region],
@@ -441,7 +441,7 @@ BEGIN
         ,[dim_customer_id]
         ,[dim_construction_type_id]
         ,[dim_date_id]
-        ,[capacity_daily]
+        ,[capacity_raw_daily]
         ,[capacity_weekly]
         ,[available_capacity_weekly]
         ,[percentage_region]

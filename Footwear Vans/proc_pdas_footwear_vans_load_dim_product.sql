@@ -138,9 +138,160 @@ BEGIN
     WHERE
         dp.[id] IS NULL
 
-      /*
-          UPDATE
-      */
+    -- Priority list data (at MTL level)
+    UNION
+    SELECT
+        @businessid,
+        CONVERT(NVARCHAR(45), prio.[dim_product_material_id])  as material_id,
+        CONVERT(NVARCHAR(45), prio.[dim_product_material_id]) as size,
+        CONVERT(NVARCHAR(45), prio.[dim_product_material_id]) as style_id, -- Not in priority list
+        CONVERT(NVARCHAR(100), prio.[dim_product_color_description]) as color_description,
+        CONVERT(NVARCHAR(100), prio.[dim_product_style_name]) as style_name,
+        CONVERT(NVARCHAR(100), prio.[dim_product_material_description]) as material_description,
+        CONVERT(NVARCHAR(45), prio.[sub_catprod_type]) as type,
+        CONVERT(NVARCHAR(45), prio.[dim_product_gender]) as gender,
+        CONVERT(NVARCHAR(45), prio.[dim_product_lifecycle]) as lifecycle, -- Update in next step
+        CONVERT(NVARCHAR(45), prio.[dim_product_style_complexity]) as style_complexity, -- Update in next step
+        1 as dim_construction_type_id, -- Update in next step
+        1 as is_placeholder,
+        'material_id' as placeholder_level
+    FROM
+        [dbo].[staging_pdas_footwear_vans_priority_list] prio
+        LEFT OUTER JOIN (SELECT DISTINCT [material_id] FROM [dbo].[dim_product]) dp
+            ON  prio.[dim_product_material_id] = dp.[material_id]
+    WHERE
+        dp.[material_id] IS NULL
+
+    /*
+    Insert missing sizes from NTB files (assuming data from regions correct) and get MTL attributes from priority list
+    */
+    -- APAC
+    UNION
+    SELECT
+        @businessid,
+        dp_m.[material_id] as material_id,
+        staging.[dim_product_size] as size,
+        dp_m.[style_id] as style_id, -- Not in priority list
+        dp_m.[color_description] as color_description,
+        dp_m.[style_name] as style_name,
+        dp_m.[material_description] as material_description,
+        dp_m.[type] as type,
+        dp_m.[gender] as gender,
+        dp_m.[lifecycle] as lifecycle, -- Update in next step
+        dp_m.[style_complexity] as style_complexity, -- Update in next step
+        1 as dim_construction_type_id, -- Update in next step
+        0 as is_placeholder,
+        NULL as placeholder_level
+    FROM
+        (SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
+        INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
+            ON  staging.[dim_product_material_id] = dp_m.[material_id]
+        LEFT OUTER JOIN
+        (
+            SELECT [id], [material_id], [size]
+            FROM [dbo].[dim_product]
+        ) dp_s
+            ON  staging.[dim_product_material_id] = dp_s.[material_id]
+                AND staging.[dim_product_size] = dp_s.[size]
+    WHERE
+        dp_s.[id] IS NULL
+
+    -- NORA
+    UNION
+    SELECT
+        @businessid,
+        dp_m.[material_id] as material_id,
+        staging.[dim_product_size] as size,
+        dp_m.[style_id] as style_id, -- Not in priority list
+        dp_m.[color_description] as color_description,
+        dp_m.[style_name] as style_name,
+        dp_m.[material_description] as material_description,
+        dp_m.[type] as type,
+        dp_m.[gender] as gender,
+        dp_m.[lifecycle] as lifecycle, -- Update in next step
+        dp_m.[style_complexity] as style_complexity, -- Update in next step
+        1 as dim_construction_type_id, -- Update in next step
+        0 as is_placeholder,
+        NULL as placeholder_level
+    FROM
+        (SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
+        INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
+            ON  staging.[dim_product_material_id] = dp_m.[material_id]
+        LEFT OUTER JOIN
+        (
+            SELECT [id], [material_id], [size]
+            FROM [dbo].[dim_product]
+        ) dp_s
+            ON  staging.[dim_product_material_id] = dp_s.[material_id]
+                AND staging.[dim_product_size] = dp_s.[size]
+    WHERE
+        dp_s.[id] IS NULL
+
+    -- CASA
+    UNION
+    SELECT
+        @businessid,
+        dp_m.[material_id] as material_id,
+        staging.[dim_product_size] as size,
+        dp_m.[style_id] as style_id, -- Not in priority list
+        dp_m.[color_description] as color_description,
+        dp_m.[style_name] as style_name,
+        dp_m.[material_description] as material_description,
+        dp_m.[type] as type,
+        dp_m.[gender] as gender,
+        dp_m.[lifecycle] as lifecycle, -- Update in next step
+        dp_m.[style_complexity] as style_complexity, -- Update in next step
+        1 as dim_construction_type_id, -- Update in next step
+        0 as is_placeholder,
+        NULL as placeholder_level
+    FROM
+        (SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
+        INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
+            ON  staging.[dim_product_material_id] = dp_m.[material_id]
+        LEFT OUTER JOIN
+        (
+            SELECT [id], [material_id], [size]
+            FROM [dbo].[dim_product]
+        ) dp_s
+            ON  staging.[dim_product_material_id] = dp_s.[material_id]
+                AND staging.[dim_product_size] = dp_s.[size]
+    WHERE
+        dp_s.[id] IS NULL
+
+    -- EMEA
+    UNION
+    SELECT
+        @businessid,
+        dp_m.[material_id] as material_id,
+        staging.[dim_product_size] as size,
+        dp_m.[style_id] as style_id, -- Not in priority list
+        dp_m.[color_description] as color_description,
+        dp_m.[style_name] as style_name,
+        dp_m.[material_description] as material_description,
+        dp_m.[type] as type,
+        dp_m.[gender] as gender,
+        dp_m.[lifecycle] as lifecycle, -- Update in next step
+        dp_m.[style_complexity] as style_complexity, -- Update in next step
+        1 as dim_construction_type_id, -- Update in next step
+        0 as is_placeholder,
+        NULL as placeholder_level
+    FROM
+        (SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
+        INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
+            ON  staging.[dim_product_material_id] = dp_m.[material_id]
+        LEFT OUTER JOIN
+        (
+            SELECT [id], [material_id], [size]
+            FROM [dbo].[dim_product]
+        ) dp_s
+            ON  staging.[dim_product_material_id] = dp_s.[material_id]
+                AND staging.[dim_product_size] = dp_s.[size]
+    WHERE
+        dp_s.[id] IS NULL
+
+    /*
+      UPDATE
+    */
 
     UPDATE dp
     SET
@@ -166,14 +317,15 @@ BEGIN
     */
     UPDATE dp
     SET
-        dp.style_name = prio.dim_product_style_name,
         dp.lifecycle = prio.dim_product_lifecycle,
         dp.dim_construction_type_id = cons.id,
-        dp.style_complexity = prio.dim_product_style_complexity
+        dp.style_complexity = prio.dim_product_style_complexity,
+        dp.color_description = CONVERT(NVARCHAR(100), prio.[dim_product_color_description]),
+        dp.style_name = CONVERT(NVARCHAR(100), prio.[dim_product_style_name]),
+        dp.material_description = CONVERT(NVARCHAR(100), prio.[dim_product_material_description])
     FROM [dbo].[dim_product] dp
     INNER JOIN [dbo].[staging_pdas_footwear_vans_priority_list] prio ON dp.material_id = prio.dim_product_material_id
     INNER JOIN [dbo].[dim_construction_type] cons ON prio.dim_construction_type_name = cons.name
-    WHERE is_placeholder = 0
     ;
 
 
@@ -324,14 +476,13 @@ BEGIN
         1 as dim_construction_type_id,
         1 as is_placeholder,
         'gender' as placeholder_level
-      FROM
-		[dbo].[dim_product] dp
-		LEFT OUTER JOIN (SELECT DISTINCT gender, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'gender') pla
-			ON dp.gender = pla.gender
-      WHERE
-		ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
-		and dp.gender IS NOT NULL
-      ;
+    FROM
+        [dbo].[dim_product] dp
+        LEFT OUTER JOIN (SELECT DISTINCT gender, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'gender') pla
+        ON dp.gender = pla.gender
+    WHERE
+        ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
+        and dp.gender IS NOT NULL
 
 
 END
