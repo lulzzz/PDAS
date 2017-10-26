@@ -101,7 +101,12 @@ BEGIN
 		SUM(ntb.lum_qty) as lum_quantity,
 		SUM(ntb.sap_qty) as quantity
 	FROM
-		[dbo].[staging_pdas_footwear_vans_emea_ntb_bulk] ntb
+		(
+			SELECT
+				*
+				,CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id_corrected]
+			FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]
+		) AS ntb
 		INNER JOIN (SELECT [id], [name], [sold_to_party] FROM [dbo].[dim_customer] WHERE is_placeholder = 0) dc
 			ON ntb.dim_customer_name = dc.name
 		LEFT OUTER JOIN
@@ -123,9 +128,9 @@ BEGIN
 				[is_placeholder] = 1 AND
 				[placeholder_level] = 'material_id'
 		) AS dp_m
-			ON ntb.dim_product_style_id = dp_m.material_id
+			ON ntb.[dim_product_material_id_corrected] = dp_m.material_id
 		LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
-			ON 	ntb.dim_product_material_id = dp_ms.material_id AND
+			ON 	ntb.[dim_product_material_id_corrected] = dp_ms.material_id AND
 				ntb.dim_product_size = dp_ms.size
 		LEFT OUTER JOIN [dbo].[dim_date] dd_buy ON ntb.buy_dt = dd_buy.full_date
 	WHERE
@@ -179,7 +184,12 @@ BEGIN
         SUM(ntb.lum_qty) as lum_quantity,
         SUM(ntb.sap_qty) as quantity
     FROM
-		[dbo].[staging_pdas_footwear_vans_apac_ntb_bulk] ntb
+		(
+			SELECT
+				*
+				,CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id_corrected]
+			FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]
+		) AS ntb
 	    INNER JOIN [dbo].[dim_date] dd_xfac ON ntb.xfac_dt = dd_xfac.full_date
 		INNER JOIN [dbo].[dim_customer] dc ON ntb.dim_customer_name = dc.name
 		LEFT OUTER JOIN
@@ -190,9 +200,9 @@ BEGIN
 				[is_placeholder] = 1 AND
 				[placeholder_level] = 'material_id'
 		) AS dp_m
-		 	ON ntb.dim_product_material_id = dp_m.material_id
+		 	ON ntb.[dim_product_material_id_corrected] = dp_m.material_id
 		LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
-			ON 	ntb.dim_product_material_id = dp_ms.material_id AND
+			ON 	ntb.[dim_product_material_id_corrected] = dp_ms.material_id AND
 				ntb.dim_product_size = dp_ms.size
 	 	LEFT OUTER JOIN [dbo].[dim_factory] df ON ntb.dim_factory_reva_vendor = df.short_name
 		LEFT OUTER JOIN
@@ -256,7 +266,12 @@ BEGIN
         SUM(ntb.lum_qty) as lum_quantity,
         SUM(ntb.sap_qty) as quantity
 	FROM
-		[dbo].[staging_pdas_footwear_vans_casa_ntb_bulk] ntb
+		(
+			SELECT
+				*
+				,CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id_corrected]
+			FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]
+		) AS ntb
 		LEFT OUTER JOIN
 		(
 			SELECT [id], [material_id]
@@ -265,11 +280,17 @@ BEGIN
 				[is_placeholder] = 1 AND
 				[placeholder_level] = 'material_id'
 		) AS dp_m
-			ON ntb.dim_product_style_id = dp_m.material_id
+			ON ntb.[dim_product_material_id_corrected] = dp_m.material_id
 		LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
-			ON 	ntb.dim_product_material_id = dp_ms.material_id AND
+			ON 	ntb.[dim_product_material_id_corrected] = dp_ms.material_id AND
 				ntb.dim_product_size = dp_ms.size
-		LEFT OUTER JOIN [dbo].[dim_customer] dc ON ntb.dim_customer_name = dc.name
+		LEFT OUTER JOIN
+		(
+			SELECT MAX([id]) AS [id], [dc_plt]
+			FROM [dbo].[dim_customer]
+			GROUP BY [dc_plt]
+		) AS dc
+			ON ntb.[dim_customer_dc_sr_code] = dc.[dc_plt]
 	    INNER JOIN [dbo].[dim_date] dd_xfac ON ntb.xfac_dt = dd_xfac.full_date
 	WHERE
 		ntb.lum_qty IS NOT NULL AND
@@ -322,7 +343,12 @@ BEGIN
         SUM(ntb.lum_qty) as lum_quantity,
         SUM(ntb.quantity) as quantity
 	FROM
-		[dbo].[staging_pdas_footwear_vans_nora_ntb_bulk] ntb
+		(
+			SELECT
+				*
+				,CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id_corrected]
+			FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]
+		) AS ntb
 		LEFT OUTER JOIN
 		(
 			SELECT [id], [material_id]
@@ -331,9 +357,9 @@ BEGIN
 				[is_placeholder] = 1 AND
 				[placeholder_level] = 'material_id'
 		) AS dp_m
-			ON ntb.dim_product_style_id = dp_m.material_id
+			ON ntb.[dim_product_material_id_corrected] = dp_m.material_id
 		LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
-			ON 	ntb.dim_product_material_id = dp_ms.material_id AND
+			ON 	ntb.[dim_product_material_id_corrected] = dp_ms.material_id AND
 				ntb.dim_product_size = dp_ms.size
 		LEFT OUTER JOIN [dbo].[dim_factory] df ON ntb.dim_factory_short_name = df.short_name
 		LEFT OUTER JOIN

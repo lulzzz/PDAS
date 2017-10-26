@@ -24,14 +24,7 @@ BEGIN
 		DECLARE @test nvarchar(500) =
 		(
 			SELECT TOP 1
-                ISNULL(temp.[Country], '') + ' / ' +
-                ISNULL(temp.[Name], '') + ' / ' +
-                ISNULL(temp.[Market], '') + ' / ' +
-                ISNULL(temp.[Sold to Party], '') + ' / ' +
-				ISNULL(temp.[Sold to Category], '') + ' / ' +
-                ISNULL(temp.[Status], '') + ' / ' +
-                ISNULL(temp.[Is Placeholder], '') + ' / ' +
-                ISNULL(temp.[Placeholder Level], '')
+                ISNULL(temp.[Name], '')
 			FROM
 				[dbo].[mc_temp_pdas_footwear_vans_customer] temp
 				LEFT JOIN (SELECT DISTINCT [country], 1 as flag FROM [dbo].[dim_location]) dim_l
@@ -65,6 +58,7 @@ BEGIN
                 [dim_location_id]
                 ,[name]
                 ,[market]
+				,[dc_plt]
                 ,[sold_to_party]
 				,[sold_to_category]
                 ,[is_active]
@@ -75,6 +69,7 @@ BEGIN
 				dim_l.[id] AS [dim_location_id]
                 ,temp.[Name] AS [name]
                 ,temp.[Market] AS [market]
+				,temp.[DC Plt] AS [dc_plt]
                 ,temp.[Sold to Party] AS [sold_to_party]
 				,temp.[Sold to Category] AS [sold_to_category]
                 ,CASE UPPER(temp.[Status])
@@ -101,6 +96,7 @@ BEGIN
 				dim.[dim_location_id] = dim_l.[id]
                 ,dim.[name] = temp.[Name]
                 ,dim.[market] = temp.[Market]
+				,dim.[dc_plt] = temp.[DC Plt]
                 ,dim.[sold_to_party] = temp.[Sold to Party]
 				,dim.[sold_to_category] = temp.[Sold to Category]
                 ,dim.[is_active] = CASE UPPER(temp.[Status])

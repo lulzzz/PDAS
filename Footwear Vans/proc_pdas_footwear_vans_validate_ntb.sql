@@ -64,7 +64,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') + '/' + ISNULL([dim_product_size], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
+		(SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -73,6 +73,25 @@ BEGIN
         ) dim
 			ON  staging.[dim_product_material_id] = dim.[material_id]
                 AND staging.[dim_product_size] = dim.[size]
+	WHERE
+		dim.[material_id] IS NULL
+
+	-- Check material_id from [fact_priority_list]
+    SET @type = 'Material ID not in priority list';
+	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
+	FROM
+		(SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
+        LEFT OUTER JOIN
+        (
+            SELECT DISTINCT
+                dp.[material_id]
+			FROM
+				[dbo].[fact_priority_list] f
+				INNER JOIN [dbo].[dim_product] dp
+					ON f.dim_product_id = dp.id
+        ) dim
+			ON  staging.[dim_product_material_id] = dim.[material_id]
 	WHERE
 		dim.[material_id] IS NULL
 
@@ -137,7 +156,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') + '/' + ISNULL([dim_product_size], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
+		(SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -146,6 +165,25 @@ BEGIN
         ) dim
 			ON  staging.[dim_product_material_id] = dim.[material_id]
                 AND staging.[dim_product_size] = dim.[size]
+	WHERE
+		dim.[material_id] IS NULL
+
+	-- Check material_id from [fact_priority_list]
+    SET @type = 'Material ID not in priority list';
+	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
+	FROM
+		(SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
+        LEFT OUTER JOIN
+        (
+            SELECT DISTINCT
+                dp.[material_id]
+			FROM
+				[dbo].[fact_priority_list] f
+				INNER JOIN [dbo].[dim_product] dp
+					ON f.dim_product_id = dp.id
+        ) dim
+			ON  staging.[dim_product_material_id] = dim.[material_id]
 	WHERE
 		dim.[material_id] IS NULL
 
@@ -210,7 +248,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') + '/' + ISNULL([dim_product_size], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
+		(SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -219,6 +257,25 @@ BEGIN
         ) dim
 			ON  staging.[dim_product_material_id] = dim.[material_id]
                 AND staging.[dim_product_size] = dim.[size]
+	WHERE
+		dim.[material_id] IS NULL
+
+	-- Check material_id from [fact_priority_list]
+    SET @type = 'Material ID not in priority list';
+	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
+	FROM
+		(SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
+        LEFT OUTER JOIN
+        (
+            SELECT DISTINCT
+                dp.[material_id]
+			FROM
+				[dbo].[fact_priority_list] f
+				INNER JOIN [dbo].[dim_product] dp
+					ON f.dim_product_id = dp.id
+        ) dim
+			ON  staging.[dim_product_material_id] = dim.[material_id]
 	WHERE
 		dim.[material_id] IS NULL
 
@@ -283,7 +340,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') + '/' + ISNULL([dim_product_size], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
+		(SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -292,6 +349,25 @@ BEGIN
         ) dim
 			ON  staging.[dim_product_material_id] = dim.[material_id]
                 AND staging.[dim_product_size] = dim.[size]
+	WHERE
+		dim.[material_id] IS NULL
+
+	-- Check material_id from [fact_priority_list]
+    SET @type = 'Material ID not in priority list';
+	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
+	FROM
+		(SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
+        LEFT OUTER JOIN
+        (
+            SELECT DISTINCT
+                dp.[material_id]
+			FROM
+				[dbo].[fact_priority_list] f
+				INNER JOIN [dbo].[dim_product] dp
+					ON f.dim_product_id = dp.id
+        ) dim
+			ON  staging.[dim_product_material_id] = dim.[material_id]
 	WHERE
 		dim.[material_id] IS NULL
 

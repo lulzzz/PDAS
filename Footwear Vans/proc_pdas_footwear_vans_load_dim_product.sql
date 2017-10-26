@@ -183,7 +183,7 @@ BEGIN
         0 as is_placeholder,
         NULL as placeholder_level
     FROM
-        (SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
+        (SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
         INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
             ON  staging.[dim_product_material_id] = dp_m.[material_id]
         LEFT OUTER JOIN
@@ -214,7 +214,7 @@ BEGIN
         0 as is_placeholder,
         NULL as placeholder_level
     FROM
-        (SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
+        (SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
         INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
             ON  staging.[dim_product_material_id] = dp_m.[material_id]
         LEFT OUTER JOIN
@@ -245,7 +245,7 @@ BEGIN
         0 as is_placeholder,
         NULL as placeholder_level
     FROM
-        (SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
+        (SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
         INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
             ON  staging.[dim_product_material_id] = dp_m.[material_id]
         LEFT OUTER JOIN
@@ -276,7 +276,7 @@ BEGIN
         0 as is_placeholder,
         NULL as placeholder_level
     FROM
-        (SELECT DISTINCT [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
+        (SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
         INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
             ON  staging.[dim_product_material_id] = dp_m.[material_id]
         LEFT OUTER JOIN
