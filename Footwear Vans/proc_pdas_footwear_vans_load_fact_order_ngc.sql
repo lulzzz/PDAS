@@ -18,14 +18,13 @@ BEGIN
 	DECLARE @dim_customer_id_placeholder int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [name] = 'PLACEHOLDER' AND [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
     DECLARE	@dim_demand_category_id_open_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Open Order')
 	DECLARE	@dim_demand_category_id_shipped_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Shipped Order')
-	DECLARE	@dim_demand_category_id_received_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Received Order')
 	DECLARE	@current_date date = GETDATE()
 
 	-- Check if the session has already been loaded
 	DELETE FROM [dbo].[fact_order]
     WHERE
         dim_pdas_id = @pdasid
-        AND dim_demand_category_id IN (@dim_demand_category_id_open_order, @dim_demand_category_id_shipped_order, @dim_demand_category_id_received_order)
+        AND dim_demand_category_id IN (@dim_demand_category_id_open_order, @dim_demand_category_id_open_order, @dim_demand_category_id_shipped_order)
         AND dim_buying_program_id = @buying_program_id
 
 	-- Insert from staging
@@ -79,8 +78,8 @@ BEGIN
 		END as dim_product_id,
         CASE
 		 	WHEN shipped_qty IS NULL THEN @dim_demand_category_id_open_order
-			WHEN revised_crd_dt < @current_date THEN @dim_demand_category_id_received_order
-			ELSE @dim_demand_category_id_shipped_order
+			WHEN revised_crd_dt < @current_date THEN @dim_demand_category_id_shipped_order
+			ELSE @dim_demand_category_id_open_order
 		END as dim_demand_category_id,
         MAX(dd_po_issue.id) as placed_date_id,
         MAX(dd_revised_crd.id) as customer_requested_xf_date_id,
@@ -168,8 +167,8 @@ BEGIN
 		END,
 		CASE
 			WHEN shipped_qty IS NULL THEN @dim_demand_category_id_open_order
-			WHEN revised_crd_dt < @current_date THEN @dim_demand_category_id_received_order
-			ELSE @dim_demand_category_id_shipped_order
+			WHEN revised_crd_dt < @current_date THEN @dim_demand_category_id_shipped_order
+			ELSE @dim_demand_category_id_open_order
 		END
 
 END
