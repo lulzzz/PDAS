@@ -57,6 +57,11 @@ BEGIN
 		WHERE [MTL] = @dim_product_material_id_02
 	)
 
+	IF @dim_factory_name_priority_list_primary_02 IS NULL
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + 'Product ID not in priority list'
+	END
+	
 	/* Sub decision tree logic */
 
 	-- SJD MTL and customer is Zumiez or Kohls or Journeys?
@@ -64,20 +69,29 @@ BEGIN
 	AND (@dim_customer_name_02 LIKE '%ZUMIEZ%' OR @dim_customer_name_02 LIKE '%KOHLS%' OR @dim_customer_name_02 LIKE '%JOURNEYS%')
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' MTL'
+		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' MTL'
 	END
 
 	-- RQT MTL?
 	ELSE IF @dim_product_material_id_02 IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-		SET @allocation_logic = @allocation_logic +'\n' + 'RQT MTL'
+		-- Vendor = DTC or SJV?
+		IF @dim_factory_name_priority_list_primary_02 in ('DTC', 'SJV')
+		BEGIN
+			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' MTL'
+		END
+		ELSE
+		BEGIN
+			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+			SET @allocation_logic = @allocation_logic +' => ' + 'RQT MTL'
+		END
 	END
 
 	ELSE
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' not RQT MTL'
+		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' not RQT MTL'
 	END
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]

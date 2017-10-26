@@ -101,59 +101,64 @@ BEGIN
 				ON fpl.[dim_factory_id_2] = df.[id]
 	)
 
+	IF @dim_factory_name_priority_list_primary_02 IS NULL
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + 'Product ID not in priority list'
+	END
+
 	/* Sub decision tree logic */
 
 	-- Flex?
 	IF @dim_product_style_complexity_02 LIKE '%Flex%' AND @dim_factory_name_priority_list_primary_02 = 'ICC'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
+		SET @allocation_logic = @allocation_logic +' => ' + 'Flex'
 	END
 
 	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%' AND @dim_factory_name_priority_list_primary_02 = 'DTC'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
+		SET @allocation_logic = @allocation_logic +' => ' + 'Flex'
 	END
 
 	ELSE IF @dim_product_style_complexity_02 LIKE '%Flex%' AND @dim_factory_name_priority_list_primary_02 = 'SJV'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
-		SET @allocation_logic = @allocation_logic +'\n' + 'Flex'
+		SET @allocation_logic = @allocation_logic +' => ' + 'Flex'
 	END
 
 	-- RQT MTL?
 	ELSE IF @dim_product_material_id_02 IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-		SET @allocation_logic = @allocation_logic +'\n' + 'RQT MTL'
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
+		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' MTL'
 	END
 
 	-- Single Source?
 	ELSE IF @fact_priority_list_source_count_02 = 1
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + 'Single Source'
+		SET @allocation_logic = @allocation_logic +' => ' + 'Single Source'
 	END
 
 	-- 1st priority = COO China?
 	ELSE IF @dim_location_country_code_a2_02 = 'CN'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO China'
+		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO China'
 	END
 
 	-- 2nd priority = CLK?
 	ELSE IF @dim_factory_name_priority_list_secondary_02 = 'CLK'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_secondary_02 + ' 2nd priority = CLK'
+		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02 + ' 2nd priority = CLK'
 	END
 
 	ELSE
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02 + ' 2nd priority = not CLK'
+		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' 2nd priority = not CLK'
 	END
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]

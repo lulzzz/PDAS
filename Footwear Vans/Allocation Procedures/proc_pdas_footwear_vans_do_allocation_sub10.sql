@@ -43,12 +43,15 @@ BEGIN
 				ON fpl.[dim_factory_id_1] = df.[id]
 	)
 
-	/* Sub decision tree logic */
-	PRINT @dim_factory_name_priority_list_primary_02
-	SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-	SET @allocation_logic = @allocation_logic +'\n' + @dim_factory_name_priority_list_primary_02
+	IF @dim_factory_name_priority_list_primary_02 IS NULL
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + 'Product ID not in priority list'
+	END
 
-	PRINT @allocation_logic
+	/* Sub decision tree logic */
+
+	SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+	SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
 		@pdasid = @pdasid,
