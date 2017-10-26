@@ -45,7 +45,7 @@ BEGIN
 		DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 
 		-- Step 02 - Transfer product master data and Priority List
-		EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product]
+		EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product] @businessid = @dim_business_id_footwear_vans
 		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_priority_list] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 		-- Step 03 - Validate source data (need to check the Vans Footwear Validation Report afterwards)

@@ -16,6 +16,7 @@ BEGIN
 	-- Placeholder
 	DECLARE @demand_category_id_ntb int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Need to Buy')
 	DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
+	DECLARE @dim_customer_id_placeholder_casa int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'CASA')
 	DECLARE @dim_customer_id_placeholder_nora int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'NORA')
 	DECLARE @dim_customer_id_placeholder_emea int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'EMEA')
 	DECLARE @dim_customer_id_placeholder_apac int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'APAC')
@@ -229,7 +230,10 @@ BEGIN
         ISNULL(pr_code, 'UNDEFINED') as order_number,
         dd_xfac.id as dim_date_id,
         @dim_factory_id_placeholder as dim_factory_id,
-		dc.id as dim_customer_id,
+		CASE
+			WHEN dc.id IS NOT NULL THEN dc.id
+			ELSE @dim_customer_id_placeholder_casa
+		END as dim_customer_id,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
@@ -265,14 +269,18 @@ BEGIN
 		LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
 			ON 	ntb.dim_product_material_id = dp_ms.material_id AND
 				ntb.dim_product_size = dp_ms.size
-		INNER JOIN [dbo].[dim_customer] dc ON ntb.dim_customer_name = dc.name
+		LEFT OUTER JOIN [dbo].[dim_customer] dc ON ntb.dim_customer_name = dc.name
 	    INNER JOIN [dbo].[dim_date] dd_xfac ON ntb.xfac_dt = dd_xfac.full_date
 	WHERE
-		ntb.lum_qty IS NOT NULL
+		ntb.lum_qty IS NOT NULL AND
+		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL)
     GROUP BY
         ISNULL(pr_code, 'UNDEFINED'),
         dd_xfac.id,
-		dc.id,
+		CASE
+			WHEN dc.id IS NOT NULL THEN dc.id
+			ELSE @dim_customer_id_placeholder_casa
+		END,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
@@ -302,7 +310,7 @@ BEGIN
         NULL as original_factory_confirmed_xf_date_id,
         NULL as current_factory_confirmed_xf_date_id,
         MAX(dd_xfac.id) as expected_xf_date_id,
-        MAX(dd_act.id) as actual_xf_date_id,
+        NULL as actual_xf_date_id,
         NULL as delay_reason,
         NULL as initial_confirmed_date_id,
         NULL as current_vendor_requested_xf_date_id,
@@ -337,11 +345,10 @@ BEGIN
 					ON m.parent = df.short_name
 			WHERE type = 'Factory Master'
 		) mapping_f ON ntb.dim_factory_short_name = mapping_f.child
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_req ON ntb.req_dt = dd_req.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_xfac ON ntb.xfac_dt = dd_xfac.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_eta ON ntb.delivered_dt = dd_eta.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_rel ON ntb.sr_sent_dt = dd_rel.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_act ON ntb.actual_buy_acceptance_dt = dd_act.full_date
+	    LEFT OUTER JOIN [dbo].[dim_date] dd_req ON CONVERT(date, ntb.req_dt) = dd_req.full_date
+	    LEFT OUTER JOIN [dbo].[dim_date] dd_xfac ON CONVERT(date, ntb.xfac_dt) = dd_xfac.full_date
+	    LEFT OUTER JOIN [dbo].[dim_date] dd_eta ON CONVERT(date, ntb.delivered_dt) = dd_eta.full_date
+	    LEFT OUTER JOIN [dbo].[dim_date] dd_rel ON CONVERT(date, ntb.sr_sent_dt) = dd_rel.full_date
 	WHERE
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		ntb.lum_qty IS NOT NULL

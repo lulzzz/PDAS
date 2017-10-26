@@ -32,31 +32,7 @@ BEGIN
 	SET @source = 'PDAS_FTW_VANS_PRIORITY_LIST.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
-    -- Check market from dim_customer (and mapping)
-	SET @type = 'Customer not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
-	SELECT DISTINCT @system, @source, @type, ISNULL([customer], '') as [value]
-	FROM
-		(SELECT DISTINCT [customer] FROM [dbo].[staging_pdas_footwear_vans_priority_list]) staging
-        LEFT OUTER JOIN
-        (
-            SELECT DISTINCT
-                [name]
-            FROM [dbo].[dim_customer]
-        ) dim
-			ON staging.[customer] = dim.[name]
-        LEFT OUTER JOIN
-        (
-            SELECT DISTINCT
-                [parent]
-                ,[child]
-            FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Customer Master'
-        ) mapping
-			ON staging.[customer] = mapping.[child]
-	WHERE
-		(dim.[name] IS NULL AND mapping.[parent] IS NULL)
-
+    
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
