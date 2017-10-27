@@ -15,6 +15,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
 	@businessid INT,
 	@dim_buying_program_id INT,
 	@dim_product_id INT,
+	@dim_product_material_id NVARCHAR(45),
+	@dim_product_style_complexity NVARCHAR(45),
 	@dim_date_id INT,
 	@dim_customer_id INT,
 	@dim_demand_category_id INT,
@@ -31,6 +33,7 @@ BEGIN
 		/* Update the dim_factory_id_original (PDAS recommendation) and dim_factory_id (value that user can overwrite in Console) */
 		UPDATE [dbo].[fact_demand_total]
 		SET [dim_factory_id_original] = @dim_factory_id_original,
+			[dim_factory_id_original_constrained] = @dim_factory_id_original,
 			[dim_factory_id] = @dim_factory_id_original,
 			[allocation_logic] = @allocation_logic
 		WHERE

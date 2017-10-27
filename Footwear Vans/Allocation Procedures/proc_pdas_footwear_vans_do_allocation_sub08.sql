@@ -7,10 +7,10 @@ SET QUOTED_IDENTIFIER ON
 GO
 -- =============================================
 -- Author:		ebp Global
--- Create date: 13/10/2017
--- Description:	Allocation sub procedure US DC (1002)
+-- Create date: 26/10/2017
+-- Description:	Allocation sub procedure Brazil DC (C0018)
 -- =============================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub05]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub08]
 	@pdasid INT,
 	@businessid INT,
 	@dim_buying_program_id INT,
@@ -29,7 +29,7 @@ BEGIN
     /* Variable declarations */
 	DECLARE @dim_factory_id_original_02 INT = NULL
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
-	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
+	DECLARE @dim_location_country_code_a2_02 NVARCHAR(2)
 
 	/* Variable assignments */
 
@@ -48,47 +48,63 @@ BEGIN
 				ON fpl.[dim_factory_id_1] = df.[id]
 	)
 
-	SET @helper_retail_qt_rqt_vendor_02 =
+	SET @dim_location_country_code_a2_02 =
 	(
-		SELECT MAX([Factory])
-		FROM [dbo].[helper_pdas_footwear_vans_retail_qt]
-		WHERE [MTL] = @dim_product_material_id
+		SELECT dfl.[dim_location_country_code_a2]
+		FROM
+			(
+				SELECT [dim_factory_id_1]
+				FROM [dbo].[fact_priority_list] f
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+	                	ON f.[dim_product_id] = dp.[id]
+				WHERE [material_id] = @dim_product_material_id
+			) AS fpl
+			INNER JOIN
+			(
+				SELECT df.[id], dl.[country_code_a2] AS [dim_location_country_code_a2]
+				FROM [dbo].[dim_factory] df
+				INNER JOIN [dbo].[dim_location] dl
+					ON df.[dim_location_id] = dl.[id]
+			) dfl
+				ON fpl.[dim_factory_id_1] = dfl.[id]
 	)
 
-	IF @dim_factory_name_priority_list_primary_02 IS NULL
-	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + 'Product ID not in priority list'
-	END
+
 
 	/* Sub decision tree logic */
 
-	-- CLK MTL?
-	IF @dim_factory_name_priority_list_primary_02 = 'SJD'
+	-- BRT MTL?
+	IF @dim_factory_name_priority_list_primary_02 = 'BRT'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
 		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' MTL'
 	END
 
-	-- RQT MTL?
-	ELSE IF @dim_product_material_id IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
+	-- Flex?
+	ELSE IF @dim_product_style_complexity LIKE '%Flex%'
 	BEGIN
-		-- Vendor = DTC or SJV?
-		IF @helper_retail_qt_rqt_vendor_02 in ('DTC', 'SJV')
-		BEGIN
-			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-			SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
-		END
-		ELSE
-		BEGIN
-			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-			SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
-		END
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+		SET @allocation_logic = @allocation_logic +' => ' + 'Flex'
+	END
+
+	-- 1st priority = COO China?
+	ELSE IF @dim_location_country_code_a2_02 = 'CN'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'BRT')
+		SET @allocation_logic = @allocation_logic +' => ' + 'BRT' + ' 1st priority = COO China'
 	END
 
 	ELSE
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + 'not RQT MTL'
+		IF @dim_factory_name_priority_list_primary_02 IS NULL
+		BEGIN
+			SET @allocation_logic = @allocation_logic +' => ' + 'Product ID not in priority list' + ' 1st priority = COO not China'
+		END
+		ELSE
+		BEGIN
+			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO not China'
+		END
 	END
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]

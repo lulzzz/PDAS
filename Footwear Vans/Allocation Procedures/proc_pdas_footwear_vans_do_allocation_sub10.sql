@@ -15,6 +15,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
 	@businessid INT,
 	@dim_buying_program_id INT,
 	@dim_product_id INT,
+	@dim_product_material_id NVARCHAR(45),
+	@dim_product_style_complexity NVARCHAR(45),
 	@dim_date_id INT,
 	@dim_customer_id INT,
 	@dim_demand_category_id INT,
@@ -36,28 +38,35 @@ BEGIN
 		FROM
 			(
 				SELECT [dim_factory_id_1]
-				FROM [dbo].[fact_priority_list]
-				WHERE [dim_product_id] = @dim_product_id
+				FROM [dbo].[fact_priority_list] f
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+	                	ON f.[dim_product_id] = dp.[id]
+				WHERE [material_id] = @dim_product_material_id
 			) fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_1] = df.[id]
 	)
+	
+	/* Sub decision tree logic */
 
-	IF @dim_factory_name_priority_list_primary_02 IS NULL
+	SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+	IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+	END
+	ELSE
 	BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + 'Product ID not in priority list'
 	END
 
-	/* Sub decision tree logic */
-
-	SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-	SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
 		@pdasid = @pdasid,
 		@businessid = @businessid,
 		@dim_buying_program_id = @dim_buying_program_id,
 		@dim_product_id = @dim_product_id,
+		@dim_product_material_id = @dim_product_material_id,
+		@dim_product_style_complexity = @dim_product_style_complexity,
 		@dim_date_id = @dim_date_id,
 		@dim_customer_id = @dim_customer_id,
 		@dim_demand_category_id = @dim_demand_category_id,

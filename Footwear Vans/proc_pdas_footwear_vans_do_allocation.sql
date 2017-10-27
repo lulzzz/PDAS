@@ -37,7 +37,6 @@ BEGIN
 
 		/* Reset allocation */
 
-
 		UPDATE [dbo].[fact_demand_total]
 		SET
 			[dim_factory_id_original] = @dim_factory_id_placeholder,
@@ -45,9 +44,6 @@ BEGIN
 		WHERE
 			[dim_pdas_id] = @pdasid
 			and [dim_business_id] = @businessid
-
-
-
 
 		-- Decision tree variables level 1 (top level decision tree)
 		DECLARE @dim_buying_program_id_01 int
@@ -77,10 +73,8 @@ BEGIN
 		DECLARE @helper_fty_qt_rqt_vendor_01 NVARCHAR(45)
 		/* DECLARE @dim_product_id  */
 
-
 		-- Cursors
 		DECLARE @cursor_01 CURSOR
-
 
 		/* Temporary table setup (for algorithm performance improvement and avoiding deadlocks) */
 
@@ -295,10 +289,7 @@ BEGIN
 			(
 				SELECT [Factory]
 				FROM [dbo].[helper_pdas_footwear_vans_fty_qt]
-				WHERE [MTL] =
-				(
-					SELECT [material_id] FROM [dbo].[dim_product] WHERE [id] = @dim_product_id_01
-				)
+				WHERE [MTL] = @dim_product_material_id_01
 			)
 
 			--PRINT('Sold to category: ' + @dim_customer_sold_to_category_01 + ' - Buying program: ' + @dim_buying_program_name_01 + ' - Region: ' + @dim_customer_country_region_01 + ' - Sold to party: ' + @dim_customer_sold_to_party_01)
@@ -317,6 +308,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -335,6 +328,7 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -351,6 +345,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -362,8 +358,18 @@ BEGIN
 						IF @dim_customer_sold_to_party_01 LIKE 'Brazil%'
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
-
-							print('todo Brasil')
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub08]
+								@pdasid = @pdasid,
+								@businessid = @businessid,
+								@dim_buying_program_id = @dim_buying_program_id_01,
+								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
+								@dim_date_id = @dim_date_id_01,
+								@dim_customer_id = @dim_customer_id_01,
+								@dim_demand_category_id = @dim_demand_category_id_01,
+								@order_number = @order_number_01,
+								@allocation_logic = @allocation_logic
 
 						END
 
@@ -375,6 +381,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -391,6 +399,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -411,6 +421,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -427,6 +439,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -443,6 +457,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -459,6 +475,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -475,6 +493,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -491,6 +511,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -512,6 +534,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -527,6 +551,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -545,6 +571,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -559,6 +587,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -582,6 +612,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -601,6 +633,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -616,6 +650,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -626,7 +662,18 @@ BEGIN
 							IF @dim_customer_sold_to_party_01 LIKE 'Brazil%'
 							BEGIN
 								SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
-								print('todo Brasil') /*TO BE UPDATED*/
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub08]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
 							END
 
 							IF @dim_customer_sold_to_party_01 LIKE 'Chile%'
@@ -637,6 +684,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -652,6 +701,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -671,6 +722,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -686,6 +739,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -701,6 +756,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -716,6 +773,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -731,6 +790,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -746,6 +807,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -765,6 +828,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -788,6 +853,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -806,6 +873,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -821,6 +890,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -831,7 +902,18 @@ BEGIN
 							IF @dim_customer_sold_to_party_01 LIKE 'Brazil%'
 							BEGIN
 								SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
-								print('todo Brasil')
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub08]
+									@pdasid = @pdasid,
+									@businessid = @businessid,
+									@dim_buying_program_id = @dim_buying_program_id_01,
+									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
+									@dim_date_id = @dim_date_id_01,
+									@dim_customer_id = @dim_customer_id_01,
+									@dim_demand_category_id = @dim_demand_category_id_01,
+									@order_number = @order_number_01,
+									@allocation_logic = @allocation_logic
 							END
 
 							IF @dim_customer_sold_to_party_01 LIKE 'Chile%'
@@ -842,6 +924,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -857,6 +941,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -876,6 +962,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -891,6 +979,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -906,6 +996,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -921,6 +1013,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -936,6 +1030,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -951,6 +1047,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -970,6 +1068,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -994,6 +1094,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1012,6 +1114,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1027,6 +1131,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1042,6 +1148,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1057,6 +1165,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1076,6 +1186,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1086,12 +1198,13 @@ BEGIN
 						IF @dim_customer_sold_to_party_01 LIKE 'APAC Direct%'
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
-							PRINT 'helloworld'
 							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
 								@pdasid = @pdasid,
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1112,6 +1225,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1127,6 +1242,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1149,6 +1266,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1167,6 +1286,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1182,6 +1303,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1197,6 +1320,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1216,6 +1341,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1231,6 +1358,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1251,6 +1380,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1275,6 +1406,8 @@ BEGIN
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
+								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1293,6 +1426,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1308,6 +1443,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1323,6 +1460,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1342,6 +1481,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1357,6 +1498,8 @@ BEGIN
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
 									@dim_product_id = @dim_product_id_01,
+									@dim_product_material_id = @dim_product_material_id_01,
+									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1376,6 +1519,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1400,6 +1545,8 @@ BEGIN
 							@businessid = @businessid,
 							@dim_buying_program_id = @dim_buying_program_id_01,
 							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
 							@dim_date_id = @dim_date_id_01,
 							@dim_customer_id = @dim_customer_id_01,
 							@dim_demand_category_id = @dim_demand_category_id_01,
@@ -1407,6 +1554,24 @@ BEGIN
 							@allocation_logic = @allocation_logic
 					END
 				END
+			END
+
+			IF @allocation_logic IS NULL
+			BEGIN
+				SET @allocation_logic = ' => Sold to category: ' + @dim_customer_sold_to_category_01 + ' => Buying program: ' + @dim_buying_program_name_01 + ' => Region: ' + @dim_customer_country_region_01 + ' => Sold to party: ' + @dim_customer_sold_to_party_01
+				EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
+					@pdasid = @pdasid,
+					@businessid = @businessid,
+					@dim_buying_program_id = @dim_buying_program_id_01,
+					@dim_product_id = @dim_product_id_01,
+					@dim_product_material_id = @dim_product_material_id_01,
+					@dim_product_style_complexity = @dim_product_style_complexity_01,
+					@dim_date_id = @dim_date_id_01,
+					@dim_customer_id = @dim_customer_id_01,
+					@dim_demand_category_id = @dim_demand_category_id_01,
+					@order_number = @order_number_01,
+					@allocation_logic = @allocation_logic,
+					@dim_factory_id_original = NULL
 			END
 
 			FETCH NEXT FROM @cursor_01
