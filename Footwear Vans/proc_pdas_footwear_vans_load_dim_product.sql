@@ -65,20 +65,91 @@ BEGIN
 
     INSERT INTO [dbo].[dim_product]
     (
-        dim_business_id,
-        material_id,
-        size,
-        style_id,
-        color_description,
-        style_name,
-        material_description,
-        type,
-        gender,
-        lifecycle,
-        style_complexity,
-        dim_construction_type_id,
-        is_placeholder,
-        placeholder_level
+        [dim_business_id],
+        [material_id],
+        [size],
+        [style_id],
+        [color_description],
+        [style_name],
+        [material_description],
+        [type],
+        [gender],
+        [lifecycle],
+        [style_complexity],
+        [dim_construction_type_id],
+        [pre_build_mtl],
+        [qt_mtl],
+        [clk_mtl],
+        [sjd_mtl],
+        [dtp_mtl],
+        [brt_in_house],
+        [is_placeholder],
+        [placeholder_level]
+    )
+    -- Priority list data (at MTL level)
+    SELECT
+        @businessid,
+        CONVERT(NVARCHAR(45), prio.[dim_product_material_id])  as material_id,
+        CONVERT(NVARCHAR(45), prio.[dim_product_material_id]) as size,
+        CONVERT(NVARCHAR(45), prio.[dim_product_material_id]) as style_id, -- Not in priority list
+        CONVERT(NVARCHAR(100), prio.[dim_product_color_description]) as color_description,
+        CONVERT(NVARCHAR(100), prio.[dim_product_style_name]) as style_name,
+        CONVERT(NVARCHAR(100), prio.[dim_product_material_description]) as material_description,
+        CONVERT(NVARCHAR(45), prio.[sub_catprod_type]) as type,
+        CONVERT(NVARCHAR(45), prio.[dim_product_gender]) as gender,
+        CONVERT(NVARCHAR(45), prio.[dim_product_lifecycle]) as lifecycle, -- Update in next step
+        CONVERT(NVARCHAR(45), prio.[dim_product_style_complexity]) as style_complexity, -- Update in next step
+        CASE ISNULL(prio.[pre_build_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END as [pre_build_mtl],
+        CASE ISNULL(prio.[qt_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END as [qt_mtl],
+        CASE ISNULL(prio.[clk_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END as [clk_mtl],
+        CASE ISNULL(prio.[sjd_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END as [sjd_mtl],
+        CASE ISNULL(prio.[dtp_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END as [dtp_mtl],
+        CASE ISNULL(prio.[brt_in_house], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END as [brt_in_house],
+        1 as dim_construction_type_id, -- Update in next step
+        1 as is_placeholder,
+        'material_id' as placeholder_level
+    FROM
+        [dbo].[staging_pdas_footwear_vans_priority_list] prio
+        LEFT OUTER JOIN (SELECT DISTINCT [material_id] FROM [dbo].[dim_product]) dp
+            ON  prio.[dim_product_material_id] = dp.[material_id]
+    WHERE
+        dp.[material_id] IS NULL
+
+
+    INSERT INTO [dbo].[dim_product]
+    (
+        [dim_business_id],
+        [material_id],
+        [size],
+        [style_id],
+        [color_description],
+        [style_name],
+        [material_description],
+        [type],
+        [gender],
+        [lifecycle],
+        [style_complexity],
+        [dim_construction_type_id],
+        [is_placeholder],
+        [placeholder_level]
     )
     SELECT
         @businessid,
@@ -137,30 +208,6 @@ BEGIN
                 AND ngc.[dim_product_size] = dp.[size]
     WHERE
         dp.[id] IS NULL
-
-    -- Priority list data (at MTL level)
-    UNION
-    SELECT
-        @businessid,
-        CONVERT(NVARCHAR(45), prio.[dim_product_material_id])  as material_id,
-        CONVERT(NVARCHAR(45), prio.[dim_product_material_id]) as size,
-        CONVERT(NVARCHAR(45), prio.[dim_product_material_id]) as style_id, -- Not in priority list
-        CONVERT(NVARCHAR(100), prio.[dim_product_color_description]) as color_description,
-        CONVERT(NVARCHAR(100), prio.[dim_product_style_name]) as style_name,
-        CONVERT(NVARCHAR(100), prio.[dim_product_material_description]) as material_description,
-        CONVERT(NVARCHAR(45), prio.[sub_catprod_type]) as type,
-        CONVERT(NVARCHAR(45), prio.[dim_product_gender]) as gender,
-        CONVERT(NVARCHAR(45), prio.[dim_product_lifecycle]) as lifecycle, -- Update in next step
-        CONVERT(NVARCHAR(45), prio.[dim_product_style_complexity]) as style_complexity, -- Update in next step
-        1 as dim_construction_type_id, -- Update in next step
-        1 as is_placeholder,
-        'material_id' as placeholder_level
-    FROM
-        [dbo].[staging_pdas_footwear_vans_priority_list] prio
-        LEFT OUTER JOIN (SELECT DISTINCT [material_id] FROM [dbo].[dim_product]) dp
-            ON  prio.[dim_product_material_id] = dp.[material_id]
-    WHERE
-        dp.[material_id] IS NULL
 
     /*
     Insert missing sizes from NTB files (assuming data from regions correct) and get MTL attributes from priority list
@@ -322,7 +369,32 @@ BEGIN
         dp.style_complexity = prio.dim_product_style_complexity,
         dp.color_description = CONVERT(NVARCHAR(100), prio.[dim_product_color_description]),
         dp.style_name = CONVERT(NVARCHAR(100), prio.[dim_product_style_name]),
-        dp.material_description = CONVERT(NVARCHAR(100), prio.[dim_product_material_description])
+        dp.material_description = CONVERT(NVARCHAR(100), prio.[dim_product_material_description]),
+        dp.pre_build_mtl =
+        CASE ISNULL(prio.[pre_build_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END,
+        dp.qt_mtl = CASE ISNULL(prio.[qt_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END,
+        dp.clk_mtl = CASE ISNULL(prio.[clk_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END,
+        dp.sjd_mtl = CASE ISNULL(prio.[sjd_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END,
+        dp.dtp_mtl = CASE ISNULL(prio.[dtp_mtl], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END,
+        dp.brt_in_house = CASE ISNULL(prio.[brt_in_house], '-')
+            WHEN '-' THEN 0
+            ELSE 1
+        END
     FROM [dbo].[dim_product] dp
     INNER JOIN [dbo].[staging_pdas_footwear_vans_priority_list] prio ON dp.material_id = prio.dim_product_material_id
     INNER JOIN [dbo].[dim_construction_type] cons ON prio.dim_construction_type_name = cons.name

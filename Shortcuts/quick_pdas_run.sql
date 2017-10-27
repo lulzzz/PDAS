@@ -3,6 +3,10 @@ DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
 DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 DECLARE	@buying_program_id int
 
+EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product] @businessid = @dim_business_id_footwear_vans
+EXEC [dbo].[proc_pdas_footwear_vans_load_fact_priority_list] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
+
 -- Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
 -- Capacity
 EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
