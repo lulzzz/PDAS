@@ -24,7 +24,7 @@ BEGIN
 	DELETE FROM [dbo].[fact_order]
     WHERE
         dim_pdas_id = @pdasid
-        AND dim_demand_category_id IN (@dim_demand_category_id_open_order, @dim_demand_category_id_open_order, @dim_demand_category_id_shipped_order)
+        AND dim_demand_category_id IN (@dim_demand_category_id_open_order, @dim_demand_category_id_shipped_order)
         AND dim_buying_program_id = @buying_program_id
 
 	-- Insert from staging
@@ -77,9 +77,8 @@ BEGIN
 			ELSE dp_m.id
 		END as dim_product_id,
         CASE
-		 	WHEN shipped_qty IS NULL THEN @dim_demand_category_id_open_order
-			WHEN revised_crd_dt < @current_date THEN @dim_demand_category_id_shipped_order
-			ELSE @dim_demand_category_id_open_order
+		 	WHEN ISNULL(shipped_qty, 0) <> ngc.order_qty THEN @dim_demand_category_id_open_order
+			ELSE @dim_demand_category_id_shipped_order
 		END as dim_demand_category_id,
         MAX(dd_po_issue.id) as placed_date_id,
         MAX(dd_revised_crd.id) as customer_requested_xf_date_id,
@@ -138,7 +137,7 @@ BEGIN
 					ON m.parent = df.short_name
 			WHERE type = 'Factory Master'
 		) mapping_f ON ngc.dim_factory_factory_code = mapping_f.child
-		-- LEFT OUTER JOIN [dbo].[dim_customer] dc ON ngc.notes LIKE '%'+ dc.name +'%'
+		LEFT OUTER JOIN [dbo].[dim_customer] dc ON ngc.notes LIKE '%'+ dc.name +'%'
 		INNER JOIN [dbo].[dim_date] dd_revised_crd ON ngc.revised_crd_dt = dd_revised_crd.full_date
 		INNER JOIN [dbo].[dim_date] dd_original_crd ON ngc.original_crd_dt = dd_original_crd.full_date
 		LEFT OUTER JOIN [dbo].[dim_date] dd_po_issue ON ngc.po_issue_dt = dd_po_issue.full_date
@@ -166,9 +165,8 @@ BEGIN
 			ELSE dp_m.id
 		END,
 		CASE
-			WHEN shipped_qty IS NULL THEN @dim_demand_category_id_open_order
-			WHEN revised_crd_dt < @current_date THEN @dim_demand_category_id_shipped_order
-			ELSE @dim_demand_category_id_open_order
+		 	WHEN ISNULL(shipped_qty, 0) <> ngc.order_qty THEN @dim_demand_category_id_open_order
+			ELSE @dim_demand_category_id_shipped_order
 		END
 
 END
