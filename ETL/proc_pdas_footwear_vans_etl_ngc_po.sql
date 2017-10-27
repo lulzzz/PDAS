@@ -12,7 +12,7 @@ AS
 BEGIN
 
 	-- Declare variables
-	DECLARE	@current_dt date = GETDATE()
+	DECLARE	@current_dt datetime = GETDATE()
 
 	-- Clear staging area table
 	DELETE FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
@@ -126,5 +126,7 @@ BEGIN
 	SET
 		[state] = 'OK',
 		[timestamp_file] = @current_dt
+	WHERE
+		[table_name] = 'staging_pdas_footwear_vans_ngc_po'
 
 END

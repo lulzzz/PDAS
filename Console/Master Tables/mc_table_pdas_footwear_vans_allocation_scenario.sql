@@ -10,14 +10,14 @@ GO
 -- Create date: 9/6/2017
 -- Description:	Console procedure to edit the allocation sandbox.
 -- =============================================
-ALTER PROCEDURE [dbo].[mc_table_pdas_footwear_vans_allocation_scenario]
+ALTER PROCEDURE [dbo].[mc_table_pdas_footwear_vans_allocation_scenario_vfa]
 	@output_param nvarchar(500) OUTPUT
 AS
 BEGIN
 	SET NOCOUNT ON;
 
 	-- Check if data was submitted from frontend
-	IF (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario]) > 0
+	IF (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario_vfa]) > 0
 	BEGIN
 
 		-- Validate submitted data based on pre-defined business rules
@@ -25,7 +25,7 @@ BEGIN
 		(
 			SELECT TOP 1
                 ISNULL(temp.[id], '')
-			FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario]  temp
+			FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario_vfa]  temp
                 LEFT JOIN (SELECT DISTINCT [brand], [product_line], 1 as flag FROM [dbo].[dim_business]) dim_b
                     ON 	temp.[Purchasing Organization] = dim_b.[brand]
                         AND temp.[Product Category] = dim_b.[product_line]
@@ -69,13 +69,13 @@ BEGIN
 		BEGIN
 
 			-- Remove duplicates
-            DECLARE @table_count_before int = (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario])
+            DECLARE @table_count_before int = (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario_vfa])
 			DELETE x FROM (
 				SELECT *, rn=row_number() OVER (PARTITION BY [id] ORDER BY [id])
-				FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario]
+				FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario_vfa]
 			) x
 			WHERE rn > 1;
-            DECLARE @table_count_after int = (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario])
+            DECLARE @table_count_after int = (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario_vfa])
 
             IF @table_count_before = @table_count_after
             BEGIN
@@ -84,7 +84,7 @@ BEGIN
 				DELETE dim
 				FROM
 					[dbo].[helper_pdas_footwear_vans_allocation_scenario] dim
-					LEFT JOIN [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario] temp
+					LEFT JOIN [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario_vfa] temp
 						ON	dim.[id] = temp.[id]
 				WHERE temp.[id] IS NULL
 
@@ -128,7 +128,7 @@ BEGIN
 					,[Quantity User]
 					,[Comment]
 				FROM
-					[dbo].[mc_temp_pdas_footwear_vans_allocation_scenario] temp
+					[dbo].[mc_temp_pdas_footwear_vans_allocation_scenario_vfa] temp
 					LEFT JOIN (SELECT [id] FROM [dbo].[helper_pdas_footwear_vans_allocation_scenario]) dim
 						ON temp.[id] = dim.[id]
 				WHERE dim.[id] IS NULL
@@ -141,7 +141,7 @@ BEGIN
 					,dim.[Comment] = temp.[Comment]
 				FROM
 					[dbo].[helper_pdas_footwear_vans_allocation_scenario] dim
-					INNER JOIN [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario] temp
+					INNER JOIN [dbo].[mc_temp_pdas_footwear_vans_allocation_scenario_vfa] temp
 						ON	dim.[id] = temp.[id]
 
             END
