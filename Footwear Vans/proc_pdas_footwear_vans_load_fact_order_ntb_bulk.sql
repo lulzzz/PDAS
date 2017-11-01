@@ -25,6 +25,7 @@ BEGIN
 	DECLARE @dim_date_id_pdas_release_day_future int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(yy, 1, full_date) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
 
 	DECLARE @dim_date_id_asap_73 int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(day, 73, [full_date]) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
+	DECLARE @dim_date_id_asap_103 int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(day, 103, [full_date]) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
 	-- Is it possible to keep it as “ASAP” as request week?
 	-- But change it to CW+73 / CW+103 (depending on the LT of the particular MTL) when you bounce it against available capacity?
 
@@ -64,7 +65,8 @@ BEGIN
         estimated_eta_date_id,
         release_date_id,
         lum_quantity,
-        quantity
+        quantity,
+		is_asap
     )
 
 	-- EMEA
@@ -74,7 +76,11 @@ BEGIN
 		@buying_program_id as dim_buying_program_id,
 		ISNULL(pr_code, 'UNDEFINED') as order_number,
 		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
-			WHEN 'ASAP' THEN @dim_date_id_asap_73
+			WHEN 'ASAP' THEN
+				CASE dp_m.[production_lt]
+					WHEN 110 THEN @dim_date_id_asap_103
+					ELSE @dim_date_id_asap_73
+				END
 			ELSE dd_xfw.id
 		END as dim_date_id,
 		@dim_factory_id_placeholder as dim_factory_id,
@@ -99,12 +105,16 @@ BEGIN
 		NULL as estimated_eta_date_id,
 		NULL as release_date_id,
 		SUM(ntb.lum_qty) as lum_quantity,
-		SUM(ntb.sap_qty) as quantity
+		SUM(ntb.sap_qty) as quantity,
+		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
+			WHEN 'ASAP' THEN 1
+			ELSE 0
+		END as is_asap
 	FROM
 		(
 			SELECT
 				*
-				,CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id_corrected]
+				,CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id_corrected]
 			FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]
 		) AS ntb
 		INNER JOIN (SELECT [id], [name], [sold_to_party] FROM [dbo].[dim_customer] WHERE is_placeholder = 0) dc
@@ -119,10 +129,14 @@ BEGIN
 				[day_name_of_week] = 'Monday'
 				and [id] BETWEEN @dim_date_id_pdas_release_day AND @dim_date_id_pdas_release_day_future
 		) dd_xfw
-			ON REPLACE(SUBSTRING(ntb.[exp_delivery_no_constraint_dt], 3, 10), ' ', '') = dd_xfw.[cw]
+			ON
+				CASE ISNUMERIC(REPLACE(SUBSTRING(ntb.[exp_delivery_no_constraint_dt], 3, 10), ' ', ''))
+					WHEN 1 THEN CONVERT(NVARCHAR(2), CONVERT(INT, REPLACE(SUBSTRING(ntb.[exp_delivery_no_constraint_dt], 3, 10), ' ', '')))
+					ELSE 0
+				END = dd_xfw.[cw]
 		LEFT OUTER JOIN
 		(
-			SELECT [id], [material_id]
+			SELECT [id], [material_id], [production_lt]
 			FROM [dbo].[dim_product]
 			WHERE
 				[is_placeholder] = 1 AND
@@ -135,17 +149,26 @@ BEGIN
 		LEFT OUTER JOIN [dbo].[dim_date] dd_buy ON ntb.buy_dt = dd_buy.full_date
 	WHERE
 		ntb.lum_qty IS NOT NULL AND
+		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		(UPPER(ntb.[exp_delivery_no_constraint_dt]) = 'ASAP' OR dd_xfw.[cw] IS NOT NULL)
 	GROUP BY
 		ISNULL(pr_code, 'UNDEFINED'),
 		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
-			WHEN 'ASAP' THEN @dim_date_id_asap_73
+			WHEN 'ASAP' THEN
+				CASE dp_m.[production_lt]
+					WHEN 110 THEN @dim_date_id_asap_103
+					ELSE @dim_date_id_asap_73
+				END
 			ELSE dd_xfw.id
 		END,
 		dc.id,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
+		END,
+		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
+			WHEN 'ASAP' THEN 1
+			ELSE 0
 		END
 
 	-- APAC
@@ -182,12 +205,13 @@ BEGIN
         NULL as estimated_eta_date_id,
         NULL as release_date_id,
         SUM(ntb.lum_qty) as lum_quantity,
-        SUM(ntb.sap_qty) as quantity
+        SUM(ntb.sap_qty) as quantity,
+		0 as is_asap
     FROM
 		(
 			SELECT
 				*
-				,CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id_corrected]
+				,CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id_corrected]
 			FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]
 		) AS ntb
 	    INNER JOIN [dbo].[dim_date] dd_xfac ON ntb.xfac_dt = dd_xfac.full_date
@@ -264,12 +288,13 @@ BEGIN
         NULL as estimated_eta_date_id,
         NULL as release_date_id,
         SUM(ntb.lum_qty) as lum_quantity,
-        SUM(ntb.sap_qty) as quantity
+        SUM(ntb.sap_qty) as quantity,
+		0 as is_asap
 	FROM
 		(
 			SELECT
 				*
-				,CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id_corrected]
+				,CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id_corrected]
 			FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]
 		) AS ntb
 		LEFT OUTER JOIN
@@ -320,7 +345,11 @@ BEGIN
 			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
 			ELSE @dim_factory_id_placeholder
 		END as dim_factory_id,
-		@dim_customer_id_placeholder_nora as dim_customer_id,
+		CASE
+			WHEN dc_name.id IS NOT NULL THEN dc_name.id
+			WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
+			ELSE @dim_customer_id_placeholder_nora
+		END as dim_customer_id,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
@@ -341,12 +370,13 @@ BEGIN
         MAX(dd_eta.id) as estimated_eta_date_id,
         MAX(dd_rel.id) as release_date_id,
         SUM(ntb.lum_qty) as lum_quantity,
-        SUM(ntb.quantity) as quantity
+        SUM(ntb.quantity) as quantity,
+		0 as is_asap
 	FROM
 		(
 			SELECT
 				*
-				,CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id_corrected]
+				,CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id_corrected]
 			FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]
 		) AS ntb
 		LEFT OUTER JOIN
@@ -361,6 +391,13 @@ BEGIN
 		LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
 			ON 	ntb.[dim_product_material_id_corrected] = dp_ms.material_id AND
 				ntb.dim_product_size = dp_ms.size
+
+		LEFT OUTER JOIN (SELECT [id], [name] FROM [dbo].[dim_customer]) dc_name
+			ON ntb.[sold_to_customer_name] = dc_name.[name]
+
+		LEFT OUTER JOIN (SELECT MAX([id]) as [id], [dc_plt] FROM [dbo].[dim_customer] GROUP BY [dc_plt]) dc_plt
+			ON ntb.[plnt] = dc_plt.[dc_plt]
+
 		LEFT OUTER JOIN [dbo].[dim_factory] df ON ntb.dim_factory_short_name = df.short_name
 		LEFT OUTER JOIN
 		(
@@ -384,6 +421,11 @@ BEGIN
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
 			ELSE mapping_f.id
+		END,
+		CASE
+			WHEN dc_name.id IS NOT NULL THEN dc_name.id
+			WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
+			ELSE @dim_customer_id_placeholder_nora
 		END,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id

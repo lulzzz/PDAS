@@ -40,6 +40,7 @@ BEGIN
         ,[quantity_unconsumed]
         ,[quantity_consumed]
         ,[quantity]
+		,[is_asap]
     )
 	-- fact_order
 	SELECT
@@ -74,7 +75,8 @@ BEGIN
 		,CASE [dim_demand_category_id]
 			WHEN @dim_demand_category_id_ntb THEN [lum_quantity]
 			ELSE [quantity]
-		END AS [quantity]
+		END AS [quantity],
+		[is_asap]
 	FROM [dbo].[fact_order]
 	WHERE
 		[dim_pdas_id] = @pdasid
@@ -96,6 +98,7 @@ BEGIN
         ,[quantity] AS [quantity_unconsumed]
         ,[quantity] AS [quantity_consumed]
         ,[quantity]
+		, 0 AS [is_asap]
 	FROM [dbo].[fact_forecast]
 	WHERE
 		[dim_pdas_id] = @pdasid

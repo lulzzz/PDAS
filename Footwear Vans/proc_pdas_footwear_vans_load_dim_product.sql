@@ -83,6 +83,7 @@ BEGIN
         [sjd_mtl],
         [dtp_mtl],
         [brt_in_house],
+        [production_lt],
         [is_placeholder],
         [placeholder_level]
     )
@@ -99,6 +100,7 @@ BEGIN
         CONVERT(NVARCHAR(45), prio.[dim_product_gender]) as gender,
         CONVERT(NVARCHAR(45), prio.[dim_product_lifecycle]) as lifecycle, -- Update in next step
         CONVERT(NVARCHAR(45), prio.[dim_product_style_complexity]) as style_complexity, -- Update in next step
+        1 as dim_construction_type_id, -- Update in next step
         CASE ISNULL(prio.[pre_build_mtl], '-')
             WHEN '-' THEN 0
             ELSE 1
@@ -123,7 +125,7 @@ BEGIN
             WHEN '-' THEN 0
             ELSE 1
         END as [brt_in_house],
-        1 as dim_construction_type_id, -- Update in next step
+        CONVERT(INT, prio.[total_prdn_lt_days]) as [production_lt],
         1 as is_placeholder,
         'material_id' as placeholder_level
     FROM
@@ -230,7 +232,7 @@ BEGIN
         0 as is_placeholder,
         NULL as placeholder_level
     FROM
-        (SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
+        (SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
         INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
             ON  staging.[dim_product_material_id] = dp_m.[material_id]
         LEFT OUTER JOIN
@@ -261,7 +263,7 @@ BEGIN
         0 as is_placeholder,
         NULL as placeholder_level
     FROM
-        (SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
+        (SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
         INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
             ON  staging.[dim_product_material_id] = dp_m.[material_id]
         LEFT OUTER JOIN
@@ -292,7 +294,7 @@ BEGIN
         0 as is_placeholder,
         NULL as placeholder_level
     FROM
-        (SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
+        (SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
         INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
             ON  staging.[dim_product_material_id] = dp_m.[material_id]
         LEFT OUTER JOIN
@@ -323,7 +325,7 @@ BEGIN
         0 as is_placeholder,
         NULL as placeholder_level
     FROM
-        (SELECT DISTINCT CASE RIGHT([dim_product_material_id], 1) WHEN 'P' THEN LEFT([dim_product_material_id], LEN([dim_product_material_id])-1) ELSE [dim_product_material_id] END AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
+        (SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
         INNER JOIN (SELECT * FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'material_id') dp_m
             ON  staging.[dim_product_material_id] = dp_m.[material_id]
         LEFT OUTER JOIN
@@ -365,11 +367,15 @@ BEGIN
     UPDATE dp
     SET
         dp.lifecycle = prio.dim_product_lifecycle,
-        dp.dim_construction_type_id = cons.id,
+        dp.dim_construction_type_id = CASE
+            WHEN dct.id IS NOT NULL THEN dct.id
+            ELSE dct_mapping.id
+        END,
         dp.style_complexity = prio.dim_product_style_complexity,
         dp.color_description = CONVERT(NVARCHAR(100), prio.[dim_product_color_description]),
         dp.style_name = CONVERT(NVARCHAR(100), prio.[dim_product_style_name]),
         dp.material_description = CONVERT(NVARCHAR(100), prio.[dim_product_material_description]),
+        dp.production_lt = CONVERT(INT, prio.[total_prdn_lt_days]),
         dp.pre_build_mtl =
         CASE ISNULL(prio.[pre_build_mtl], '-')
             WHEN '-' THEN 0
@@ -395,9 +401,31 @@ BEGIN
             WHEN '-' THEN 0
             ELSE 1
         END
-    FROM [dbo].[dim_product] dp
-    INNER JOIN [dbo].[staging_pdas_footwear_vans_priority_list] prio ON dp.material_id = prio.dim_product_material_id
-    INNER JOIN [dbo].[dim_construction_type] cons ON prio.dim_construction_type_name = cons.name
+    FROM
+        [dbo].[dim_product] dp
+        INNER JOIN [dbo].[staging_pdas_footwear_vans_priority_list] prio
+            ON dp.material_id = prio.dim_product_material_id
+        LEFT OUTER JOIN
+        (
+            SELECT [id], [name]
+            FROM [dbo].[dim_construction_type]
+        ) dct
+			ON prio.[dim_construction_type_name] = dct.[name]
+        LEFT OUTER JOIN
+        (
+            SELECT
+                dct.[id],
+                [parent]
+                ,[child]
+            FROM
+                [dbo].[helper_pdas_footwear_vans_mapping] mapping
+                INNER JOIN [dbo].[dim_construction_type] dct
+                    ON dct.[name] = mapping.[parent]
+            WHERE [type] = 'Construction Type Master'
+        ) dct_mapping
+			ON prio.[dim_construction_type_name] = dct_mapping.[child]
+	WHERE
+		(dct.[id] IS NOT NULL OR dct_mapping.[id] IS NOT NULL)
     ;
 
 

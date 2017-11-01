@@ -425,12 +425,17 @@ BEGIN
         temp.[dim_construction_type_id],
         temp.[dim_date_id],
         0 as [capacity_raw_daily],
-        temp.[capacity_weekly],
-        0 as [available_capacity_weekly],
-        temp.[percentage_region],
-        temp.[percentage_from_original]
+        MAX(temp.[capacity_weekly]),
+        0 as [available_capacity_weekly]),
+        MAX(temp.[percentage_region]),
+        MAX(temp.[percentage_from_original])
     FROM
         [target_factory_capacity] temp
+    GROUP BY
+        temp.[dim_factory_id],
+        temp.[dim_customer_id],
+        temp.[dim_construction_type_id],
+        temp.[dim_date_id]
 
     -- Insert on non-match
     INSERT INTO [dbo].[fact_factory_capacity]

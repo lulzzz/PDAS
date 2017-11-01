@@ -51,7 +51,8 @@ BEGIN
         estimated_eta_date_id,
         release_date_id,
         lum_quantity,
-        quantity
+        quantity,
+		is_asap
     )
 	SELECT
         @pdasid as dim_pdas_id,
@@ -95,7 +96,8 @@ BEGIN
         NULL as estimated_eta_date_id,
         NULL as release_date_id,
         SUM(ngc.lum_qty) as lum_quantity,
-        SUM(ngc.order_qty) as quantity
+        SUM(ngc.order_qty) as quantity,
+		0 as is_asap
 	FROM
 		(
 			SELECT
