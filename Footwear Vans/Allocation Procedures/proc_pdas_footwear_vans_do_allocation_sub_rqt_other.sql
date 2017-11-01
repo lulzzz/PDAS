@@ -15,6 +15,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_other]
 	@businessid INT,
 	@dim_buying_program_id INT,
 	@dim_product_id INT,
+	@dim_product_material_id NVARCHAR(45),
+	@dim_product_style_complexity NVARCHAR(45),
 	@dim_date_id INT,
 	@dim_customer_id INT,
 	@dim_demand_category_id INT,
@@ -27,29 +29,28 @@ BEGIN
     /* Variable declarations */
 	DECLARE @dim_factory_id_original_02 INT = NULL
 	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
-	DECLARE @dim_product_material_id_02 NVARCHAR(45)
 
 	/* Variable assignments */
-	SET @dim_product_material_id_02 = (SELECT [material_id] FROM [dbo].[dim_product] WHERE [id] = @dim_product_id)
-
 	SET @helper_retail_qt_rqt_vendor_02 =
 	(
 		SELECT [Factory]
 		FROM [dbo].[helper_pdas_footwear_vans_retail_qt]
-		WHERE [MTL] = @dim_product_material_id_02
+		WHERE [MTL] = @dim_product_material_id
 	)
 
 	/* Sub decision tree logic */
 
-	-- Vendor = DTC or SJV?
+	-- Fixed Vendor
 	SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-	SET @allocation_logic = @allocation_logic +'\n' + 'RQT MTL'
+	SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
 		@pdasid = @pdasid,
 		@businessid = @businessid,
 		@dim_buying_program_id = @dim_buying_program_id,
 		@dim_product_id = @dim_product_id,
+		@dim_product_material_id = @dim_product_material_id,
+		@dim_product_style_complexity = @dim_product_style_complexity,
 		@dim_date_id = @dim_date_id,
 		@dim_customer_id = @dim_customer_id,
 		@dim_demand_category_id = @dim_demand_category_id,

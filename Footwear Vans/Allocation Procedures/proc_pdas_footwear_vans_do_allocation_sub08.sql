@@ -30,6 +30,7 @@ BEGIN
 	DECLARE @dim_factory_id_original_02 INT = NULL
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
 	DECLARE @dim_location_country_code_a2_02 NVARCHAR(2)
+	DECLARE @dim_product_brt_in_house SMALLINT
 
 	/* Variable assignments */
 
@@ -46,6 +47,13 @@ BEGIN
 			) fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_1] = df.[id]
+	)
+
+	SET @dim_product_brt_in_house =
+	(
+		SELECT ISNULL([brt_in_house], 0)
+		FROM [dbo].[dim_product]
+		WHERE [material_id] = @dim_product_material_id AND [id] = @dim_product_id
 	)
 
 	SET @dim_location_country_code_a2_02 =
@@ -74,10 +82,10 @@ BEGIN
 	/* Sub decision tree logic */
 
 	-- BRT MTL?
-	IF @dim_factory_name_priority_list_primary_02 = 'BRT'
+	IF @dim_product_brt_in_house = 1
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' MTL'
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'BRT')
+		SET @allocation_logic = @allocation_logic +' => ' + 'BRT MTL'
 	END
 
 	-- Flex?
