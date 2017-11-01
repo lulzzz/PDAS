@@ -15,6 +15,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_hsc]
 	@businessid INT,
 	@dim_buying_program_id INT,
 	@dim_product_id INT,
+	@dim_product_material_id NVARCHAR(45),
+	@dim_product_style_complexity NVARCHAR(45),
 	@dim_date_id INT,
 	@dim_customer_id INT,
 	@dim_demand_category_id INT,
@@ -31,13 +33,15 @@ BEGIN
 
 	-- HSC
 	SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
-	SET @allocation_logic = @allocation_logic +'\n' + 'HSC'
+	SET @allocation_logic = @allocation_logic +' => ' + 'HSC'
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
 		@pdasid = @pdasid,
 		@businessid = @businessid,
 		@dim_buying_program_id = @dim_buying_program_id,
 		@dim_product_id = @dim_product_id,
+		@dim_product_material_id = @dim_product_material_id,
+		@dim_product_style_complexity = @dim_product_style_complexity,
 		@dim_date_id = @dim_date_id,
 		@dim_customer_id = @dim_customer_id,
 		@dim_demand_category_id = @dim_demand_category_id,

@@ -31,6 +31,7 @@ BEGIN
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
 	DECLARE @dim_customer_name_02 NVARCHAR(100)
 	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
+	DECLARE @dim_product_sjd_mtl SMALLINT
 
 	/* Variable assignments */
 
@@ -47,6 +48,13 @@ BEGIN
 			) fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_1] = df.[id]
+	)
+
+	SET @dim_product_sjd_mtl =
+	(
+		SELECT ISNULL([sjd_mtl], 0)
+		FROM [dbo].[dim_product]
+		WHERE [material_id] = @dim_product_material_id AND [id] = @dim_product_id
 	)
 
 	SET @dim_customer_name_02 = (SELECT [name] FROM [dbo].[dim_customer] WHERE [id] = @dim_customer_id)
@@ -66,11 +74,11 @@ BEGIN
 	/* Sub decision tree logic */
 
 	-- SJD MTL and customer is Zumiez or Kohls or Journeys?
-	IF @dim_factory_name_priority_list_primary_02 = 'SJD'
+	IF @dim_product_sjd_mtl = 1
 	AND (@dim_customer_name_02 LIKE '%ZUMIEZ%' OR @dim_customer_name_02 LIKE '%KOHLS%' OR @dim_customer_name_02 LIKE '%JOURNEYS%')
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' MTL'
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJD')
+		SET @allocation_logic = @allocation_logic +' => ' + 'SJD MTL'
 	END
 
 	-- RQT MTL?

@@ -1556,7 +1556,7 @@ BEGIN
 				END
 			END
 
-			IF @allocation_logic IS NULL
+			IF @allocation_logic = ''
 			BEGIN
 				SET @allocation_logic = ' => Sold to category: ' + @dim_customer_sold_to_category_01 + ' => Buying program: ' + @dim_buying_program_name_01 + ' => Region: ' + @dim_customer_country_region_01 + ' => Sold to party: ' + @dim_customer_sold_to_party_01
 				EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
@@ -1571,7 +1571,7 @@ BEGIN
 					@dim_demand_category_id = @dim_demand_category_id_01,
 					@order_number = @order_number_01,
 					@allocation_logic = @allocation_logic,
-					@dim_factory_id_original = NULL
+					@dim_factory_id_original = @dim_factory_id_original_01
 			END
 
 			FETCH NEXT FROM @cursor_01
