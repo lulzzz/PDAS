@@ -329,6 +329,7 @@ BEGIN
 								@dim_buying_program_id = @dim_buying_program_id_01,
 								@dim_product_id = @dim_product_id_01,
 								@dim_product_material_id = @dim_product_material_id_01,
+								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
