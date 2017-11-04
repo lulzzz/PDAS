@@ -85,7 +85,10 @@ BEGIN
 	EXEC [dbo].[proc_pdas_footwear_vans_do_demand_signal_netting]
 
 	-- Run decision tree allocation algorithm
-	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
+	-- Include manual overwritte from VFA users
+	EXEC [dbo].[proc_pdas_footwear_vans_load_allocation_scenario_vfa] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- Adjust EMEA NTB based on cutoff days
 	EXEC [dbo].[proc_pdas_footwear_vans_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
