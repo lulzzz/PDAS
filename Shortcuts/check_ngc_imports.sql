@@ -4,6 +4,6 @@ SELECT
 	sum(order_qty) qty,
 	count(*) c
   FROM
-	[dbo].[staging_pdas_footwear_vans_ngc_po_init2014]
+	[dbo].[staging_pdas_footwear_vans_ngc_po_init2017]
 group by year(original_crd_dt), month(original_crd_dt)
 order by y, m
