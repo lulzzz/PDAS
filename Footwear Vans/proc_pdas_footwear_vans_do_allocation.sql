@@ -40,7 +40,7 @@ BEGIN
 		UPDATE [dbo].[fact_demand_total]
 		SET
 			[dim_factory_id_original] = @dim_factory_id_placeholder,
-			[allocation_logic] = NULL
+			[allocation_logic_unconstrained] = NULL
 		WHERE
 			[dim_pdas_id] = @pdasid
 			and [dim_business_id] = @businessid
@@ -468,7 +468,7 @@ BEGIN
 
 						END
 
-						IF @dim_customer_sold_to_party_01 LIKE 'MY%'
+						IF @dim_customer_sold_to_party_01 LIKE 'MY%' OR @dim_customer_sold_to_party_01 LIKE 'Malaysia%'
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
 							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
@@ -766,7 +766,7 @@ BEGIN
 									@allocation_logic = @allocation_logic
 							END
 
-							IF @dim_customer_sold_to_party_01 LIKE 'MY%'
+							IF @dim_customer_sold_to_party_01 LIKE 'MY%' OR @dim_customer_sold_to_party_01 LIKE 'Malaysia%'
 							BEGIN
 								SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
 								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
@@ -1006,7 +1006,7 @@ BEGIN
 									@allocation_logic = @allocation_logic
 							END
 
-							IF @dim_customer_sold_to_party_01 LIKE 'MY%'
+							IF @dim_customer_sold_to_party_01 LIKE 'MY%' OR @dim_customer_sold_to_party_01 LIKE 'Malaysia%'
 							BEGIN
 								SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
 								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
