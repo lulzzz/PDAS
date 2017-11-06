@@ -41,7 +41,7 @@ BEGIN
 			(
 				SELECT [dim_factory_id_1]
 				FROM [dbo].[fact_priority_list] f
-					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
 			) fpl
@@ -53,7 +53,7 @@ BEGIN
 	(
 		SELECT ISNULL([sjd_mtl], 0)
 		FROM [dbo].[dim_product]
-		WHERE [material_id] = @dim_product_material_id AND [id] = @dim_product_id
+		WHERE [id] = @dim_product_id
 	)
 
 	SET @helper_retail_qt_rqt_vendor_02 =
@@ -62,11 +62,6 @@ BEGIN
 		FROM [dbo].[helper_pdas_footwear_vans_retail_qt]
 		WHERE [MTL] = @dim_product_material_id
 	)
-
-	IF @dim_factory_name_priority_list_primary_02 IS NULL
-	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + 'Product ID not in priority list'
-	END
 
 	/* Sub decision tree logic */
 
@@ -97,6 +92,11 @@ BEGIN
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
 		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + 'not RQT MTL'
+	END
+
+	IF @dim_factory_id_original_02 IS NULL
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + 'Not found'
 	END
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]

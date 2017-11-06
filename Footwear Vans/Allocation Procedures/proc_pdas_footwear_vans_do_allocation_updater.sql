@@ -35,7 +35,7 @@ BEGIN
 		SET [dim_factory_id_original] = @dim_factory_id_original,
 			[dim_factory_id_original_constrained] = @dim_factory_id_original,
 			[dim_factory_id] = @dim_factory_id_original,
-			[allocation_logic] = @allocation_logic
+			[allocation_logic_unconstrained] = @allocation_logic
 		WHERE
 			[dim_pdas_id] = @pdasid AND
 			[dim_business_id] = @businessid AND
@@ -44,7 +44,22 @@ BEGIN
 			[dim_date_id] = @dim_date_id AND
 			[dim_customer_id] = @dim_customer_id AND
 			[dim_demand_category_id] = @dim_demand_category_id AND
-			[order_number] = @order_number AND
-			[edit_dt] IS NULL
+			[order_number] = @order_number
+	END
+
+	ELSE
+	BEGIN
+		/* Update the allocation logic only */
+		UPDATE [dbo].[fact_demand_total]
+		SET [allocation_logic_unconstrained] = @allocation_logic
+		WHERE
+			[dim_pdas_id] = @pdasid AND
+			[dim_business_id] = @businessid AND
+			[dim_buying_program_id] = @dim_buying_program_id AND
+			[dim_product_id] = @dim_product_id AND
+			[dim_date_id] = @dim_date_id AND
+			[dim_customer_id] = @dim_customer_id AND
+			[dim_demand_category_id] = @dim_demand_category_id AND
+			[order_number] = @order_number
 	END
 END

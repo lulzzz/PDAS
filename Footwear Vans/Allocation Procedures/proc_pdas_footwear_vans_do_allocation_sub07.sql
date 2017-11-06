@@ -46,7 +46,7 @@ BEGIN
 			(
 				SELECT [dim_factory_id_1]
 				FROM [dbo].[fact_priority_list] f
-					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
 			) fpl
@@ -58,21 +58,21 @@ BEGIN
 	(
 		SELECT ISNULL([clk_mtl], 0)
 		FROM [dbo].[dim_product]
-		WHERE [material_id] = @dim_product_material_id AND [id] = @dim_product_id
+		WHERE [id] = @dim_product_id
 	)
 
 	SET @dim_product_dtp_mtl =
 	(
 		SELECT ISNULL([dtp_mtl], 0)
 		FROM [dbo].[dim_product]
-		WHERE [material_id] = @dim_product_material_id AND [id] = @dim_product_id
+		WHERE [id] = @dim_product_id
 	)
 
 	SET @dim_product_sjd_mtl =
 	(
 		SELECT ISNULL([sjd_mtl], 0)
 		FROM [dbo].[dim_product]
-		WHERE [material_id] = @dim_product_material_id AND [id] = @dim_product_id
+		WHERE [id] = @dim_product_id
 	)
 
 	SET @helper_retail_qt_rqt_vendor_02 =
@@ -98,7 +98,7 @@ BEGIN
 			(
 				SELECT [dim_factory_id_1]
 				FROM [dbo].[fact_priority_list] f
-					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
 			) AS fpl
@@ -119,18 +119,13 @@ BEGIN
 			(
 				SELECT [dim_factory_id_2]
 				FROM [dbo].[fact_priority_list] f
-					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
 			) AS fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_2] = df.[id]
 	)
-
-	IF @dim_factory_name_priority_list_primary_02 IS NULL
-	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + 'Product ID not in priority list'
-	END
 
 	/* Sub decision tree logic */
 
@@ -171,20 +166,37 @@ BEGIN
 	ELSE IF @dim_location_country_code_a2_02 = 'CN'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' 1st priority = COO China'
+		SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' +'First priority'
+		IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+		BEGIN
+			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+		END
 	END
 
 	-- 2nd priority = CLK?
 	ELSE IF @dim_factory_name_priority_list_secondary_02 = 'CLK'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02 + ' 2nd priority = CLK'
+		SET @allocation_logic = @allocation_logic +' => ' + '2nd priority = CLK' +' => ' +'Second priority'
+		IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+		BEGIN
+			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
+		END
 	END
 
 	ELSE
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02 + ' 2nd priority = not CLK'
+		SET @allocation_logic = @allocation_logic +' => ' + '2nd priority = not CLK' +' => ' +'First priority'
+		IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+		BEGIN
+			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+		END
+	END
+
+	IF @dim_factory_id_original_02 IS NULL
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + 'Not found'
 	END
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
