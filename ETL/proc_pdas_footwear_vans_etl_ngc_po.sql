@@ -13,6 +13,7 @@ BEGIN
 
 	-- Declare variables
 	DECLARE	@current_dt datetime = GETDATE()
+	DECLARE	@starting_month_dt datetime = (SELECT DATEADD(month, -3, DATEADD(month, DATEDIFF(month, 0, @current_dt), 0)))
 
 	-- Clear staging area table
 	DELETE FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
@@ -110,8 +111,7 @@ BEGIN
 	            ON (nbbundet.size=prscale.scale)
 
 	    WHERE
-	        -- Prbunhea.ModifiedOn >= '2017-01-01'
-			Shipped.Actual_CRD >= '2016-01-01'
+			Shipped.Actual_CRD >= @starting_month_dt
 			AND Prbunhea.Misc21 IN ('CONDOR', 'JBA-VF', 'JBA-VS', 'REVA', 'S65')
 			AND Prbunhea.Misc6 IN ('OCN', 'OIN', 'OSA', 'VF ASIA', 'VF INDIA', 'VF Thailand', 'VFA', 'VFA Bangladesh', 'VFA Guangzhou', 'VFA HongKong', 'VFA India', 'VFA Indonesia', 'VFA Qingdao', 'VFA Shanghai', 'VFA Vietnam', 'VFA Zhuhai', 'VFI')
 			AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')

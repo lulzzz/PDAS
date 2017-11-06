@@ -6,6 +6,15 @@ DECLARE	@buying_program_id int
 EXEC [dbo].[proc_pdas_footwear_vans_load_dim_product] @businessid = @dim_business_id_footwear_vans
 EXEC [dbo].[proc_pdas_footwear_vans_load_fact_priority_list] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
+EXEC [dbo].[proc_pdas_footwear_vans_validate_priority_list] @mc_user_name = NULL
+EXEC [dbo].[proc_pdas_footwear_vans_validate_capacity_by_week] @mc_user_name = NULL
+EXEC [dbo].[proc_pdas_footwear_vans_validate_forecast] @mc_user_name = NULL
+EXEC [dbo].[proc_pdas_footwear_vans_validate_ngc_orders] @mc_user_name = NULL
+EXEC [dbo].[proc_pdas_footwear_vans_validate_ntb] @mc_user_name = NULL
+EXEC [dbo].[proc_pdas_footwear_vans_validate_raw_capacity] @mc_user_name = NULL
+
+SELECT * FROM [dbo].[system_log_file] WHERE [system] = 'pdas_ftw_vans' ORDER BY [source], [type]
+
 
 -- Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
 -- Capacity
