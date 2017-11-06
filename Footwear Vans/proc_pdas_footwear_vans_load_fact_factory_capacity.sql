@@ -18,7 +18,7 @@ BEGIN
     DECLARE @dim_customer_id_placeholder int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER' and [name] = 'PLACEHOLDER')
 
     -- Temp tables
-    DECLARE @temp_capacity TABLE(
+    DECLARE @temp_capacity_available_weekly TABLE(
         [dim_pdas_id] INT
         ,[dim_business_id] INT
         ,[dim_factory_id] INT
@@ -26,8 +26,7 @@ BEGIN
         ,[dim_construction_type_id] INT
         ,[dim_date_id] INT
         ,[capacity_raw_daily] INT
-        ,[capacity_weekly]	INT
-        ,[available_capacity_weekly] INT
+        ,[capacity_available_weekly] INT
         ,[percentage_region] INT
         ,[percentage_from_original] INT
     )
@@ -87,8 +86,7 @@ BEGIN
         ,[dim_construction_type_id]
         ,[dim_date_id]
         ,[capacity_raw_daily]
-        ,[capacity_weekly]
-        ,[available_capacity_weekly]
+        ,[capacity_available_weekly]
         ,[percentage_region]
         ,[percentage_from_original]
     )
@@ -105,9 +103,8 @@ BEGIN
             ELSE mapping_cons.id
         END as dim_construction_type_id,
         dd.[id] as dim_date_id,
-        sum(ISNULL(cap.[quantity], 0)) * max(ISNULL(cap_region.[percentage], 1)) * max(ISNULL(cap_adj.[Percentage], 1)) as capacity_raw_daily,
-        0 AS [capacity_weekly],
-        0 AS [available_capacity_weekly],
+        sum(ISNULL(cap.[quantity], 0)) * max(ISNULL(cap_region.[percentage], 0.25)) * max(ISNULL(cap_adj.[Percentage], 1)) as capacity_raw_daily,
+        0 AS [capacity_available_weekly],
         max(ISNULL(cap_region.[percentage], 1)) AS [percentage_region],
         max(ISNULL(cap_adj.[Percentage], 1)) as percentage_from_original
     FROM
@@ -157,10 +154,10 @@ BEGIN
         END,
         dd.[id]
 
-    -- Update available_capacity_weekly field with daily capacity aggregated by accounting week
+    -- Update capacity_raw_weekly field with daily raw capacity aggregated by accounting week
     UPDATE f
     SET
-        f.[available_capacity_weekly] = f_aggr.[available_capacity_weekly]
+        f.[capacity_raw_weekly] = f_aggr.[capacity_raw_weekly]
     FROM
         (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
         INNER JOIN
@@ -170,7 +167,7 @@ BEGIN
                 ,[dim_customer_id]
                 ,[dim_construction_type_id]
                 ,dd2.[id] as [dim_date_id]
-                ,sum([capacity_raw_daily]) as [available_capacity_weekly]
+                ,sum([capacity_raw_daily]) as [capacity_raw_weekly]
             FROM
                 [dbo].[fact_factory_capacity] cap
                 INNER JOIN
@@ -201,15 +198,14 @@ BEGIN
                 f.[dim_date_id] = f_aggr.[dim_date_id]
 
 
-    -- Insert/update capacity (pivot)
-
+    -- Fill table selection capacity_available_weekly (weekly capacity)
     ;WITH [pivoted_factory_capacity] AS (
     SELECT
         u.[dim_factory_id]
         ,u.[dim_construction_type_id]
         ,u.[dim_customer_id]
         ,CONVERT(NVARCHAR(4), u.[year_cw_accounting]) + 'CW' + RIGHT(u.[cw], 2) AS [year_cw_accounting]
-        ,ISNULL(u.[quantity], 0) * ISNULL([percentage_region], 1) * ISNULL([percentage_from_original], 1) as capacity_weekly
+        ,ISNULL(u.[quantity], 0) * ISNULL([percentage_region], 1) * ISNULL([percentage_from_original], 1) as capacity_available_weekly
         ,[percentage_region]
         ,[percentage_from_original]
     FROM
@@ -380,13 +376,13 @@ BEGIN
             )
         ) u
     ),
-    [target_factory_capacity] AS (
+    [target_capacity_available_weekly] AS (
         SELECT
             dd.[id] as [dim_date_id],
             piv.[dim_customer_id] as [dim_customer_id],
             piv.[dim_factory_id] as [dim_factory_id],
             piv.[dim_construction_type_id] as [dim_construction_type_id],
-            piv.[capacity_weekly] as [capacity_weekly],
+            piv.[capacity_available_weekly] as [capacity_available_weekly],
             piv.[percentage_region],
             piv.[percentage_from_original]
         FROM
@@ -403,7 +399,8 @@ BEGIN
 
     )
 
-    INSERT INTO @temp_capacity
+    -- Fill temp table capacity_available_weekly (weekly capacity)
+    INSERT INTO @temp_capacity_available_weekly
     (
         [dim_pdas_id]
         ,[dim_business_id]
@@ -412,8 +409,7 @@ BEGIN
         ,[dim_construction_type_id]
         ,[dim_date_id]
         ,[capacity_raw_daily]
-        ,[capacity_weekly]
-        ,[available_capacity_weekly]
+        ,[capacity_available_weekly]
         ,[percentage_region]
         ,[percentage_from_original]
     )
@@ -425,19 +421,18 @@ BEGIN
         temp.[dim_construction_type_id],
         temp.[dim_date_id],
         0 as [capacity_raw_daily],
-        MAX(temp.[capacity_weekly]),
-        0 as [available_capacity_weekly]),
+        MAX(temp.[capacity_available_weekly]),
         MAX(temp.[percentage_region]),
         MAX(temp.[percentage_from_original])
     FROM
-        [target_factory_capacity] temp
+        [target_capacity_available_weekly] temp
     GROUP BY
         temp.[dim_factory_id],
         temp.[dim_customer_id],
         temp.[dim_construction_type_id],
         temp.[dim_date_id]
 
-    -- Insert on non-match
+    -- Insert on non-match (raw capacity not existing for the week)
     INSERT INTO [dbo].[fact_factory_capacity]
     (
         [dim_pdas_id]
@@ -447,33 +442,40 @@ BEGIN
         ,[dim_construction_type_id]
         ,[dim_date_id]
         ,[capacity_raw_daily]
-        ,[capacity_weekly]
-        ,[available_capacity_weekly]
+        ,[capacity_available_weekly]
         ,[percentage_region]
         ,[percentage_from_original]
     )
     SELECT temp.*
     FROM
-        @temp_capacity temp
+        @temp_capacity_available_weekly temp
         LEFT JOIN
-        (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
+        (
+            SELECT *
+            FROM [dbo].[fact_factory_capacity]
+            WHERE
+                [dim_pdas_id] = @pdasid AND
+                [dim_business_id] = @businessid
+        ) as f
             ON	temp.[dim_factory_id] = f.[dim_factory_id] AND
                 temp.[dim_construction_type_id] = f.[dim_construction_type_id] AND
                 temp.[dim_date_id] = f.[dim_date_id]
-    WHERE f.[dim_factory_id] IS NULL
+    WHERE
+        f.[dim_factory_id] IS NULL
 
-    -- Update on match
+    -- Update on match (raw capacity existing for the week)
     UPDATE f
     SET
-        f.[capacity_weekly] = temp.[capacity_weekly],
-        f.[available_capacity_weekly] =
-        CASE
-            WHEN f.[available_capacity_weekly] > temp.[capacity_weekly] THEN f.[available_capacity_weekly] - temp.[capacity_weekly]
-            ELSE f.[available_capacity_weekly]
-        END
+        f.[capacity_available_weekly] = temp.[capacity_available_weekly]
     FROM
-        (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
-        INNER JOIN @temp_capacity temp
+        (
+            SELECT *
+            FROM [dbo].[fact_factory_capacity]
+            WHERE
+                [dim_pdas_id] = @pdasid AND
+                [dim_business_id] = @businessid
+        ) as f
+        INNER JOIN @temp_capacity_available_weekly temp
             ON	temp.[dim_factory_id] = f.[dim_factory_id] AND
                 temp.[dim_construction_type_id] = f.[dim_construction_type_id] AND
                 temp.[dim_date_id] = f.[dim_date_id]
@@ -482,7 +484,7 @@ BEGIN
     -- Update adjusted capacity (80% second capacity line)
     UPDATE f
     SET
-        f.[available_capacity_weekly_adjusted] = f.[available_capacity_weekly] * h.[Percentage Adjustment]
+        f.[capacity_available_weekly_adjusted] = f.[capacity_available_weekly] * h.[Percentage Adjustment]
     FROM
         (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
         INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
