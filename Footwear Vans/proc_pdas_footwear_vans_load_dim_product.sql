@@ -181,8 +181,8 @@ BEGIN
         @businessid,
         ngc.dim_product_style_id as material_id,
         ngc.dim_product_size as size,
-        ngc.dim_product_style_id as style_id,
-        ngc.dim_product_color_description as color_description,
+        MAX(ngc.dim_product_style_id) as style_id,
+        MAX(ngc.dim_product_color_description) as color_description,
         NULL as style_name,
         NULL as material_description,
         NULL as type,
@@ -196,7 +196,7 @@ BEGIN
         (
             SELECT
                 REPLACE([dim_product_style_id], ' ', '') as [dim_product_style_id],
-                LTRIM(RTRIM([dim_product_size])) as [dim_product_size],
+                LTRIM(RTRIM(ISNULL([dim_product_size], ''))) as [dim_product_size],
                 MAX([dim_product_sbu]) as [dim_product_sbu],
                 MAX([dim_product_color_description]) as [dim_product_color_description],
                 MAX([dimension]) as [dimension]
@@ -210,6 +210,9 @@ BEGIN
                 AND ngc.[dim_product_size] = dp.[size]
     WHERE
         dp.[id] IS NULL
+    GROUP BY
+        ngc.dim_product_style_id,
+        ngc.dim_product_size
 
     /*
     Insert missing sizes from NTB files (assuming data from regions correct) and get MTL attributes from priority list
@@ -435,47 +438,48 @@ BEGIN
 
     -- Level Material
     INSERT INTO [dbo].[dim_product] (dim_business_id, material_id, size, style_id, color_description, style_name, material_description, type, gender, lifecycle, style_complexity, dim_construction_type_id, is_placeholder, placeholder_level)
-    SELECT DISTINCT
+    SELECT
         @businessid as dim_business_id,
         dp.material_id  as material_id,
         dp.material_id as size,
-        dp.style_id as style_id,
-        dp.color_description as color_description,
-        dp.style_name as style_name,
-        dp.material_description as material_description,
-        dp.type as type,
-        dp.gender as gender,
-        lifecycle as lifecycle,
-        style_complexity as style_complexity,
-        dim_construction_type_id as dim_construction_type_id,
+        MAX(dp.style_id) as style_id,
+        MAX(dp.color_description) as color_description,
+        MAX(dp.style_name) as style_name,
+        MAX(dp.material_description) as material_description,
+        MAX(dp.type) as type,
+        MAX(dp.gender) as gender,
+        MAX(lifecycle) as lifecycle,
+        MAX(style_complexity) as style_complexity,
+        MAX(dim_construction_type_id) as dim_construction_type_id,
         1 as is_placeholder,
         'material_id' as placeholder_level
-      FROM [dbo].[dim_product] dp
-      LEFT OUTER JOIN (SELECT DISTINCT material_id, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'material_id') pla
+    FROM [dbo].[dim_product] dp
+        LEFT OUTER JOIN (SELECT DISTINCT material_id, 1 as flag FROM [dbo].[dim_product] WHERE is_placeholder = 1 AND placeholder_level = 'material_id') pla
         ON dp.material_id = pla.material_id
-      WHERE ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
-      ;
+    WHERE
+        ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
+    GROUP BY
+        dp.material_id,
+        dp.style_id
 
-      UPDATE dp
-      SET
-          dp.style_id = mat.dim_product_style_id,
-          dp.style_name = prio.dim_product_style_name,
-          dp.color_description = mat.dim_product_color_description,
-          dp.material_description = mat.dim_product_material_description,
-          dp.type = mat.dim_product_material_type,
-          dp.gender = mat.dim_product_gender,
-          dp.style_complexity = prio.dim_product_style_complexity,
-          dp.dim_construction_type_id = cons.id,
-          dp.lifecycle = prio.dim_product_lifecycle
-      FROM [dbo].[dim_product] dp
-      INNER JOIN [dbo].[staging_pdas_footwear_vans_material_master] mat ON dp.material_id = mat.dim_product_material_id
-      INNER JOIN [dbo].[staging_pdas_footwear_vans_priority_list] prio ON dp.material_id = prio.dim_product_material_id
-      INNER JOIN [dbo].[dim_construction_type] cons ON prio.dim_construction_type_name = cons.name
-      WHERE dp.is_placeholder = 1 AND dp.placeholder_level = 'material_id'
-      ;
+    UPDATE dp
+    SET
+        dp.style_id = mat.dim_product_style_id,
+        dp.style_name = prio.dim_product_style_name,
+        dp.color_description = mat.dim_product_color_description,
+        dp.material_description = mat.dim_product_material_description,
+        dp.type = mat.dim_product_material_type,
+        dp.gender = mat.dim_product_gender,
+        dp.style_complexity = prio.dim_product_style_complexity,
+        dp.dim_construction_type_id = cons.id,
+        dp.lifecycle = prio.dim_product_lifecycle
+    FROM [dbo].[dim_product] dp
+        INNER JOIN [dbo].[staging_pdas_footwear_vans_material_master] mat ON dp.material_id = mat.dim_product_material_id
+        INNER JOIN [dbo].[staging_pdas_footwear_vans_priority_list] prio ON dp.material_id = prio.dim_product_material_id
+        INNER JOIN [dbo].[dim_construction_type] cons ON prio.dim_construction_type_name = cons.name
+    WHERE dp.is_placeholder = 1 AND dp.placeholder_level = 'material_id'
 
     -- Level Style
-
     INSERT INTO [dbo].[dim_product] (dim_business_id, material_id, size, style_id, color_description, style_name, material_description, type, gender, lifecycle, style_complexity, dim_construction_type_id, is_placeholder, placeholder_level)
     SELECT DISTINCT
         @businessid as dim_business_id,
