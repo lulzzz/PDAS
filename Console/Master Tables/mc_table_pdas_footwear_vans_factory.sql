@@ -39,11 +39,7 @@ BEGIN
 			WHERE
 				ISNULL(dim_b.[flag],0) = 0 OR
 				ISNULL(dim_l.[flag],0) = 0 OR
-				UPPER(temp.[Status]) NOT IN ('ACTIVE', 'INACTIVE') OR
-				(
-						UPPER(temp.[Is Placeholder]) = 'YES' AND
-						temp.[Placeholder Level] NOT IN ('PLACEHOLDER', 'Factory', 'Vendor')
-				)
+				UPPER(temp.[Status]) NOT IN ('ACTIVE', 'INACTIVE')
 		)
 
 		IF @test IS NULL
@@ -59,7 +55,11 @@ BEGIN
 			-- Delete removed rows (secured by PK constraint)
 			DELETE dim
 			FROM
-				[dbo].[dim_factory] dim
+				(
+					SELECT *
+					FROM [dbo].[dim_factory]
+					WHERE [is_placeholder] = 0
+				) dim
 				LEFT OUTER JOIN (
 					SELECT temp.*
 					FROM
@@ -95,11 +95,8 @@ BEGIN
 					WHEN 'ACTIVE' THEN 1
 					ELSE 0
 				END as [is_active]
-				,CASE UPPER(temp.[Is Placeholder])
-					WHEN 'YES' THEN 1
-					ELSE 0
-				END AS [is_placeholder]
-                ,temp.[Placeholder Level] AS [placeholder_level]
+				,0 [is_placeholder]
+                ,NULL AS [placeholder_level]
 			FROM
 				[dbo].[mc_temp_pdas_footwear_vans_factory] temp
 				INNER JOIN (SELECT [id], [country] FROM [dbo].[dim_location]) dim_l
@@ -124,11 +121,6 @@ BEGIN
 										WHEN 'ACTIVE' THEN 1
 										ELSE 0
 									END
-				,dim.[is_placeholder] = CASE UPPER(temp.[Is Placeholder])
-					WHEN 'YES' THEN 1
-					ELSE 0
-				END
-	            ,dim.[placeholder_level] = temp.[Placeholder Level]
 			FROM
 				[dbo].[dim_factory] dim
 				INNER JOIN [dbo].[mc_temp_pdas_footwear_vans_factory] temp

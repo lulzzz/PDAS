@@ -47,7 +47,11 @@ BEGIN
 			-- Delete removed rows (secured by PK constraint)
 			DELETE dim
 			FROM
-				[dbo].[dim_customer] dim
+				(
+					SELECT *
+					FROM [dbo].[dim_customer]
+					WHERE [is_placeholder] = 0
+				) dim
 				LEFT OUTER JOIN [dbo].[mc_temp_pdas_footwear_vans_customer] temp
 					ON	dim.[id] = temp.[id]
 			WHERE temp.[id] IS NULL
@@ -76,11 +80,8 @@ BEGIN
 					WHEN 'ACTIVE' THEN 1
 					ELSE 0
 				END AS [is_active]
-                ,CASE UPPER(temp.[Is Placeholder])
-					WHEN 'YES' THEN 1
-					ELSE 0
-				END AS [is_placeholder]
-                ,temp.[Placeholder Level] AS [placeholder_level]
+                ,0 [is_placeholder]
+                ,NULL AS [placeholder_level]
 
 			FROM
 				[dbo].[mc_temp_pdas_footwear_vans_customer] temp
@@ -103,11 +104,6 @@ BEGIN
 					WHEN 'ACTIVE' THEN 1
 					ELSE 0
 				END
-                ,dim.[is_placeholder] = CASE UPPER(temp.[Is Placeholder])
-					WHEN 'YES' THEN 1
-					ELSE 0
-				END
-                ,dim.[placeholder_level] = temp.[Placeholder Level]
 			FROM
 				[dbo].[dim_customer] dim
 				INNER JOIN [dbo].[mc_temp_pdas_footwear_vans_customer] temp
