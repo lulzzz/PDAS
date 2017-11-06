@@ -45,7 +45,7 @@ BEGIN
             FROM [dbo].[dim_product]
         ) dim
 			ON  staging.[dim_product_style_id] = dim.[material_id]
-                AND staging.[dim_product_size] = dim.[size]
+                AND ISNULL(staging.[dim_product_size], '') = dim.[size]
 	WHERE
 		dim.[material_id] IS NULL
 
