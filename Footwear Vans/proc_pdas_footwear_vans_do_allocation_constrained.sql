@@ -40,7 +40,8 @@ BEGIN
 
 		UPDATE [dbo].[fact_demand_total]
 		SET
-			[dim_factory_id_original_constrained] = [dim_factory_id_original]
+			[dim_factory_id_original_constrained] = [dim_factory_id_original],
+			[allocation_logic_constrained] = NULL
 		WHERE
 			[dim_pdas_id] = @pdasid
 			and [dim_business_id] = @businessid
@@ -343,12 +344,12 @@ BEGIN
 					[dim_pdas_id] = @pdasid
 					and [dim_business_id] = @businessid
 					and [dim_date_id] >= @pdas_release_month_date_id
-					and [edit_username] IS NULL
 					and ddc.[name] IN ('Forecast', 'Need to Buy')
 				GROUP BY [dim_factory_id_original], [year_cw_accounting], [dim_construction_type_name]
 				HAVING [dim_factory_id_original] = @dim_factory_id_original_01
 					AND [year_cw_accounting] = @dim_date_year_cw_accounting_01
 					AND [dim_construction_type_name] = @dim_construction_type_name_01
+					-- TO DO there should be two additional conditions
 			)
 
 			SET @max_capacity_01 =
@@ -369,7 +370,7 @@ BEGIN
 				+ ' construction type '
 				+ @dim_construction_type_name_01
 			END
-			IF @max_capacity_01 IS NULL
+			ELSE IF @max_capacity_01 IS NULL
 			BEGIN
 				SET @allocation_logic = @dim_factory_original_short_name_01
 				+ ' capacity not found for '
@@ -377,7 +378,7 @@ BEGIN
 				+ ' construction type '
 				+ @dim_construction_type_name_01
 			END
-			IF @max_capacity_01 = 0
+			ELSE IF @max_capacity_01 = 0
 			BEGIN
 				SET @allocation_logic = @allocation_logic +
 					'Weekly fill rate: ' +
@@ -566,9 +567,29 @@ BEGIN
 						@dim_demand_category_id = @dim_demand_category_id_01,
 						@allocation_logic = @allocation_logic
 				END
+				ELSE
+				BEGIN
+					SET @allocation_logic = @allocation_logic + ' => ' + 'No allocation logic found for ' + @dim_factory_original_short_name_01
+					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_updater]
+						@pdasid = @pdasid,
+						@businessid = @businessid,
+						@pdas_release_month_date_id = @pdas_release_month_date_id,
+						@dim_buying_program_id = @dim_buying_program_id_01,
+						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_product_material_id = @dim_product_material_id_01,
+						@dim_product_style_complexity = @dim_product_style_complexity_01,
+						@dim_construction_type_name = @dim_construction_type_name_01,
+						@dim_factory_original_region = @dim_factory_original_region_01,
+						@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
+						@dim_customer_id = @dim_customer_id_01,
+						@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+						@dim_demand_category_id = @dim_demand_category_id_01,
+						@allocation_logic = @allocation_logic,
+						@dim_factory_id_original_constrained = @dim_factory_id_original_01
+				END
 			END
 
-			IF @allocation_logic = ''
+			ELSE
 			BEGIN
 				EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_updater]
 					@pdasid = @pdasid,
@@ -587,7 +608,6 @@ BEGIN
 					@allocation_logic = @allocation_logic,
 					@dim_factory_id_original_constrained = @dim_factory_id_original_01
 			END
-
 
 			FETCH NEXT FROM @cursor_01
 			INTO
