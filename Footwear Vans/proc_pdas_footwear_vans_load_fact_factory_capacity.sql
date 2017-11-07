@@ -9,6 +9,10 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]
 AS
 BEGIN
 
+    -- Check if the session has already been loaded
+    DELETE FROM [dbo].[fact_factory_capacity]
+    WHERE dim_pdas_id = @pdasid and dim_business_id = @businessid;
+
     -- Cleanse weekly capacity
     UPDATE [dbo].[staging_pdas_footwear_vans_capacity_by_week]
     SET [dim_construction_type_name] = 'NA'
@@ -72,9 +76,6 @@ BEGIN
     ) dc
         ON u.[region] = dc.[name]
 
-    -- Check if the session has already been loaded
-    DELETE FROM [dbo].[fact_factory_capacity]
-    WHERE dim_pdas_id = @pdasid and dim_business_id = @businessid;
 
     -- Insert daily capacity from staging area
     INSERT INTO [dbo].[fact_factory_capacity]
@@ -458,6 +459,7 @@ BEGIN
                 [dim_business_id] = @businessid
         ) as f
             ON	temp.[dim_factory_id] = f.[dim_factory_id] AND
+                temp.[dim_customer_id] = f.[dim_customer_id] AND
                 temp.[dim_construction_type_id] = f.[dim_construction_type_id] AND
                 temp.[dim_date_id] = f.[dim_date_id]
     WHERE
@@ -477,6 +479,7 @@ BEGIN
         ) as f
         INNER JOIN @temp_capacity_available_weekly temp
             ON	temp.[dim_factory_id] = f.[dim_factory_id] AND
+                temp.[dim_customer_id] = f.[dim_customer_id] AND
                 temp.[dim_construction_type_id] = f.[dim_construction_type_id] AND
                 temp.[dim_date_id] = f.[dim_date_id]
 
