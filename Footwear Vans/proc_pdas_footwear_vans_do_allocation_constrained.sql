@@ -390,7 +390,7 @@ BEGIN
 					'Weekly fill rate: ' +
 					CONVERT(NVARCHAR(10), @current_fill_01) + '/' +
 					CONVERT(NVARCHAR(10), @max_capacity_01) + ' (' +
-					FORMAT(CONVERT(FLOAT, @current_fill_01/@max_capacity_01),'P') + ')'
+					FORMAT(CONVERT(FLOAT, @current_fill_01)/CONVERT(FLOAT, @max_capacity_01),'P') + ')'
 			END
 
 			IF @current_fill_01 > @max_capacity_01
@@ -570,34 +570,6 @@ BEGIN
 
 			IF @allocation_logic = ''
 			BEGIN
-
-				IF @current_fill_01 IS NULL
-				BEGIN
-					SET @allocation_logic = @dim_factory_original_short_name_01
-					+ ' quantity not found for '
-					+ @dim_date_year_cw_accounting_01
-					+ ' construction type '
-					+ @dim_construction_type_name_01
-				END
-				IF @max_capacity_01 IS NULL
-				BEGIN
-					SET @allocation_logic = @dim_factory_original_short_name_01
-					+ ' capacity not found for '
-					+ @dim_date_year_cw_accounting_01
-					+ ' construction type '
-					+ @dim_construction_type_name_01
-				END
-				ELSE
-				BEGIN
-					SET @allocation_logic =
-					(
-						@dim_factory_original_short_name_01
-						+ ' fill: '
-						+ convert(NVARCHAR(12), @current_fill_01)
-						+ '/'
-						+ convert(NVARCHAR(12), @max_capacity_01)
-					)
-				END
 				EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_updater]
 					@pdasid = @pdasid,
 					@businessid = @businessid,
