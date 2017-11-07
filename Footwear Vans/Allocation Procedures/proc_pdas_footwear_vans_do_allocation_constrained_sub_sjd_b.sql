@@ -8,9 +8,9 @@ GO
 -- =============================================
 -- Author:		ebp Global
 -- Create date: 9/6/2017
--- Description:	Allocation sub procedure DTP Scnenario B
+-- Description:	Allocation sub procedure SJD Scnenario B
 -- =============================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_dtp_b]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_sjd_b]
 	@pdasid INT,
 	@businessid INT,
 	@pdas_release_month_date_id INT,
@@ -32,17 +32,14 @@ BEGIN
     /* Variable declarations */
 	DECLARE @dim_factory_id_original_constrained_02 INT = @dim_factory_id_original
 	DECLARE @dim_product_clk_mtl_02 SMALLINT
+	DECLARE @dim_product_dtp_mtl_02 SMALLINT
+	DECLARE @dim_product_sjd_mtl_02 SMALLINT
 	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
+	DECLARE @dim_factory_name_priority_list_secondary_02 NVARCHAR(45)
 	DECLARE @fact_priority_list_source_count_02 INT = 0
 
 	/* Variable assignments */
-	SET @dim_product_clk_mtl_02 =
-	(
-		SELECT ISNULL(MAX([clk_mtl]), 0)
-		FROM [dbo].[dim_product]
-		WHERE [material_id] = @dim_product_material_id
-	)
 
 	SET @helper_retail_qt_rqt_vendor_02 =
 	(
@@ -51,40 +48,10 @@ BEGIN
 		WHERE [MTL] = @dim_product_material_id
 	)
 
-	SET @dim_factory_name_priority_list_primary_02 =
-	(
-		SELECT df.[short_name]
-		FROM
-			(
-				SELECT [dim_factory_id_1]
-				FROM [dbo].[fact_priority_list] f
-					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
-	                	ON f.[dim_product_id] = dp.[id]
-				WHERE [material_id] = @dim_product_material_id
-			) fpl
-			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
-				ON fpl.[dim_factory_id_1] = df.[id]
-	)
 
 	/* Sub decision tree logic */
-	-- Duty Beneficial: EU DC and EU Cross Dock
-	IF @dim_customer_sold_to_party IN ('EU DC', 'EU Crossdock')
-	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
-		-- DTP MTL?
-		IF @dim_product_clk_mtl_02 = 1
-		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'CLK')
-			SET @allocation_logic = @allocation_logic +' => ' + 'CLK MTL'
-		END
-		ELSE
-		BEGIN
-			SET @allocation_logic = @allocation_logic +' => ' + 'Non CLK MTL' + ' => ' + 'DTP'
-		END
-	END
-
-	-- Duty Beneficial: Korea DC
-	ELSE IF @dim_customer_sold_to_party IN ('Korea DC')
+	-- Duty Beneficial: US Direct
+	IF @dim_customer_sold_to_party = 'US Direct'
 	BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
 		-- RQT MTL?
@@ -141,21 +108,17 @@ BEGIN
 			END
 		END
 
-		-- Flex?
-		ELSE IF @dim_product_style_complexity LIKE '%Flex%'
-		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-			SET @allocation_logic = @allocation_logic +' => ' + 'Flex' + ' => ' + 'SJV'
-		END
 		ELSE
 		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-			SET @allocation_logic = @allocation_logic +' => ' + 'Not Flex' + ' => ' + 'First priority'
-			IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
-			BEGIN
-				SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
-			END
+			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+			SET @allocation_logic = @allocation_logic +' => ' + 'not RQT MTL' +' => ' + 'SJV'
 		END
+	END
+
+	ELSE IF @dim_customer_sold_to_party = 'US DC'
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
+		SET @allocation_logic = @allocation_logic +' => ' + 'not RQT MTL' +' => ' + 'SJD'
 	END
 
 	IF @dim_factory_id_original_constrained_02 IS NULL

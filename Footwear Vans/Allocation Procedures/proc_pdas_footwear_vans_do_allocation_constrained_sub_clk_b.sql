@@ -13,10 +13,12 @@ GO
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_clk_b]
 	@pdasid INT,
 	@businessid INT,
+	@pdas_release_month_date_id INT,
 	@dim_buying_program_id INT,
 	@dim_factory_id_original INT,
 	@dim_product_material_id NVARCHAR(45),
 	@dim_product_style_complexity NVARCHAR(45),
+	@dim_construction_type_name NVARCHAR(100),
 	@dim_factory_original_region NVARCHAR(45),
 	@dim_date_year_cw_accounting NVARCHAR(8),
 	@dim_customer_id INT,
@@ -129,6 +131,7 @@ BEGIN
 		-- RQT MTL?
 		IF @dim_product_material_id IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
 		BEGIN
+			SET @allocation_logic = @allocation_logic +' => ' + 'RQT MTL'
 
 			IF @dim_factory_original_region = 'EMEA'
 			BEGIN
@@ -136,12 +139,13 @@ BEGIN
 				IF @helper_retail_qt_rqt_vendor_02 in ('DTC', 'SJV')
 				BEGIN
 					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTC')
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
+					SET @allocation_logic = @allocation_logic +' => ' + 'DTC'
 				END
+				-- Fixed Vendor
 				ELSE
 				BEGIN
 					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
+					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
 				END
 			END
 
@@ -150,29 +154,30 @@ BEGIN
 				-- Vendor = DTC or SJV?
 				IF @dim_product_material_id in ('DTC', 'SJV')
 				BEGIN
-					SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-					SET @allocation_logic = @allocation_logic +' => ' + 'SJV RQT MTL'
+					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+					SET @allocation_logic = @allocation_logic +' => ' + 'SJV'
 				END
-
+				-- Fixed Vendor
 				ELSE
 				BEGIN
-					SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
+					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
 				END
 			END
 
 			ELSE IF @dim_factory_original_region IN ('APAC')
 			BEGIN
+				-- HSC
 				IF @dim_customer_sold_to_party LIKE 'China%'
 				BEGIN
-					SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
+					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
 					SET @allocation_logic = @allocation_logic +' => ' + 'HSC'
 				END
+				-- Fixed Vendor
 				ELSE
 				BEGIN
-					-- Fixed Vendor
-					SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
+					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
 				END
 			END
 		END
@@ -202,6 +207,7 @@ BEGIN
 	-- Non Duty Beneficial
 	ELSE
 	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + 'Non-duty Beneficial: ' + @dim_customer_sold_to_party
 		-- Dual Source?
 		IF @fact_priority_list_source_count_02 = 2 AND (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 1
 		BEGIN
@@ -214,13 +220,21 @@ BEGIN
 		END
 	END
 
+	IF @dim_factory_id_original_constrained_02 IS NULL
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + 'Not Found'
+	END
+
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_updater]
 		@pdasid = @pdasid,
 		@businessid = @businessid,
+		@pdas_release_month_date_id = @pdas_release_month_date_id,
 		@dim_buying_program_id = @dim_buying_program_id,
 		@dim_factory_id_original = @dim_factory_id_original,
 		@dim_product_material_id = @dim_product_material_id,
 		@dim_product_style_complexity = @dim_product_style_complexity,
+		@dim_construction_type_name = @dim_construction_type_name,
+		@dim_factory_original_region = @dim_factory_original_region,
 		@dim_date_year_cw_accounting = @dim_date_year_cw_accounting,
 		@dim_customer_id = @dim_customer_id,
 		@dim_customer_sold_to_party = @dim_customer_sold_to_party,
