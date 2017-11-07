@@ -54,6 +54,21 @@ BEGIN
 				ON fpl.[dim_factory_id_1] = df.[id]
 	)
 
+	SET @dim_factory_name_priority_list_secondary_02 =
+	(
+		SELECT df.[short_name]
+		FROM
+			(
+				SELECT [dim_factory_id_2]
+				FROM [dbo].[fact_priority_list] f
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
+	                	ON f.[dim_product_id] = dp.[id]
+				WHERE [material_id] = @dim_product_material_id
+			) AS fpl
+			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
+				ON fpl.[dim_factory_id_2] = df.[id]
+	)
+
 	SET @dim_product_clk_mtl =
 	(
 		SELECT ISNULL([clk_mtl], 0)
@@ -82,11 +97,11 @@ BEGIN
 		WHERE [MTL] = @dim_product_material_id
 	)
 
-	IF (SELECT [dim_factory_id_1] FROM [dbo].[fact_priority_list] WHERE [dim_product_id] = @dim_product_id) IS NOT NULL
+	IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 	BEGIN
 		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
 	END
-	IF (SELECT [dim_factory_id_2] FROM [dbo].[fact_priority_list] WHERE [dim_product_id] = @dim_product_id) IS NOT NULL
+	IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
 	BEGIN
 		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
 	END
@@ -98,7 +113,7 @@ BEGIN
 			(
 				SELECT [dim_factory_id_1]
 				FROM [dbo].[fact_priority_list] f
-					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
 			) AS fpl
@@ -112,20 +127,7 @@ BEGIN
 				ON fpl.[dim_factory_id_1] = dfl.[id]
 	)
 
-	SET @dim_factory_name_priority_list_secondary_02 =
-	(
-		SELECT df.[short_name]
-		FROM
-			(
-				SELECT [dim_factory_id_2]
-				FROM [dbo].[fact_priority_list] f
-					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
-	                	ON f.[dim_product_id] = dp.[id]
-				WHERE [material_id] = @dim_product_material_id
-			) AS fpl
-			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
-				ON fpl.[dim_factory_id_2] = df.[id]
-	)
+
 
 	/* Sub decision tree logic */
 
