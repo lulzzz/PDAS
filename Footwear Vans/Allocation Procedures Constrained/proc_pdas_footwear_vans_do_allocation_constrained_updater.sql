@@ -62,7 +62,6 @@ BEGIN
 				[dim_pdas_id] = @pdasid
 				and [dim_business_id] = @businessid
 				and [dim_date_id] >= @pdas_release_month_date_id
-				and [edit_username] IS NULL
 				and ddc.[name] IN ('Forecast', 'Need to Buy')
 			GROUP BY [dim_factory_id_original], [year_cw_accounting], [dim_construction_type_name]
 			HAVING [dim_factory_id_original] = @dim_factory_id_original

@@ -93,7 +93,7 @@ BEGIN
 			,[dim_date_year_cw_accounting] NVARCHAR(8)
 			,[dim_buying_program_name] NVARCHAR(100)
 			,[dim_demand_category_name] NVARCHAR(100)
-			,[dim_product_material_id] NVARCHAR(100) -- Here you are at MTL level
+			,[dim_product_material_id] NVARCHAR(100) -- Here we are at MTL level
 			,[dim_product_style_complexity] NVARCHAR(100)
 			,[dim_construction_type_name] NVARCHAR(100)
 			,[dim_factory_original_short_name]  NVARCHAR(100)
@@ -238,7 +238,6 @@ BEGIN
 				[dim_pdas_id] = @pdasid
 				and [dim_business_id] = @businessid
 				and [dim_date_id] >= @pdas_release_month_date_id
-				and [edit_username] IS NULL
 				and ddc.[name] IN ('Forecast', 'Need to Buy')
 		) x
 		GROUP BY
@@ -260,7 +259,10 @@ BEGIN
 			,[dim_customer_sold_to_category]
 			,[dim_customer_country_region]
 			,[dim_customer_country_code_a2]
-		ORDER BY [quantity] DESC
+		ORDER BY
+			[dim_date_year_cw_accounting] ASC
+			,[quantity] DESC
+
 
 		/* Decision tree algorithm */
 
@@ -317,25 +319,26 @@ BEGIN
 			SET @current_fill_01 =
 			(
 				SELECT SUM([quantity_consumed])
-				FROM [dbo].[fact_demand_total] f
-				INNER JOIN (SELECT [id], [year_cw_accounting] FROM [dbo].[dim_date]) dd
-					ON f.[dim_date_id] = dd.[id]
-				INNER JOIN
-				(
-					SELECT
-						f.[id]
-						,f.[material_id]
-						,f.[style_complexity]
-						,f.[is_placeholder]
-						,dl.[name] AS [dim_construction_type_name]
-					FROM
-						[dbo].[dim_product] f
-						INNER JOIN [dbo].[dim_construction_type] dl
-							ON dl.[id] = f.[dim_construction_type_id]
-				) dp
-					ON f.[dim_product_id] = dp.[id]
-				INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-					ON f.[dim_demand_category_id] = ddc.[id]
+				FROM
+					[dbo].[fact_demand_total] f
+					INNER JOIN (SELECT [id], [year_cw_accounting] FROM [dbo].[dim_date]) dd
+						ON f.[dim_date_id] = dd.[id]
+					INNER JOIN
+					(
+						SELECT
+							f.[id]
+							,f.[material_id]
+							,f.[style_complexity]
+							,f.[is_placeholder]
+							,dl.[name] AS [dim_construction_type_name]
+						FROM
+							[dbo].[dim_product] f
+							INNER JOIN [dbo].[dim_construction_type] dl
+								ON dl.[id] = f.[dim_construction_type_id]
+					) dp
+						ON f.[dim_product_id] = dp.[id]
+					INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
+						ON f.[dim_demand_category_id] = ddc.[id]
 				WHERE
 					[dim_pdas_id] = @pdasid
 					and [dim_business_id] = @businessid
@@ -348,7 +351,6 @@ BEGIN
 					AND [dim_construction_type_name] = @dim_construction_type_name_01
 			)
 
-			-- we don't have the 2018 capacities...
 			SET @max_capacity_01 =
 			(
 				SELECT SUM([Available Capacity by Week])
@@ -358,6 +360,12 @@ BEGIN
 					AND [Accounting CW] = @dim_date_year_cw_accounting_01
 					AND [Construction Type] = @dim_construction_type_name_01
 			)
+
+			SET @allocation_logic = @allocation_logic +
+				'Weekly fill rate: ' +
+				CONVERT(NVARCHAR(10), @current_fill_01) + '/' +
+				CONVERT(NVARCHAR(10), @max_capacity_01) + ' (' +
+				FORMAT(CONVERT(FLOAT, @current_fill_01/@max_capacity_01),'P') + ')'
 
 			IF @current_fill_01 > @max_capacity_01
 			BEGIN
