@@ -9,10 +9,9 @@ GO
 --              2. Else if the NTB sold to party is "EU Crossdock", take the day from Cutoff Day EU Crossdock field for the corresponding port
 --              3. Else keep Monday (standard)
 -- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_emea_ntb_cutoff_day_adjustment]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_emea_ntb_cutoff_day_adjustment]
 	@pdasid INT,
-	@businessid INT,
-	@buying_program_id INT
+	@businessid INT
 AS
 BEGIN
 
@@ -21,25 +20,40 @@ BEGIN
 
     -- Update the date based on cutoff day table (default day is Monday)
 	UPDATE target
+	SET
         target.[dim_date_id] =
 			CASE target.[sold_to_party]
-				WHEN 'EU DC' THEN dd_xfd.[id]
-				ELSE
+				WHEN 'EU DC' THEN eu_dc_xfd.[id]
+				ELSE eu_crossdock_xfd.[id]
 			END
 	FROM
     	(
-            SELECT *
+            SELECT
+				f.*
+				,dc.[sold_to_party]
+				,dd.[year_cw_accounting]
             FROM
 				[dbo].[fact_demand_total] f
 				INNER JOIN
 				(
 					SELECT
 						[id]
+						,[sold_to_party]
 					FROM
 						[dbo].[dim_customer] dc
-					WHERE [sold_to_party] IN ('EU DC', 'EU Crossdock')
+					WHERE
+						[sold_to_party] IN ('EU DC', 'EU Crossdock')
 				) as dc
 					ON f.[dim_customer_id] = dc.[id]
+				INNER JOIN
+				(
+					SELECT
+						[id],
+						[year_cw_accounting],
+						[day_name_of_week]
+					FROM [dbo].[dim_date]
+				) dd
+					ON f.[dim_date_id] = dd.[id]
             WHERE
 				[dim_pdas_id] = @pdasid and
 				[dim_business_id] = @businessid and
@@ -47,26 +61,43 @@ BEGIN
         ) target
 		INNER JOIN
 		(
-			SELECT [id], [short_name], [port], cut.[Cutoff Weekday] as [cutoff_day], cut.[Season Year] as [cutoff_season]
+			SELECT
+				[id],
+				[short_name],
+				[port],
+				cut.[Cutoff Day EU DC] as [cutoff_day_eu_dc],
+				cut.[Cutoff Day EU Crossdock] as [cutoff_day_eu_crossdock]
 			FROM
 				[dbo].[dim_factory] df
 				LEFT OUTER JOIN [dbo].[helper_pdas_footwear_vans_cutoff] cut
 					ON 	df.port = cut.[Port Name]
 			WHERE is_placeholder = 0
 		) df
-			ON ntb.vfa_allocation = df.short_name
-		LEFT OUTER JOIN -- Cutoff join
+			ON target.[dim_factory_id] = df.[id]
+
+		LEFT OUTER JOIN -- Cutoff join EU DC
 		(
 			SELECT
 				id,
-				SUBSTRING([year_cw_accounting], 7, 2) AS cw,
-				[day_name_of_week],
-				[season_year_short_crd]
+				[year_cw_accounting],
+				[day_name_of_week]
 			FROM [dbo].[dim_date]
-		) dd_xfd
-			ON 	dd_xfd.cw = SUBSTRING([exp_delivery_no_constraint_dt], 3, 5) AND
-				dd_xfd.day_name_of_week = df.[cutoff_day] AND
-				dd_xfd.season_year_short_crd = df.[cutoff_season]
+		) eu_dc_xfd
+			ON 	eu_dc_xfd.[year_cw_accounting] = target.[year_cw_accounting] AND
+				eu_dc_xfd.day_name_of_week = df.[cutoff_day_eu_dc]
+
+		LEFT OUTER JOIN -- Cutoff join EU Crossdock
+		(
+			SELECT
+				id,
+				[year_cw_accounting],
+				[day_name_of_week]
+			FROM [dbo].[dim_date]
+		) eu_crossdock_xfd
+			ON 	eu_crossdock_xfd.[year_cw_accounting] = target.[year_cw_accounting] AND
+				eu_crossdock_xfd.day_name_of_week = df.[cutoff_day_eu_crossdock]
+	WHERE
+		target.[sold_to_party] IN ('EU DC', 'EU Crossdock')
 
 
 END

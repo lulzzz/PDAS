@@ -22,7 +22,7 @@ BEGIN
 		(
 			SELECT
 				*
-				,CONVERT(NVARCHAR(100), CONVERT(NVARCHAR(10), dim_buying_program_id) + '-' + CONVERT(NVARCHAR(10), dim_demand_category_id) + '-' + CONVERT(NVARCHAR(10), dim_product_id) + '-' + CONVERT(NVARCHAR(10), dim_date_id) + '-' + CONVERT(NVARCHAR(10), dim_customer_id) + '-' + [order_number]) AS id
+				,CONVERT(NVARCHAR(100), CONVERT(NVARCHAR(10), dim_pdas_id) + '-' + CONVERT(NVARCHAR(10), dim_business_id) + '-' + CONVERT(NVARCHAR(10), dim_buying_program_id) + '-' + CONVERT(NVARCHAR(10), dim_demand_category_id) + '-' + CONVERT(NVARCHAR(10), dim_product_id) + '-' + CONVERT(NVARCHAR(10), dim_date_id) + '-' + CONVERT(NVARCHAR(10), dim_customer_id) + '-' + [order_number]) AS id
 			FROM [dbo].[fact_demand_total]
 			WHERE
 				dim_pdas_id = @pdasid and
@@ -35,12 +35,15 @@ BEGIN
 				,temp.[vfa_comment]
 				,df.[id] as	[dim_factory_id]
 			FROM
-				[dbo].[staging_pdas_footwear_vans_allocation_scenario_vfa_ntb] temp
+				[dbo].[staging_pdas_footwear_vans_allocation_scenario_vfa] temp
 				INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 					ON temp.[factory_code] = df.[short_name]
 			WHERE
-				[factory_code] <> [factory_code_constrained_scenario]
+				[factory_code] <> [factory_code_constrained]
 		) as temp
 			ON	target.[id] = temp.[id]
+	WHERE
+		target.[dim_factory_id] <> temp.[dim_factory_id] AND
+		target.[comment] <> temp.[vfa_comment]
 
 END
