@@ -6,7 +6,7 @@ GO
 -- Create date: 9/12/2017
 -- Description:	Procedure to load the forecast in fact_forecast.
 -- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_forecast_bulk]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
 	@pdasid INT,
 	@businessid INT,
 	@buying_program_id INT
@@ -44,7 +44,7 @@ BEGIN
 		@dim_factory_id_placeholder as dim_factory_id,
 		sum(quantity) as quantity
 	FROM
-		[dbo].[staging_pdas_footwear_vans_apac_forecast_bulk] nf
+		[dbo].[staging_pdas_footwear_vans_apac_forecast] nf
 		LEFT OUTER JOIN
 		(
 			SELECT id, material_id
@@ -102,7 +102,7 @@ BEGIN
 		@dim_factory_id_placeholder as dim_factory_id,
 		sum(quantity) as quantity
 	FROM
-		[dbo].[staging_pdas_footwear_vans_emea_forecast_bulk] nf
+		[dbo].[staging_pdas_footwear_vans_emea_forecast] nf
 		LEFT OUTER JOIN
 		(
 			SELECT id, material_id
@@ -162,7 +162,7 @@ BEGIN
 		@dim_factory_id_placeholder as dim_factory_id,
 		sum(quantity) as quantity
 	FROM
-		[dbo].[staging_pdas_footwear_vans_nora_forecast_bulk] nf
+		[dbo].[staging_pdas_footwear_vans_nora_forecast] nf
 		INNER JOIN
 		(
 			SELECT [id], [name]

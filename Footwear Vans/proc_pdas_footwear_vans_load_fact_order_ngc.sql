@@ -77,8 +77,8 @@ BEGIN
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
 		END as dim_product_id,
-        CASE
-		 	WHEN ISNULL(shipped_qty, 0) <> ngc.order_qty THEN @dim_demand_category_id_open_order
+		CASE ngc.shipment_status
+			WHEN 1 THEN @dim_demand_category_id_shipped_order
 			ELSE @dim_demand_category_id_shipped_order
 		END as dim_demand_category_id,
         MAX(dd_po_issue.id) as placed_date_id,
@@ -156,7 +156,7 @@ BEGIN
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_shipment_closed_on ON ngc.shipment_closed_on_dt = dd_shipment_closed_on.full_date
 	WHERE
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL)
-		and dd_original_crd.id >= 20170101
+		--and dd_original_crd.id >= 20170101
     GROUP BY
 		ISNULL(po_code, 'UNDEFINED'),
 		CASE ngc.shipment_status

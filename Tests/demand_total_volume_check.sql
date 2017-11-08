@@ -33,24 +33,21 @@ ORDER BY
 	[Customer Region],
     CRD
 
+
 -- Month Factory
 SELECT
-	ASAP,
-	CASE ASAP
-		WHEN 1 THEN 'ASAP'
-		ELSE convert(nvarchar(10), MONTH(CRD))
-	END AS CRD,
-	[Factory Code (Unconstrained Scenario)],
+	[Urgency],
+	convert(nvarchar(10), MONTH(CRD)) crd_month,
+	[Factory Code (Constrained)],
 	SUM(quantity) qty
 FROM [dbo].[xl_view_pdas_footwear_vans_demand_total]
+where
+[Demand Signal Type] in ('Need to Buy')
 GROUP BY
-	CASE ASAP
-		WHEN 1 THEN 'ASAP'
-		ELSE convert(nvarchar(10), MONTH(CRD))
-	END,
-	[Factory Code (Unconstrained Scenario)],
-	ASAP
+	[Urgency],
+	convert(nvarchar(10), MONTH(CRD)),
+	[Factory Code (Constrained)]
 ORDER BY
-	ASAP,
-	[Factory Code (Unconstrained Scenario)],
-    CRD
+	[Urgency],
+	convert(nvarchar(10), MONTH(CRD)),
+	[Factory Code (Constrained)]

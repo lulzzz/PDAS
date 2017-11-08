@@ -6,7 +6,7 @@ GO
 -- Create date: 15/9/2017
 -- Description:	Procedure to load the NTB in fact_order.
 -- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb_bulk]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
 	@pdasid INT,
 	@businessid INT,
 	@buying_program_id INT
@@ -115,7 +115,7 @@ BEGIN
 			SELECT
 				*
 				,CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id_corrected]
-			FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]
+			FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]
 		) AS ntb
 		INNER JOIN (SELECT [id], [name], [sold_to_party] FROM [dbo].[dim_customer] WHERE is_placeholder = 0) dc
 			ON ntb.dim_customer_name = dc.name
@@ -212,7 +212,7 @@ BEGIN
 			SELECT
 				*
 				,CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id_corrected]
-			FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]
+			FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]
 		) AS ntb
 	    INNER JOIN [dbo].[dim_date] dd_xfac ON ntb.xfac_dt = dd_xfac.full_date
 		INNER JOIN [dbo].[dim_customer] dc ON ntb.dim_customer_name = dc.name
@@ -295,7 +295,7 @@ BEGIN
 			SELECT
 				*
 				,CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id_corrected]
-			FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]
+			FROM [dbo].[staging_pdas_footwear_vans_casa_ntb]
 		) AS ntb
 		LEFT OUTER JOIN
 		(
@@ -377,7 +377,7 @@ BEGIN
 			SELECT
 				*
 				,CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id_corrected]
-			FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]
+			FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]
 		) AS ntb
 		LEFT OUTER JOIN
 		(
@@ -393,7 +393,7 @@ BEGIN
 				ntb.dim_product_size = dp_ms.size
 
 		LEFT OUTER JOIN (SELECT [id], [name] FROM [dbo].[dim_customer]) dc_name
-			ON ntb.[sold_to_customer_name] = dc_name.[name]
+			ON ntb.[ship_to] = dc_name.[name]
 
 		LEFT OUTER JOIN (SELECT MAX([id]) as [id], [dc_plt] FROM [dbo].[dim_customer] GROUP BY [dc_plt]) dc_plt
 			ON ntb.[plnt] = dc_plt.[dc_plt]

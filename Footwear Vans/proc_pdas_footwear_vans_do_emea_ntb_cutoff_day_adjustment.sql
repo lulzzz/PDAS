@@ -97,7 +97,8 @@ BEGIN
 			ON 	eu_crossdock_xfd.[year_cw_accounting] = target.[year_cw_accounting] AND
 				eu_crossdock_xfd.day_name_of_week = df.[cutoff_day_eu_crossdock]
 	WHERE
-		target.[sold_to_party] IN ('EU DC', 'EU Crossdock')
+		(target.[sold_to_party] = 'EU DC' and eu_dc_xfd.[id] IS NOT NULL) or
+		(target.[sold_to_party] = 'EU Crossdock' and eu_crossdock_xfd.[id] IS NOT NULL)
 
 
 END

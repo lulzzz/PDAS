@@ -33,10 +33,13 @@ BEGIN
 				) OR
 				[variable] NOT IN (
 					'Release Locker',
-					'Release Note'
+					'Release Note',
+					'Buying Program Name'
 				)
 				OR
 				([variable] = 'Release Locker' AND [value] NOT IN ('ON', 'OFF'))
+				OR
+				([variable] = 'Buying Program Name' AND [value] NOT IN (SELECT DISTINCT [name] FROM [dbo].[dim_buying_program]))
 		)
 
 		IF @test IS NULL
@@ -73,12 +76,22 @@ BEGIN
     			FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
 
 				UPDATE [dbo].[dim_pdas]
-				SET [comment] =
-				(
-					SELECT TOP 1 [value]
-					FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
-					WHERE [type] = 'System' AND [variable] = 'Release Note'
-				)
+				SET
+					[comment] =
+						(
+							SELECT TOP 1 [value]
+							FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
+							WHERE [type] = 'System' AND [variable] = 'Release Note'
+						)
+					,[dim_buying_program_id] =
+						(
+							SELECT TOP 1 dbp.[id]
+							FROM
+								[dbo].[mc_temp_pdas_footwear_vans_configuration] temp
+								INNER JOIN [dbo].[dim_buying_program] dbp
+									ON temp.[value] = dbp.[name]
+							WHERE [type] = 'System' AND [variable] = 'Buying Program Name'
+						)
 				WHERE [id] = @dim_pdas_id
 
             END

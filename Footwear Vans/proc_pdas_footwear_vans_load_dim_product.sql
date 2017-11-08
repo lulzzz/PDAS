@@ -374,6 +374,11 @@ BEGIN
             WHEN dct.id IS NOT NULL THEN dct.id
             ELSE dct_mapping.id
         END,
+        dp.product_type = CASE
+    		WHEN [catsub_sbu] LIKE '%Vault%' THEN 'Vault'
+    		WHEN [catsub_sbu] LIKE '%ArcAd%' THEN 'ArcAd'
+    		ELSE 'Regular'
+    	END,
         dp.style_complexity = prio.dim_product_style_complexity,
         dp.color_description = CONVERT(NVARCHAR(100), prio.[dim_product_color_description]),
         dp.style_name = CONVERT(NVARCHAR(100), prio.[dim_product_style_name]),

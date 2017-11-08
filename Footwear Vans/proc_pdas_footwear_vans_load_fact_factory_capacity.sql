@@ -495,4 +495,40 @@ BEGIN
         INNER JOIN [dbo].[helper_pdas_footwear_vans_factory_capacity_adjustment] h
             ON df.[short_name] = h.[Factory]
 
+    -- Update negative capacity to 0
+    UPDATE [dbo].[fact_factory_capacity]
+    SET [capacity_raw_weekly] = 0
+    WHERE
+        [dim_pdas_id] = @pdasid AND
+        [dim_business_id] = @businessid AND
+        ISNULL([capacity_raw_weekly], 0) < 0
+
+    UPDATE [dbo].[fact_factory_capacity]
+    SET [capacity_raw_daily_overwritten] = 0
+    WHERE
+        [dim_pdas_id] = @pdasid AND
+        [dim_business_id] = @businessid AND
+        ISNULL([capacity_raw_daily_overwritten], 0) < 0
+
+    UPDATE [dbo].[fact_factory_capacity]
+    SET [capacity_raw_weekly_overwritten] = 0
+    WHERE
+        [dim_pdas_id] = @pdasid AND
+        [dim_business_id] = @businessid AND
+        ISNULL([capacity_raw_weekly_overwritten], 0) < 0
+
+    UPDATE [dbo].[fact_factory_capacity]
+    SET [capacity_available_weekly] = 0
+    WHERE
+        [dim_pdas_id] = @pdasid AND
+        [dim_business_id] = @businessid AND
+        ISNULL([capacity_available_weekly], 0) < 0
+
+    UPDATE [dbo].[fact_factory_capacity]
+    SET [capacity_available_weekly_adjusted] = 0
+    WHERE
+        [dim_pdas_id] = @pdasid AND
+        [dim_business_id] = @businessid AND
+        ISNULL([capacity_available_weekly_adjusted], 0) < 0
+
 END
