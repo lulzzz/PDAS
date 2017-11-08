@@ -156,10 +156,11 @@ BEGIN
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_shipment_closed_on ON ngc.shipment_closed_on_dt = dd_shipment_closed_on.full_date
 	WHERE
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL)
+		and dd_original_crd.id >= 20170101
     GROUP BY
 		ISNULL(po_code, 'UNDEFINED'),
 		CASE ngc.shipment_status
-			WHEN 1 THEN dd_original_crd.id
+				WHEN 1 THEN dd_original_crd.id
 			ELSE dd_revised_crd.id
 		END,
 		CASE

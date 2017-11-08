@@ -1,3 +1,15 @@
+-- Month Demand Signal Type
+SELECT
+	[Accounting Month],
+	[Demand Signal Type],
+	SUM(quantity) qty
+FROM [dbo].[xl_view_pdas_footwear_vans_demand_total]
+GROUP BY
+	[Accounting Month],
+	[Demand Signal Type]
+ORDER BY
+	[Accounting Month],
+	[Demand Signal Type]
 
 -- Month Region
 SELECT
