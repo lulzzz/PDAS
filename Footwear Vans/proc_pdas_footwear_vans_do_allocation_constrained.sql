@@ -50,7 +50,7 @@ BEGIN
 			[dim_pdas_id] = @pdasid
 			and [dim_business_id] = @businessid
 			and ddc.[name] IN ('Forecast', 'Need to Buy')
-			
+
 
 		-- Decision tree variables level 1 (top level decision tree)
 		DECLARE @dim_buying_program_id_01 int
@@ -387,14 +387,16 @@ BEGIN
 			ELSE IF @max_capacity_01 = 0
 			BEGIN
 				SET @allocation_logic = @allocation_logic +
-					'Weekly fill rate: ' +
+					@dim_factory_original_short_name_01 +
+					' Weekly fill rate: ' +
 					CONVERT(NVARCHAR(10), @current_fill_01) + '/' +
 					CONVERT(NVARCHAR(10), @max_capacity_01)
 			END
 			ELSE
 			BEGIN
 				SET @allocation_logic = @allocation_logic +
-					'Weekly fill rate: ' +
+					@dim_factory_original_short_name_01 +
+					' Weekly fill rate: ' +
 					CONVERT(NVARCHAR(10), @current_fill_01) + '/' +
 					CONVERT(NVARCHAR(10), @max_capacity_01) + ' (' +
 					FORMAT(CONVERT(FLOAT, @current_fill_01)/CONVERT(FLOAT, @max_capacity_01),'P') + ')'
@@ -404,7 +406,7 @@ BEGIN
 			BEGIN
 				IF @dim_factory_original_short_name_01 = 'BRT'
 				BEGIN
-					SET @allocation_logic = @allocation_logic + ' => ' + 'Unconstrained: ' + @dim_factory_original_short_name_01
+					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
 					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_brt_b]
 						@pdasid = @pdasid,
 						@businessid = @businessid,
@@ -423,7 +425,7 @@ BEGIN
 				END
 				ELSE IF @dim_factory_original_short_name_01 = 'CLK'
 				BEGIN
-					SET @allocation_logic = @allocation_logic + ' => ' + 'Unconstrained: ' + @dim_factory_original_short_name_01
+					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
 					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_clk_b]
 						@pdasid = @pdasid,
 						@businessid = @businessid,
@@ -442,7 +444,7 @@ BEGIN
 				END
 				ELSE IF @dim_factory_original_short_name_01 = 'DTC'
 				BEGIN
-					SET @allocation_logic = @allocation_logic + ' => ' + 'Unconstrained: ' + @dim_factory_original_short_name_01
+					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
 					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_dtc_b]
 						@pdasid = @pdasid,
 						@businessid = @businessid,
@@ -461,7 +463,7 @@ BEGIN
 				END
 				ELSE IF @dim_factory_original_short_name_01 = 'DTP'
 				BEGIN
-					SET @allocation_logic = @allocation_logic + ' => ' + 'Unconstrained: ' + @dim_factory_original_short_name_01
+					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
 					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_dtp_b]
 						@pdasid = @pdasid,
 						@businessid = @businessid,
@@ -480,7 +482,7 @@ BEGIN
 				END
 				ELSE IF @dim_factory_original_short_name_01 = 'FSC'
 				BEGIN
-					SET @allocation_logic = @allocation_logic + ' => ' + 'Unconstrained: ' + @dim_factory_original_short_name_01
+					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
 					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_fsc_b]
 						@pdasid = @pdasid,
 						@businessid = @businessid,
@@ -499,7 +501,7 @@ BEGIN
 				END
 				ELSE IF @dim_factory_original_short_name_01 = 'HSC'
 				BEGIN
-					SET @allocation_logic = @allocation_logic + ' => ' + 'Unconstrained: ' + @dim_factory_original_short_name_01
+					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
 					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_hsc_b]
 						@pdasid = @pdasid,
 						@businessid = @businessid,
@@ -518,7 +520,7 @@ BEGIN
 				END
 				ELSE IF @dim_factory_original_short_name_01 = 'ICC'
 				BEGIN
-					SET @allocation_logic = @allocation_logic + ' => ' + 'Unconstrained: ' + @dim_factory_original_short_name_01
+					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
 					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_icc_b]
 						@pdasid = @pdasid,
 						@businessid = @businessid,
@@ -537,7 +539,7 @@ BEGIN
 				END
 				ELSE IF @dim_factory_original_short_name_01 = 'SJD'
 				BEGIN
-					SET @allocation_logic = @allocation_logic + ' => ' + 'Unconstrained: ' + @dim_factory_original_short_name_01
+					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
 					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_sjd_b]
 						@pdasid = @pdasid,
 						@businessid = @businessid,
@@ -556,7 +558,7 @@ BEGIN
 				END
 				ELSE IF @dim_factory_original_short_name_01 = 'SJV'
 				BEGIN
-					SET @allocation_logic = @allocation_logic + ' => ' + 'Unconstrained: ' + @dim_factory_original_short_name_01
+					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
 					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_sjv_b]
 						@pdasid = @pdasid,
 						@businessid = @businessid,
