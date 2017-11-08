@@ -6,7 +6,7 @@ GO
 -- Create date: 9/18/2017
 -- Description:	Procedure to do the allocation of demand to factories (decision tree implementation)
 -- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_unconstrained]
 	@pdasid INT,
 	@businessid INT
 AS
@@ -37,13 +37,18 @@ BEGIN
 
 		/* Reset allocation */
 
-		UPDATE [dbo].[fact_demand_total]
+		UPDATE f
 		SET
 			[dim_factory_id_original] = @dim_factory_id_placeholder,
 			[allocation_logic_unconstrained] = NULL
+		FROM
+			[dbo].[fact_demand_total] f
+			INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
+				ON f.[dim_demand_category_id] = ddc.[id]
 		WHERE
 			[dim_pdas_id] = @pdasid
 			and [dim_business_id] = @businessid
+			and ddc.[name] IN ('Forecast', 'Need to Buy')
 
 		-- Decision tree variables level 1 (top level decision tree)
 		DECLARE @dim_buying_program_id_01 int
