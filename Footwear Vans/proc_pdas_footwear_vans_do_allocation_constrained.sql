@@ -38,13 +38,19 @@ BEGIN
 
 		/* Reset allocation */
 
-		UPDATE [dbo].[fact_demand_total]
+		UPDATE f
 		SET
 			[dim_factory_id_original_constrained] = [dim_factory_id_original],
 			[allocation_logic_constrained] = NULL
+		FROM
+			[dbo].[fact_demand_total] f
+			INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
+				ON f.[dim_demand_category_id] = ddc.[id]
 		WHERE
 			[dim_pdas_id] = @pdasid
 			and [dim_business_id] = @businessid
+			and ddc.[name] IN ('Forecast', 'Need to Buy')
+			
 
 		-- Decision tree variables level 1 (top level decision tree)
 		DECLARE @dim_buying_program_id_01 int

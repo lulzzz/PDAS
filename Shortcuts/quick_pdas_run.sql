@@ -40,9 +40,12 @@ EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @bus
 -- Combine demand
 EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
+-- Consume high level demand signal with low level demand signal
+EXEC [dbo].[proc_pdas_footwear_vans_do_demand_signal_netting]
 
 -- Run decision tree allocation algorithm
-EXEC [dbo].[proc_pdas_footwear_vans_do_allocation]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_unconstrained] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 -- Include manual overwritte from VFA users
 EXEC [dbo].[proc_pdas_footwear_vans_load_allocation_scenario_vfa] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
