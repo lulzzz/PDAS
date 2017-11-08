@@ -346,7 +346,7 @@ BEGIN
 						IF @dim_customer_sold_to_party_01 LIKE 'US%'
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
-							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub05]
 								@pdasid = @pdasid,
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
@@ -651,7 +651,7 @@ BEGIN
 							IF @dim_customer_sold_to_party_01 LIKE 'US%'
 							BEGIN
 								SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
-								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub05]
 									@pdasid = @pdasid,
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,
@@ -868,7 +868,7 @@ BEGIN
 								@allocation_logic = @allocation_logic
 						END
 
-						IF @dim_customer_country_region_01 in ('NORA')	/*TO BE UPDATED*/
+						IF @dim_customer_country_region_01 in ('NORA')
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
 							IF @dim_customer_sold_to_party_01 LIKE 'CAN%'
@@ -891,7 +891,7 @@ BEGIN
 							IF @dim_customer_sold_to_party_01 LIKE 'US%'
 							BEGIN
 								SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
-								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub04]
+								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub05]
 									@pdasid = @pdasid,
 									@businessid = @businessid,
 									@dim_buying_program_id = @dim_buying_program_id_01,

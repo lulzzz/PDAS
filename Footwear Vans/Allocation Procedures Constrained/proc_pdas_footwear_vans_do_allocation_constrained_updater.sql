@@ -80,7 +80,7 @@ BEGIN
 				AND [Construction Type] = @dim_construction_type_name
 		)
 
-		IF @current_fill_01 < @max_capacity_01
+		IF @current_fill_01 < @max_capacity_01 OR @dim_factory_id_original_constrained = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
 		BEGIN
 			/* Update the dim_factory_id_original (PDAS recommendation) and dim_factory_id (value that user can overwrite in Console) */
 			UPDATE [dbo].[fact_demand_total]
