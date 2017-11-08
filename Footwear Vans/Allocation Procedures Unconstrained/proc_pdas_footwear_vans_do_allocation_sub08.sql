@@ -29,8 +29,13 @@ BEGIN
     /* Variable declarations */
 	DECLARE @dim_factory_id_original_02 INT = NULL
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
-	DECLARE @dim_location_country_code_a2_02 NVARCHAR(2)
-	DECLARE @dim_product_brt_in_house SMALLINT
+	DECLARE @dim_factory_name_priority_list_secondary_02 NVARCHAR(45)
+	DECLARE @dim_location_country_code_a2_primary_02 NVARCHAR(2)
+	DECLARE @dim_location_country_code_a2_secondary_02 NVARCHAR(2)
+	DECLARE @dim_product_clk_mtl_02 SMALLINT
+	DECLARE @dim_product_dtp_mtl_02 SMALLINT
+	DECLARE @dim_product_sjd_mtl_02 SMALLINT
+	DECLARE @fact_priority_list_source_count_02 INT = 0
 
 	/* Variable assignments */
 
@@ -49,14 +54,43 @@ BEGIN
 				ON fpl.[dim_factory_id_1] = df.[id]
 	)
 
-	SET @dim_product_brt_in_house =
+	SET @dim_factory_name_priority_list_secondary_02 =
 	(
-		SELECT ISNULL([brt_in_house], 0)
+		SELECT df.[short_name]
+		FROM
+			(
+				SELECT [dim_factory_id_2]
+				FROM [dbo].[fact_priority_list] f
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
+	                	ON f.[dim_product_id] = dp.[id]
+				WHERE [material_id] = @dim_product_material_id
+			) AS fpl
+			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
+				ON fpl.[dim_factory_id_2] = df.[id]
+	)
+
+	SET @dim_product_clk_mtl_02 =
+	(
+		SELECT ISNULL([clk_mtl], 0)
 		FROM [dbo].[dim_product]
 		WHERE [id] = @dim_product_id
 	)
 
-	SET @dim_location_country_code_a2_02 =
+	SET @dim_product_dtp_mtl_02 =
+	(
+		SELECT ISNULL([dtp_mtl], 0)
+		FROM [dbo].[dim_product]
+		WHERE [id] = @dim_product_id
+	)
+
+	SET @dim_product_sjd_mtl_02 =
+	(
+		SELECT ISNULL([sjd_mtl], 0)
+		FROM [dbo].[dim_product]
+		WHERE [id] = @dim_product_id
+	)
+
+	SET @dim_location_country_code_a2_primary_02 =
 	(
 		SELECT dfl.[dim_location_country_code_a2]
 		FROM
@@ -77,36 +111,94 @@ BEGIN
 				ON fpl.[dim_factory_id_1] = dfl.[id]
 	)
 
-	/* Sub decision tree logic */
+	SET @dim_location_country_code_a2_secondary_02 =
+	(
+		SELECT dfl.[dim_location_country_code_a2]
+		FROM
+			(
+				SELECT [dim_factory_id_2]
+				FROM [dbo].[fact_priority_list] f
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
+	                	ON f.[dim_product_id] = dp.[id]
+				WHERE [material_id] = @dim_product_material_id
+			) AS fpl
+			INNER JOIN
+			(
+				SELECT df.[id], dl.[country_code_a2] AS [dim_location_country_code_a2]
+				FROM [dbo].[dim_factory] df
+				INNER JOIN [dbo].[dim_location] dl
+					ON df.[dim_location_id] = dl.[id]
+			) dfl
+				ON fpl.[dim_factory_id_2] = dfl.[id]
+	)
 
-	-- BRT MTL?
-	IF @dim_product_brt_in_house = 1
+	IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'BRT')
-		SET @allocation_logic = @allocation_logic +' => ' + 'BRT MTL'
+		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
+	END
+	IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+	BEGIN
+		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
 	END
 
+	/* Sub decision tree logic */
+
 	-- Flex?
-	ELSE IF @dim_product_style_complexity LIKE '%Flex%'
+	IF @dim_product_style_complexity LIKE '%Flex%'
 	BEGIN
 		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
 		SET @allocation_logic = @allocation_logic +' => ' + 'Flex'
 	END
 
-	-- 1st priority = COO China?
-	ELSE IF @dim_location_country_code_a2_02 = 'CN'
+	-- DTP MTL?
+	ELSE IF @dim_product_dtp_mtl_02 = 1
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'BRT')
-		SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' +'BRT component'
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTP')
+		SET @allocation_logic = @allocation_logic +' => ' + 'DTP MTL'
+	END
+
+	-- Single Source?
+	ELSE IF @fact_priority_list_source_count_02 = 1 AND (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) <= 1
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + 'Single Source'
+
+		-- 1st priority = DTC?
+		IF @dim_factory_name_priority_list_primary_02 = 'DTC'
+		BEGIN
+			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTC')
+			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = DTC' +' => ' +'DTC'
+		END
+		-- 1st priority = COO China?
+		ELSE IF @dim_location_country_code_a2_primary_02 = 'CN'
+		BEGIN
+			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' +'1st priority'
+			IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+			BEGIN
+				SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+			END
+		END
+		ELSE
+		BEGIN
+			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO not China' +' => ' +'SJV'
+		END
+	END
+
+	-- 2nd Priority = COO China?
+	ELSE IF @dim_location_country_code_a2_secondary_02 = 'CN'
+	BEGIN
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+		SET @allocation_logic = @allocation_logic +' => ' + '2nd priority = COO China' +' => ' +'SJV'
 	END
 
 	ELSE
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO not China' +' => ' +'First priority'
-		IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+		SET @allocation_logic = @allocation_logic +' => ' + '2nd priority = COO not China' +' => ' +'2nd priority'
+		IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
 		BEGIN
-			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
 		END
 	END
 
