@@ -37,7 +37,6 @@ BEGIN
 		,[Need to Buy - Scheduled Out of Sync]
 		,[Need to Buy - Ad-Hoc Out of Sync]
 		,[Open Order]
-		,[Received Order]
 		,[Shipped Order]
 	)
 	SELECT
@@ -57,7 +56,6 @@ BEGIN
 		,ISNULL([Need to Buy - Scheduled Out of Sync], 0)
 		,ISNULL([Need to Buy - Ad-Hoc Out of Sync], 0)
 		,ISNULL([Open Order], 0)
-		,ISNULL([Received Order], 0)
 		,ISNULL([Shipped Order], 0)
 	FROM
 	(
@@ -104,7 +102,6 @@ BEGIN
 			,[Need to Buy - Scheduled Out of Sync]
 			,[Need to Buy - Ad-Hoc Out of Sync]
 			,[Open Order]
-			,[Received Order]
 			,[Shipped Order]
 		)
 	) piv
