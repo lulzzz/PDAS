@@ -83,6 +83,7 @@ BEGIN
 				,[is_active]
 				,[is_placeholder]
 				,[placeholder_level]
+				,[allocation_group]
 			)
 			SELECT
 				dim_b.[id] AS [dim_business_id]
@@ -97,6 +98,7 @@ BEGIN
 				END as [is_active]
 				,0 [is_placeholder]
                 ,NULL AS [placeholder_level]
+				,temp.[Allocation Group] AS [allocation_group]
 			FROM
 				[dbo].[mc_temp_pdas_footwear_vans_factory] temp
 				INNER JOIN (SELECT [id], [country] FROM [dbo].[dim_location]) dim_l
@@ -121,6 +123,7 @@ BEGIN
 										WHEN 'ACTIVE' THEN 1
 										ELSE 0
 									END
+				,dim.[allocation_group] = temp.[Allocation Group]
 			FROM
 				[dbo].[dim_factory] dim
 				INNER JOIN [dbo].[mc_temp_pdas_footwear_vans_factory] temp

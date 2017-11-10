@@ -20,6 +20,7 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_sjv
 	@dim_product_style_complexity NVARCHAR(45),
 	@dim_construction_type_name NVARCHAR(100),
 	@dim_factory_original_region NVARCHAR(45),
+	@quantity INT,
 	@dim_date_year_cw_accounting NVARCHAR(8),
 	@dim_customer_id INT,
 	@dim_customer_sold_to_party NVARCHAR(100),
@@ -60,11 +61,11 @@ BEGIN
 	/* Sub decision tree logic */
 	IF @dim_customer_sold_to_party IN ('Korea DC', 'Korea Direct', 'India DC', 'EU DC', 'EU Crossdock', 'Brazil DC', 'Chile DC', 'China DC')
 	BEGIN
-		IF @dim_customer_sold_to_party IN ('Korea DC', 'Korea Direct')
+		IF @dim_customer_sold_to_party IN ('Korea DC', 'Korea Direct', 'Brazil DC')
 		BEGIN
 			SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
 		END
-		ELSE IF @dim_customer_sold_to_party IN ('India DC', 'EU DC', 'EU Crossdock', 'Brazil DC', 'Chile DC', 'China DC')
+		ELSE IF @dim_customer_sold_to_party IN ('India DC', 'EU DC', 'EU Crossdock', 'Chile DC', 'China DC')
 		BEGIN
 			SET @allocation_logic = @allocation_logic +' => ' + 'Non-duty Beneficial: ' + @dim_customer_sold_to_party
 		END
@@ -123,8 +124,8 @@ BEGIN
 			END
 		END
 
-		-- 'Korea DC', 'Korea Direct', 'India DC', 'EU DC', 'EU Crossdock', 'Brazil DC'
-		IF @dim_customer_sold_to_party IN ('Korea DC', 'Korea Direct', 'India DC', 'EU DC', 'EU Crossdock', 'Brazil DC')
+		-- 'Korea DC', 'Korea Direct', 'India DC', 'EU DC', 'EU Crossdock'
+		IF @dim_customer_sold_to_party IN ('Korea DC', 'Korea Direct', 'India DC', 'EU DC', 'EU Crossdock')
 		BEGIN
 			-- Flex?
 			IF @dim_product_style_complexity LIKE '%Flex%'
@@ -191,6 +192,7 @@ BEGIN
 		@dim_product_style_complexity = @dim_product_style_complexity,
 		@dim_construction_type_name = @dim_construction_type_name,
 		@dim_factory_original_region = @dim_factory_original_region,
+		@quantity = @quantity,
 		@dim_date_year_cw_accounting = @dim_date_year_cw_accounting,
 		@dim_customer_id = @dim_customer_id,
 		@dim_customer_sold_to_party = @dim_customer_sold_to_party,

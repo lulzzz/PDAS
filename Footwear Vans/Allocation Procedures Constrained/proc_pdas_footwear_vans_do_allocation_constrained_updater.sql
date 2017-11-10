@@ -20,6 +20,7 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_updater
 	@dim_product_style_complexity NVARCHAR(45),
 	@dim_construction_type_name NVARCHAR(100),
 	@dim_factory_original_region NVARCHAR(45),
+	@quantity INT,
 	@dim_date_year_cw_accounting NVARCHAR(8),
 	@dim_customer_id INT,
 	@dim_customer_sold_to_party NVARCHAR(100),
@@ -30,13 +31,13 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @current_fill_01 int
-	DECLARE @max_capacity_01 int
+	DECLARE @current_fill_03 int
+	DECLARE @max_capacity_03 int
 
 	IF @dim_factory_id_original_constrained IS NOT NULL AND @dim_factory_id_original <> @dim_factory_id_original_constrained
 	BEGIN
 
-		SET @current_fill_01 =
+		SET @current_fill_03 =
 		(
 			SELECT SUM([quantity_consumed])
 			FROM
@@ -70,7 +71,7 @@ BEGIN
 				AND [dim_construction_type_name] = @dim_construction_type_name
 		)
 
-		SET @max_capacity_01 =
+		SET @max_capacity_03 =
 		(
 			SELECT SUM([Available Capacity by Week])
 			FROM [VCDWH].[dbo].[xl_view_pdas_footwear_vans_factory_capacity]
@@ -80,7 +81,7 @@ BEGIN
 				AND [Construction Type] = @dim_construction_type_name
 		)
 
-		IF @current_fill_01 < @max_capacity_01 OR @dim_factory_id_original_constrained = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+		IF @current_fill_03 + @quantity < @max_capacity_03 OR @dim_factory_id_original_constrained = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
 		BEGIN
 			/* Update the dim_factory_id_original (PDAS recommendation) and dim_factory_id (value that user can overwrite in Console) */
 			UPDATE [dbo].[fact_demand_total]

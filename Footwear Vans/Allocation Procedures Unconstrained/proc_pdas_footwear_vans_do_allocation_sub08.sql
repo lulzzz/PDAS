@@ -170,15 +170,6 @@ BEGIN
 		-- 1st priority = COO China?
 		ELSE IF @dim_location_country_code_a2_primary_02 = 'CN'
 		BEGIN
-			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' + 'Allocation and Component: '
-			IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
-			BEGIN
-				SET @allocation_logic = @allocation_logic + @dim_factory_name_priority_list_primary_02
-			END
-		END
-		ELSE
-		BEGIN
 			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
 			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO not China' +' => ' + 'Allocation: SJV'+' => ' + 'Component: '
 			IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
@@ -188,6 +179,15 @@ BEGIN
 			ELSE
 			BEGIN
 				SET @allocation_logic = @allocation_logic + '1st priority not found'
+			END
+		END
+		ELSE
+		BEGIN
+			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' + 'Allocation and Component: '
+			IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+			BEGIN
+				SET @allocation_logic = @allocation_logic + @dim_factory_name_priority_list_primary_02
 			END
 		END
 	END
