@@ -59,7 +59,7 @@ BEGIN
         @businessid as dim_business_id,
         @buying_program_id as dim_buying_program_id,
         ISNULL(po_code, 'UNDEFINED') as order_number,
-		CASE ngc.shipment_status
+		CASE ISNULL(ngc.shipment_status, 0)
 			WHEN 1 THEN dd_original_crd.id
 			ELSE dd_revised_crd.id
 		END as dim_date_id,
@@ -77,7 +77,7 @@ BEGIN
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
 		END as dim_product_id,
-		CASE ngc.shipment_status
+		CASE ISNULL(ngc.shipment_status, 0)
 			WHEN 1 THEN @dim_demand_category_id_shipped_order
 			ELSE @dim_demand_category_id_shipped_order
 		END as dim_demand_category_id,
@@ -148,19 +148,24 @@ BEGIN
 		LEFT OUTER JOIN (SELECT MAX([id]) as [id], [dc_plt] FROM [dbo].[dim_customer] GROUP BY [dc_plt]) dc_plt
 			ON ngc.dim_customer_dc_code_brio = dc_plt.dc_plt
 
-		INNER JOIN [dbo].[dim_date] dd_revised_crd ON ngc.revised_crd_dt = dd_revised_crd.full_date
-		INNER JOIN [dbo].[dim_date] dd_original_crd ON ngc.original_crd_dt = dd_original_crd.full_date
+		LEFT OUTER JOIN [dbo].[dim_date] dd_revised_crd ON ngc.revised_crd_dt = dd_revised_crd.full_date
+		LEFT OUTER JOIN [dbo].[dim_date] dd_original_crd ON ngc.original_crd_dt = dd_original_crd.full_date
 
 		LEFT OUTER JOIN [dbo].[dim_date] dd_po_issue ON ngc.po_issue_dt = dd_po_issue.full_date
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_shipped ON ngc.shipped_dt = dd_shipped.full_date
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_shipment_closed_on ON ngc.shipment_closed_on_dt = dd_shipment_closed_on.full_date
 	WHERE
-		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL)
+		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
+		(
+			(ISNULL(ngc.shipment_status, 0) = 1 AND dd_original_crd.id IS NOT NULL)
+			OR
+			(ISNULL(ngc.shipment_status, 0) = 0 AND dd_revised_crd.id IS NOT NULL)
+		)
 		--and dd_original_crd.id >= 20170101
     GROUP BY
 		ISNULL(po_code, 'UNDEFINED'),
-		CASE ngc.shipment_status
-				WHEN 1 THEN dd_original_crd.id
+		CASE ISNULL(ngc.shipment_status, 0)
+			WHEN 1 THEN dd_original_crd.id
 			ELSE dd_revised_crd.id
 		END,
 		CASE
@@ -177,8 +182,8 @@ BEGIN
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
 		END,
-		CASE
-		 	WHEN ISNULL(shipped_qty, 0) <> ngc.order_qty THEN @dim_demand_category_id_open_order
+		CASE ISNULL(ngc.shipment_status, 0)
+			WHEN 1 THEN @dim_demand_category_id_shipped_order
 			ELSE @dim_demand_category_id_shipped_order
 		END
 
