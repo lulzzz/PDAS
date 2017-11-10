@@ -20,6 +20,7 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_clk
 	@dim_product_style_complexity NVARCHAR(45),
 	@dim_construction_type_name NVARCHAR(100),
 	@dim_factory_original_region NVARCHAR(45),
+	@quantity INT,
 	@dim_date_year_cw_accounting NVARCHAR(8),
 	@dim_customer_id INT,
 	@dim_customer_sold_to_party NVARCHAR(100),
@@ -209,7 +210,7 @@ BEGIN
 	BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + 'Non-duty Beneficial: ' + @dim_customer_sold_to_party
 		-- Dual Source?
-		IF @fact_priority_list_source_count_02 = 2 AND (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 1
+		IF @fact_priority_list_source_count_02 = 2 OR (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 1 OR @dim_product_style_complexity LIKE '%Flex%'
 		BEGIN
 			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
 			SET @allocation_logic = @allocation_logic +' => ' + 'Dual Source' + ' => ' + @dim_factory_name_priority_list_secondary_02
@@ -235,6 +236,7 @@ BEGIN
 		@dim_product_style_complexity = @dim_product_style_complexity,
 		@dim_construction_type_name = @dim_construction_type_name,
 		@dim_factory_original_region = @dim_factory_original_region,
+		@quantity = @quantity,
 		@dim_date_year_cw_accounting = @dim_date_year_cw_accounting,
 		@dim_customer_id = @dim_customer_id,
 		@dim_customer_sold_to_party = @dim_customer_sold_to_party,
