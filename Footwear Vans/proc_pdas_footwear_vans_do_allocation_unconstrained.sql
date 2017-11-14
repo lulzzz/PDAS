@@ -1,6 +1,7 @@
 USE [VCDWH]
 GO
-
+SET ANSI_WARNINGS OFF
+GO
 -- ==============================================================
 -- Author:		ebp Global
 -- Create date: 9/18/2017
@@ -39,7 +40,7 @@ BEGIN
 
 		UPDATE f
 		SET
-			[dim_factory_id_original] = @dim_factory_id_placeholder,
+			[dim_factory_id_original_unconstrained] = @dim_factory_id_placeholder,
 			[allocation_logic_unconstrained] = NULL
 		FROM
 			[dbo].[fact_demand_total] f
@@ -54,7 +55,7 @@ BEGIN
 		DECLARE @dim_buying_program_id_01 int
 		DECLARE @dim_product_id_01 int
 		DECLARE @dim_date_id_01 int
-		DECLARE @dim_factory_id_original_01 int
+		DECLARE @dim_factory_id_original_unconstrained_01 int
 		DECLARE @dim_customer_id_01 int
 		DECLARE @dim_demand_category_id_01 int
 		DECLARE @order_number_01 NVARCHAR(45)
@@ -94,7 +95,7 @@ BEGIN
 			[dim_buying_program_id] INT
 			,[dim_product_id] INT
 			,[dim_date_id] INT
-			,[dim_factory_id_original] INT
+			,[dim_factory_id_original_unconstrained] INT
 			,[dim_customer_id] INT
 			,[dim_demand_category_id] INT
 			,[order_number] NVARCHAR(45)
@@ -120,7 +121,7 @@ BEGIN
 			[dim_buying_program_id]
 			,[dim_product_id]
 			,[dim_date_id]
-			,[dim_factory_id_original]
+			,[dim_factory_id_original_unconstrained]
 			,[dim_customer_id]
 			,[dim_demand_category_id]
 			,[order_number]
@@ -132,7 +133,7 @@ BEGIN
 			[dim_buying_program_id]
 			,[dim_product_id]
 			,[dim_date_id]
-			,[dim_factory_id_original]
+			,[dim_factory_id_original_unconstrained]
 			,[dim_customer_id]
 			,[dim_demand_category_id]
 			,[order_number]
@@ -155,11 +156,11 @@ BEGIN
 			f.[dim_buying_program_id]
 			,f.[dim_product_id]
 			,f.[dim_date_id]
-			,f.[dim_factory_id_original]
+			,f.[dim_factory_id_original_unconstrained]
 			,f.[dim_customer_id]
 			,f.[dim_demand_category_id]
 			,f.[order_number]
-			,f.[quantity_consumed]
+			,f.[quantity]
 			,dbp.[name] AS [dim_buying_program_name]
 			,ddc.[name] AS [dim_demand_category_name]
 			,dp.[material_id] AS [dim_product_material_id]
@@ -206,7 +207,7 @@ BEGIN
 					INNER JOIN [dbo].[dim_location] dl
 						ON dl.[id] = f.[dim_location_id]
 			) df
-				ON f.[dim_factory_id_original] = df.[id]
+				ON f.[dim_factory_id_original_unconstrained] = df.[id]
 			INNER JOIN
 			(
 				SELECT
@@ -227,7 +228,7 @@ BEGIN
 			[dim_pdas_id] = @pdasid
 			and [dim_business_id] = @businessid
 			and [dim_date_id] >= @pdas_release_month_date_id
-			and [edit_username] IS NULL
+			and [edit_dt] IS NULL
 			and ddc.[name] IN ('Forecast', 'Need to Buy')
 
 
@@ -239,7 +240,7 @@ BEGIN
 			[dim_buying_program_id]
 			,[dim_product_id]
 			,[dim_date_id]
-			,[dim_factory_id_original]
+			,[dim_factory_id_original_unconstrained]
 			,[dim_customer_id]
 			,[dim_demand_category_id]
 			,[order_number]
@@ -264,7 +265,7 @@ BEGIN
 			@dim_buying_program_id_01
 			,@dim_product_id_01
 			,@dim_date_id_01
-			,@dim_factory_id_original_01
+			,@dim_factory_id_original_unconstrained_01
 			,@dim_customer_id_01
 			,@dim_demand_category_id_01
 			,@order_number_01
@@ -826,7 +827,7 @@ BEGIN
 
 					ELSE
 					BEGIN
-						SET @dim_factory_id_original_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
+						SET @dim_factory_id_original_unconstrained_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
 						SET @allocation_logic = @allocation_logic +' => ' + 'VQT Vendor'
 
 						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
@@ -841,7 +842,7 @@ BEGIN
 							@dim_demand_category_id = @dim_demand_category_id_01,
 							@order_number = @order_number_01,
 							@allocation_logic = @allocation_logic,
-							@dim_factory_id_original = @dim_factory_id_original_01
+							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
 					END
 				END
 
@@ -1066,7 +1067,7 @@ BEGIN
 
 					ELSE
 					BEGIN
-						SET @dim_factory_id_original_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
+						SET @dim_factory_id_original_unconstrained_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
 						SET @allocation_logic = @allocation_logic +' => ' + 'VQT Vendor'
 
 						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
@@ -1081,7 +1082,7 @@ BEGIN
 							@dim_demand_category_id = @dim_demand_category_id_01,
 							@order_number = @order_number_01,
 							@allocation_logic = @allocation_logic,
-							@dim_factory_id_original = @dim_factory_id_original_01
+							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
 					END
 				END
 			END
@@ -1373,12 +1374,11 @@ BEGIN
 									@allocation_logic = @allocation_logic
 							END
 						END
-
 					END
 
 					ELSE
 					BEGIN
-						SET @dim_factory_id_original_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
+						SET @dim_factory_id_original_unconstrained_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
 						SET @allocation_logic = @allocation_logic +' => ' + 'VQT Vendor'
 
 						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
@@ -1393,7 +1393,7 @@ BEGIN
 							@dim_demand_category_id = @dim_demand_category_id_01,
 							@order_number = @order_number_01,
 							@allocation_logic = @allocation_logic,
-							@dim_factory_id_original = @dim_factory_id_original_01
+							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
 					END
 
 				END
@@ -1517,7 +1517,7 @@ BEGIN
 
 					ELSE
 					BEGIN
-						SET @dim_factory_id_original_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
+						SET @dim_factory_id_original_unconstrained_01 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_fty_qt_rqt_vendor_01)
 						SET @allocation_logic = @allocation_logic +' => ' + 'VQT Vendor'
 
 						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
@@ -1532,7 +1532,7 @@ BEGIN
 							@dim_demand_category_id = @dim_demand_category_id_01,
 							@order_number = @order_number_01,
 							@allocation_logic = @allocation_logic,
-							@dim_factory_id_original = @dim_factory_id_original_01
+							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
 					END
 				END
 			END
@@ -1577,7 +1577,7 @@ BEGIN
 					@dim_demand_category_id = @dim_demand_category_id_01,
 					@order_number = @order_number_01,
 					@allocation_logic = @allocation_logic,
-					@dim_factory_id_original = @dim_factory_id_original_01
+					@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
 			END
 
 			FETCH NEXT FROM @cursor_01
@@ -1585,7 +1585,7 @@ BEGIN
 				@dim_buying_program_id_01
 				,@dim_product_id_01
 				,@dim_date_id_01
-				,@dim_factory_id_original_01
+				,@dim_factory_id_original_unconstrained_01
 				,@dim_customer_id_01
 				,@dim_demand_category_id_01
 				,@order_number_01

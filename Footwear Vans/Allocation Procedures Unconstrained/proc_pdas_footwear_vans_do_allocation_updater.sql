@@ -5,6 +5,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+SET ANSI_WARNINGS OFF
+GO
 -- =============================================
 -- Author:		ebp Global
 -- Create date: 12/10/2017
@@ -22,19 +24,19 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
 	@dim_demand_category_id INT,
 	@order_number NVARCHAR(45),
 	@allocation_logic NVARCHAR(1000),
-	@dim_factory_id_original INT
+	@dim_factory_id_original_unconstrained INT
 AS
 BEGIN
 	SET NOCOUNT ON;
 
-	IF @dim_factory_id_original IS NOT NULL
+	IF @dim_factory_id_original_unconstrained IS NOT NULL
 	BEGIN
 
 		/* Update the dim_factory_id_original (PDAS recommendation) and dim_factory_id (value that user can overwrite in Console) */
 		UPDATE [dbo].[fact_demand_total]
-		SET [dim_factory_id_original] = @dim_factory_id_original,
-			[dim_factory_id_original_constrained] = @dim_factory_id_original,
-			[dim_factory_id] = @dim_factory_id_original,
+		SET [dim_factory_id_original_unconstrained] = @dim_factory_id_original_unconstrained,
+			[dim_factory_id_original_constrained] = @dim_factory_id_original_unconstrained,
+			[dim_factory_id] = @dim_factory_id_original_unconstrained,
 			[allocation_logic_unconstrained] = @allocation_logic
 		WHERE
 			[dim_pdas_id] = @pdasid AND

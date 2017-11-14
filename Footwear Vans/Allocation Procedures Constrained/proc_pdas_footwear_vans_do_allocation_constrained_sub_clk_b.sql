@@ -15,7 +15,7 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_clk
 	@businessid INT,
 	@pdas_release_month_date_id INT,
 	@dim_buying_program_id INT,
-	@dim_factory_id_original INT,
+	@dim_factory_id_original_unconstrained INT,
 	@dim_product_material_id NVARCHAR(45),
 	@dim_product_style_complexity NVARCHAR(45),
 	@dim_construction_type_name NVARCHAR(100),
@@ -31,10 +31,11 @@ BEGIN
 	SET NOCOUNT ON;
 
     /* Variable declarations */
-	DECLARE @dim_factory_id_original_constrained_02 INT = @dim_factory_id_original
+	DECLARE @dim_factory_id_original_constrained_02 INT = @dim_factory_id_original_unconstrained
 	DECLARE @dim_product_clk_mtl_02 SMALLINT
 	DECLARE @dim_product_dtp_mtl_02 SMALLINT
 	DECLARE @dim_product_sjd_mtl_02 SMALLINT
+	DECLARE @mtl_factories_02 table (short_name NVARCHAR(45))
 	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
 	DECLARE @dim_factory_name_priority_list_secondary_02 NVARCHAR(45)
@@ -61,6 +62,11 @@ BEGIN
 		FROM [dbo].[dim_product]
 		WHERE [material_id] = @dim_product_material_id
 	)
+
+	INSERT @mtl_factories_02(short_name)
+	VALUES (CASE WHEN @dim_product_clk_mtl_02 = 1 THEN 'CLK' ELSE '' END),
+			(CASE WHEN @dim_product_dtp_mtl_02 = 1 THEN 'DTP' ELSE '' END),
+			(CASE WHEN @dim_product_sjd_mtl_02 = 1 THEN 'SJD' ELSE '' END);
 
 	SET @helper_retail_qt_rqt_vendor_02 =
 	(
@@ -101,11 +107,11 @@ BEGIN
 
 	IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 	BEGIN
-		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
+	SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
 	END
 	IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
 	BEGIN
-		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
+	SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
 	END
 
 	/* Sub decision tree logic */
@@ -184,7 +190,12 @@ BEGIN
 		END
 
 		-- Dual Source?
-		ELSE IF @fact_priority_list_source_count_02 = 2 AND (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 1
+		ELSE IF @fact_priority_list_source_count_02 = 2
+			OR (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 2
+			OR @dim_product_style_complexity LIKE '%Flex%'
+			OR ((SELECT max([short_name]) from @mtl_factories_02) <> ''
+				AND (SELECT (@dim_factory_name_priority_list_secondary_02)
+					INTERSECT (SELECT [short_name] FROM @mtl_factories_02)) IS NULL)
 		BEGIN
 			SET @allocation_logic = @allocation_logic +' => ' + 'Dual Source'
 			-- Flex?
@@ -195,8 +206,21 @@ BEGIN
 			END
 			ELSE
 			BEGIN
-				SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
-				SET @allocation_logic = @allocation_logic +' => ' + 'Not Flex' + ' => ' + @dim_factory_name_priority_list_secondary_02
+				SET @allocation_logic = @allocation_logic +' => ' + 'Not Flex'
+				IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+				BEGIN
+					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+					SET @allocation_logic = @allocation_logic +' => ' + '2nd priority' + @dim_factory_name_priority_list_secondary_02
+				END
+				ELSE
+				BEGIN
+					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+					SET @allocation_logic = @allocation_logic +' => ' + '2nd priority not found'+' => ' + '1st priority'
+					IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+					BEGIN
+						SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+					END
+				END
 			END
 		END
 		ELSE
@@ -210,10 +234,28 @@ BEGIN
 	BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + 'Non-duty Beneficial: ' + @dim_customer_sold_to_party
 		-- Dual Source?
-		IF @fact_priority_list_source_count_02 = 2 OR (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 1 OR @dim_product_style_complexity LIKE '%Flex%'
+		IF @fact_priority_list_source_count_02 = 2
+			OR (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 2
+			OR @dim_product_style_complexity LIKE '%Flex%'
+			OR ((SELECT max([short_name]) from @mtl_factories_02) <> ''
+				AND (SELECT (@dim_factory_name_priority_list_secondary_02)
+					INTERSECT (SELECT [short_name] FROM @mtl_factories_02)) IS NULL)
 		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
-			SET @allocation_logic = @allocation_logic +' => ' + 'Dual Source' + ' => ' + @dim_factory_name_priority_list_secondary_02
+			SET @allocation_logic = @allocation_logic +' => ' + 'Dual Source'
+			IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+			BEGIN
+				SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+				SET @allocation_logic = @allocation_logic +' => ' + '2nd priority' + @dim_factory_name_priority_list_secondary_02
+			END
+			ELSE
+			BEGIN
+				SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+				SET @allocation_logic = @allocation_logic +' => ' + '2nd priority not found'+' => ' + '1st priority'
+				IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+				BEGIN
+					SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+				END
+			END
 		END
 		ELSE
 		BEGIN
@@ -231,7 +273,7 @@ BEGIN
 		@businessid = @businessid,
 		@pdas_release_month_date_id = @pdas_release_month_date_id,
 		@dim_buying_program_id = @dim_buying_program_id,
-		@dim_factory_id_original = @dim_factory_id_original,
+		@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained,
 		@dim_product_material_id = @dim_product_material_id,
 		@dim_product_style_complexity = @dim_product_style_complexity,
 		@dim_construction_type_name = @dim_construction_type_name,

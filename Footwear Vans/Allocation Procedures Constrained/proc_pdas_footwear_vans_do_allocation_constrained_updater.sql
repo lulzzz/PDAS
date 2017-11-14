@@ -15,7 +15,7 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_updater
 	@businessid INT,
 	@pdas_release_month_date_id INT,
 	@dim_buying_program_id INT,
-	@dim_factory_id_original INT,
+	@dim_factory_id_original_unconstrained INT,
 	@dim_product_material_id NVARCHAR(45),
 	@dim_product_style_complexity NVARCHAR(45),
 	@dim_construction_type_name NVARCHAR(100),
@@ -34,12 +34,12 @@ BEGIN
 	DECLARE @current_fill_03 int
 	DECLARE @max_capacity_03 int
 
-	IF @dim_factory_id_original_constrained IS NOT NULL AND @dim_factory_id_original <> @dim_factory_id_original_constrained
+	IF @dim_factory_id_original_constrained IS NOT NULL AND @dim_factory_id_original_unconstrained <> @dim_factory_id_original_constrained
 	BEGIN
 
 		SET @current_fill_03 =
 		(
-			SELECT SUM([quantity_consumed])
+			SELECT SUM([quantity])
 			FROM
 				[dbo].[fact_demand_total] f
 				INNER JOIN (SELECT [id], [year_cw_accounting] FROM [dbo].[dim_date]) dd
@@ -65,8 +65,12 @@ BEGIN
 				and [dim_business_id] = @businessid
 				and [dim_date_id] >= @pdas_release_month_date_id
 				and ddc.[name] IN ('Forecast', 'Need to Buy')
-			GROUP BY [dim_factory_id_original], [year_cw_accounting], [dim_construction_type_name]
-			HAVING [dim_factory_id_original] = @dim_factory_id_original_constrained
+			GROUP BY [dim_factory_id_original_unconstrained], [year_cw_accounting], [dim_construction_type_name]
+			HAVING [dim_factory_id_original_unconstrained] IN (
+					SELECT [id]
+					FROM [dbo].[dim_factory]
+					WHERE [allocation_group] = (SELECT [allocation_group] FROM [dbo].[dim_factory] WHERE [id] = @dim_factory_id_original_constrained)
+				)
 				AND [year_cw_accounting] = @dim_date_year_cw_accounting
 				AND [dim_construction_type_name] = @dim_construction_type_name
 		)

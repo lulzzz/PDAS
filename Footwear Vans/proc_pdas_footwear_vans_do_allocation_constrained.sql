@@ -40,7 +40,7 @@ BEGIN
 
 		UPDATE f
 		SET
-			[dim_factory_id_original_constrained] = [dim_factory_id_original],
+			[dim_factory_id_original_constrained] = [dim_factory_id_original_unconstrained],
 			[allocation_logic_constrained] = NULL
 		FROM
 			[dbo].[fact_demand_total] f
@@ -55,7 +55,7 @@ BEGIN
 		-- Decision tree variables level 1 (top level decision tree)
 		DECLARE @dim_buying_program_id_01 int
 		DECLARE @dim_date_id_01 int
-		DECLARE @dim_factory_id_original_01 int
+		DECLARE @dim_factory_id_original_unconstrained_01 int
 		DECLARE @dim_factory_original_short_name_01 NVARCHAR(100)
 		DECLARE @dim_factory_original_region_01 NVARCHAR(100)
 		DECLARE @dim_factory_original_country_code_a2_01 NVARCHAR(2)
@@ -93,7 +93,7 @@ BEGIN
 		-- Create table
 		CREATE TABLE #select_cursor01 (
 			[dim_buying_program_id] INT
-			,[dim_factory_id_original] INT
+			,[dim_factory_id_original_unconstrained] INT
 			,[dim_customer_id] INT
 			,[dim_demand_category_id] INT
 			,[quantity] INT
@@ -117,7 +117,7 @@ BEGIN
 		CREATE INDEX idx_select_cursor01 ON #select_cursor01
 		(
 			[dim_buying_program_id]
-			,[dim_factory_id_original]
+			,[dim_factory_id_original_unconstrained]
 			,[dim_customer_id]
 			,[dim_demand_category_id]
 		)
@@ -126,7 +126,7 @@ BEGIN
 		INSERT INTO #select_cursor01
 		(
 			[dim_buying_program_id]
-			,[dim_factory_id_original]
+			,[dim_factory_id_original_unconstrained]
 			,[dim_customer_id]
 			,[dim_demand_category_id]
 			,[quantity]
@@ -147,10 +147,10 @@ BEGIN
 		)
 		SELECT
 				[dim_buying_program_id]
-				,[dim_factory_id_original]
+				,[dim_factory_id_original_unconstrained]
 				,[dim_customer_id]
 				,[dim_demand_category_id]
-				,SUM([quantity_consumed]) AS [quantity]
+				,SUM([quantity]) AS [quantity]
 				,[dim_date_year_cw_accounting]
 				,[dim_buying_program_name]
 				,[dim_demand_category_name]
@@ -171,10 +171,10 @@ BEGIN
 			SELECT
 				f.[dim_buying_program_id]
 				,f.[dim_date_id]
-				,f.[dim_factory_id_original]
+				,f.[dim_factory_id_original_unconstrained]
 				,f.[dim_customer_id]
 				,f.[dim_demand_category_id]
-				,f.[quantity_consumed]
+				,f.[quantity]
 				,dd.[year_cw_accounting] AS [dim_date_year_cw_accounting]
 				,dbp.[name] AS [dim_buying_program_name]
 				,ddc.[name] AS [dim_demand_category_name]
@@ -224,7 +224,7 @@ BEGIN
 						INNER JOIN [dbo].[dim_location] dl
 							ON dl.[id] = f.[dim_location_id]
 				) df
-					ON f.[dim_factory_id_original] = df.[id]
+					ON f.[dim_factory_id_original_unconstrained] = df.[id]
 				INNER JOIN
 				(
 					SELECT
@@ -249,7 +249,7 @@ BEGIN
 		) x
 		GROUP BY
 			[dim_buying_program_id]
-			,[dim_factory_id_original]
+			,[dim_factory_id_original_unconstrained]
 			,[dim_customer_id]
 			,[dim_demand_category_id]
 			,[dim_date_year_cw_accounting]
@@ -277,7 +277,7 @@ BEGIN
 		SET @cursor_01 = CURSOR FAST_FORWARD FOR
 		SELECT
 			[dim_buying_program_id]
-			,[dim_factory_id_original]
+			,[dim_factory_id_original_unconstrained]
 			,[dim_customer_id]
 			,[dim_demand_category_id]
 			,[quantity]
@@ -300,7 +300,7 @@ BEGIN
 		FETCH NEXT FROM @cursor_01
 		INTO
 			@dim_buying_program_id_01
-			,@dim_factory_id_original_01
+			,@dim_factory_id_original_unconstrained_01
 			,@dim_customer_id_01
 			,@dim_demand_category_id_01
 			,@quantity_01
@@ -325,7 +325,7 @@ BEGIN
 
 			SET @current_fill_01 =
 			(
-				SELECT SUM([quantity_consumed])
+				SELECT SUM([quantity])
 				FROM
 					[dbo].[fact_demand_total] f
 					INNER JOIN (SELECT [id], [year_cw_accounting] FROM [dbo].[dim_date]) dd
@@ -351,8 +351,12 @@ BEGIN
 					and [dim_business_id] = @businessid
 					and [dim_date_id] >= @pdas_release_month_date_id
 					and ddc.[name] IN ('Forecast', 'Need to Buy')
-				GROUP BY [dim_factory_id_original], [year_cw_accounting], [dim_construction_type_name]
-				HAVING [dim_factory_id_original] = @dim_factory_id_original_01
+				GROUP BY [dim_factory_id_original_unconstrained], [year_cw_accounting], [dim_construction_type_name]
+				HAVING [dim_factory_id_original_unconstrained] IN (
+						SELECT [id]
+					    FROM [dbo].[dim_factory]
+					    WHERE [allocation_group] = (SELECT [allocation_group] FROM [dbo].[dim_factory] WHERE [id] = @dim_factory_id_original_unconstrained_01)
+					)
 					AND [year_cw_accounting] = @dim_date_year_cw_accounting_01
 					AND [dim_construction_type_name] = @dim_construction_type_name_01
 					-- TO DO there should be two additional conditions
@@ -363,7 +367,7 @@ BEGIN
 				SELECT SUM([Available Capacity by Week])
 			  	FROM [VCDWH].[dbo].[xl_view_pdas_footwear_vans_factory_capacity]
 			 	GROUP BY [dim_factory_id], [Accounting CW], [Construction Type]
-				HAVING [dim_factory_id] = @dim_factory_id_original_01
+				HAVING [dim_factory_id] = @dim_factory_id_original_unconstrained_01
 					AND [Accounting CW] = @dim_date_year_cw_accounting_01
 					AND [Construction Type] = @dim_construction_type_name_01
 			)
@@ -412,7 +416,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -432,7 +436,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -452,7 +456,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -472,7 +476,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -492,7 +496,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -512,7 +516,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -532,7 +536,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -552,7 +556,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -572,7 +576,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -592,7 +596,7 @@ BEGIN
 						@businessid = @businessid,
 						@pdas_release_month_date_id = @pdas_release_month_date_id,
 						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original = @dim_factory_id_original_01,
+						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 						@dim_product_material_id = @dim_product_material_id_01,
 						@dim_product_style_complexity = @dim_product_style_complexity_01,
 						@dim_construction_type_name = @dim_construction_type_name_01,
@@ -603,7 +607,7 @@ BEGIN
 						@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
 						@dim_demand_category_id = @dim_demand_category_id_01,
 						@allocation_logic = @allocation_logic,
-						@dim_factory_id_original_constrained = @dim_factory_id_original_01
+						@dim_factory_id_original_constrained = @dim_factory_id_original_unconstrained_01
 				END
 			END
 
@@ -614,7 +618,7 @@ BEGIN
 					@businessid = @businessid,
 					@pdas_release_month_date_id = @pdas_release_month_date_id,
 					@dim_buying_program_id = @dim_buying_program_id_01,
-					@dim_factory_id_original = @dim_factory_id_original_01,
+					@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
 					@dim_product_material_id = @dim_product_material_id_01,
 					@dim_product_style_complexity = @dim_product_style_complexity_01,
 					@dim_construction_type_name = @dim_construction_type_name_01,
@@ -625,13 +629,13 @@ BEGIN
 					@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
 					@dim_demand_category_id = @dim_demand_category_id_01,
 					@allocation_logic = @allocation_logic,
-					@dim_factory_id_original_constrained = @dim_factory_id_original_01
+					@dim_factory_id_original_constrained = @dim_factory_id_original_unconstrained_01
 			END
 
 			FETCH NEXT FROM @cursor_01
 			INTO
 				@dim_buying_program_id_01
-				,@dim_factory_id_original_01
+				,@dim_factory_id_original_unconstrained_01
 				,@dim_customer_id_01
 				,@dim_demand_category_id_01
 				,@quantity_01

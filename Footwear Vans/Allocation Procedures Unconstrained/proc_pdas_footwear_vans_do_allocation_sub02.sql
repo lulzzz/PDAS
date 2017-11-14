@@ -5,6 +5,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+SET ANSI_WARNINGS OFF
+GO
 -- =============================================
 -- Author:		ebp Global
 -- Create date: 12/10/2017
@@ -27,10 +29,15 @@ BEGIN
 	SET NOCOUNT ON;
 
     /* Variable declarations */
-	DECLARE @dim_factory_id_original_02 INT = NULL
+	DECLARE @dim_factory_id_original_unconstrained_02 INT = NULL
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
+	DECLARE @dim_factory_name_priority_list_secondary_02 NVARCHAR(45)
 	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
-	DECLARE @dim_product_clk_mtl SMALLINT
+	DECLARE @dim_product_clk_mtl_02 SMALLINT
+	DECLARE @dim_product_dtp_mtl_02 SMALLINT
+	DECLARE @dim_product_sjd_mtl_02 SMALLINT
+	DECLARE @mtl_factories_02 table (short_name NVARCHAR(45))
+	DECLARE @fact_priority_list_source_count_02 INT = 0
 
 	/* Variable assignments */
 
@@ -49,11 +56,19 @@ BEGIN
 				ON fpl.[dim_factory_id_1] = df.[id]
 	)
 
-	SET @dim_product_clk_mtl =
+	SET @dim_factory_name_priority_list_secondary_02 =
 	(
-		SELECT ISNULL([clk_mtl], 0)
-		FROM [dbo].[dim_product]
-		WHERE [id] = @dim_product_id
+		SELECT df.[short_name]
+		FROM
+			(
+				SELECT [dim_factory_id_2]
+				FROM [dbo].[fact_priority_list] f
+					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
+	                	ON f.[dim_product_id] = dp.[id]
+				WHERE [material_id] = @dim_product_material_id
+			) AS fpl
+			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
+				ON fpl.[dim_factory_id_2] = df.[id]
 	)
 
 	SET @helper_retail_qt_rqt_vendor_02 =
@@ -63,12 +78,47 @@ BEGIN
 		WHERE [MTL] = @dim_product_material_id
 	)
 
+	SET @dim_product_clk_mtl_02 =
+	(
+		SELECT ISNULL(MAX([clk_mtl]), 0)
+		FROM [dbo].[dim_product]
+		WHERE [id] = @dim_product_id
+	)
+
+	SET @dim_product_dtp_mtl_02 =
+	(
+		SELECT ISNULL(MAX([dtp_mtl]), 0)
+		FROM [dbo].[dim_product]
+		WHERE [id] = @dim_product_id
+	)
+
+	SET @dim_product_sjd_mtl_02 =
+	(
+		SELECT ISNULL(MAX([sjd_mtl]), 0)
+		FROM [dbo].[dim_product]
+		WHERE [id] = @dim_product_id
+	)
+
+	INSERT @mtl_factories_02(short_name)
+	VALUES (CASE WHEN @dim_product_clk_mtl_02 = 1 THEN 'CLK' ELSE '' END),
+			(CASE WHEN @dim_product_dtp_mtl_02 = 1 THEN 'DTP' ELSE '' END),
+			(CASE WHEN @dim_product_sjd_mtl_02 = 1 THEN 'SJD' ELSE '' END);
+
+	IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+	BEGIN
+		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
+	END
+	IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+	BEGIN
+		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
+	END
+
 	/* Sub decision tree logic */
 
 	-- CLK MTL?
-	IF @dim_product_clk_mtl = 1
+	IF @dim_product_clk_mtl_02 = 1
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'CLK')
+		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'CLK')
 		SET @allocation_logic = @allocation_logic +' => ' + 'CLK MTL'
 	END
 
@@ -78,27 +128,42 @@ BEGIN
 		-- Vendor = DTC or SJV?
 		IF @helper_retail_qt_rqt_vendor_02 in ('DTC', 'SJV')
 		BEGIN
-			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
 			SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
 		END
 		ELSE
 		BEGIN
-			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
 			SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
 		END
 	END
 
+	-- Dual Source?
+	ELSE IF @fact_priority_list_source_count_02 = 2
+		OR (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 2
+		OR @dim_product_style_complexity LIKE '%Flex%'
+		OR ((SELECT max([short_name]) from @mtl_factories_02) <> ''
+			AND (SELECT (@dim_factory_name_priority_list_secondary_02)
+				INTERSECT (SELECT [short_name] FROM @mtl_factories_02)) IS NULL)
+	BEGIN
+		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+		SET @allocation_logic = @allocation_logic +' => ' + 'Dual source' +' => ' + '2nd priority'
+		IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+		BEGIN
+			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
+		END
+	END
 	ELSE
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + 'not RQT MTL' +' => ' + 'First priority'
+		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+		SET @allocation_logic = @allocation_logic +' => ' + 'Single source' +' => ' + '1st priority'
 		IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 		BEGIN
 			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
 		END
 	END
 
-	IF @dim_factory_id_original_02 IS NULL
+	IF @dim_factory_id_original_unconstrained_02 IS NULL
 	BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + 'Not found'
 	END
@@ -115,5 +180,5 @@ BEGIN
 		@dim_demand_category_id = @dim_demand_category_id,
 		@order_number = @order_number,
 		@allocation_logic = @allocation_logic,
-		@dim_factory_id_original = @dim_factory_id_original_02
+		@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_02
 END

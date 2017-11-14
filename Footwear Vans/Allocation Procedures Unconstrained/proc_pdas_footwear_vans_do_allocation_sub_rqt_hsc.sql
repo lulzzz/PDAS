@@ -5,6 +5,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+SET ANSI_WARNINGS OFF
+GO
 -- =============================================
 -- Author:		ebp Global
 -- Create date: 13/10/2017
@@ -27,12 +29,12 @@ BEGIN
 	SET NOCOUNT ON;
 
     /* Variable declarations */
-	DECLARE @dim_factory_id_original_02 INT = NULL
+	DECLARE @dim_factory_id_original_unconstrained_02 INT = NULL
 
 	/* Sub decision tree logic */
 
 	-- HSC
-	SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
+	SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
 	SET @allocation_logic = @allocation_logic +' => ' + 'HSC'
 
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
@@ -47,5 +49,5 @@ BEGIN
 		@dim_demand_category_id = @dim_demand_category_id,
 		@order_number = @order_number,
 		@allocation_logic = @allocation_logic,
-		@dim_factory_id_original = @dim_factory_id_original_02
+		@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_02
 END

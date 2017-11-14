@@ -5,6 +5,8 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+SET ANSI_WARNINGS OFF
+GO
 -- =============================================
 -- Author:		ebp Global
 -- Create date: 26/10/2017
@@ -27,7 +29,7 @@ BEGIN
 	SET NOCOUNT ON;
 
     /* Variable declarations */
-	DECLARE @dim_factory_id_original_02 INT = NULL
+	DECLARE @dim_factory_id_original_unconstrained_02 INT = NULL
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
 	DECLARE @dim_factory_name_priority_list_secondary_02 NVARCHAR(45)
 	DECLARE @dim_location_country_code_a2_primary_02 NVARCHAR(2)
@@ -145,14 +147,14 @@ BEGIN
 	-- Flex?
 	IF @dim_product_style_complexity LIKE '%Flex%'
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
 		SET @allocation_logic = @allocation_logic +' => ' + 'Flex' +' => ' + 'Allocation: SJV'+' => ' + 'Component: SJV'
 	END
 
 	-- DTP MTL?
 	ELSE IF @dim_product_dtp_mtl_02 = 1
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTP')
+		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTP')
 		SET @allocation_logic = @allocation_logic +' => ' + 'DTP MTL'+' => ' + 'Allocation: DTP'+' => ' + 'Component: DTP'
 	END
 
@@ -164,13 +166,13 @@ BEGIN
 		-- 1st priority = DTC?
 		IF @dim_factory_name_priority_list_primary_02 = 'DTC'
 		BEGIN
-			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTP')
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTP')
 			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = DTC' +' => ' + 'Allocation: DTP'+' => ' + 'Component: DTC'
 		END
 		-- 1st priority = COO China?
 		ELSE IF @dim_location_country_code_a2_primary_02 = 'CN'
 		BEGIN
-			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
 			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO not China' +' => ' + 'Allocation: SJV'+' => ' + 'Component: '
 			IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 			BEGIN
@@ -183,7 +185,7 @@ BEGIN
 		END
 		ELSE
 		BEGIN
-			SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
 			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' + 'Allocation and Component: '
 			IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 			BEGIN
@@ -195,7 +197,7 @@ BEGIN
 	-- 2nd Priority = COO China?
 	ELSE IF @dim_location_country_code_a2_secondary_02 = 'CN'
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
 		SET @allocation_logic = @allocation_logic +' => ' + '2nd priority = COO China' +' => ' + 'Allocation: SJV'+' => ' + 'Component: '
 		IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 		BEGIN
@@ -209,7 +211,7 @@ BEGIN
 
 	ELSE
 	BEGIN
-		SET @dim_factory_id_original_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
 		SET @allocation_logic = @allocation_logic +' => ' + '2nd priority = COO not China' +' => ' + 'Allocation and Component: '
 		IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
 		BEGIN
@@ -217,7 +219,7 @@ BEGIN
 		END
 	END
 
-	IF @dim_factory_id_original_02 IS NULL
+	IF @dim_factory_id_original_unconstrained_02 IS NULL
 	BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + 'Not found'
 	END
@@ -234,5 +236,5 @@ BEGIN
 		@dim_demand_category_id = @dim_demand_category_id,
 		@order_number = @order_number,
 		@allocation_logic = @allocation_logic,
-		@dim_factory_id_original = @dim_factory_id_original_02
+		@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_02
 END

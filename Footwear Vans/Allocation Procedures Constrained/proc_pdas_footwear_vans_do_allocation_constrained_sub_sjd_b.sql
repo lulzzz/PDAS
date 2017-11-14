@@ -15,7 +15,7 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_sjd
 	@businessid INT,
 	@pdas_release_month_date_id INT,
 	@dim_buying_program_id INT,
-	@dim_factory_id_original INT,
+	@dim_factory_id_original_unconstrained INT,
 	@dim_product_material_id NVARCHAR(45),
 	@dim_product_style_complexity NVARCHAR(45),
 	@dim_construction_type_name NVARCHAR(100),
@@ -31,7 +31,7 @@ BEGIN
 	SET NOCOUNT ON;
 
     /* Variable declarations */
-	DECLARE @dim_factory_id_original_constrained_02 INT = @dim_factory_id_original
+	DECLARE @dim_factory_id_original_constrained_02 INT = @dim_factory_id_original_unconstrained
 	DECLARE @dim_product_clk_mtl_02 SMALLINT
 	DECLARE @dim_product_dtp_mtl_02 SMALLINT
 	DECLARE @dim_product_sjd_mtl_02 SMALLINT
@@ -132,7 +132,7 @@ BEGIN
 		@businessid = @businessid,
 		@pdas_release_month_date_id = @pdas_release_month_date_id,
 		@dim_buying_program_id = @dim_buying_program_id,
-		@dim_factory_id_original = @dim_factory_id_original,
+		@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained,
 		@dim_product_material_id = @dim_product_material_id,
 		@dim_product_style_complexity = @dim_product_style_complexity,
 		@dim_construction_type_name = @dim_construction_type_name,
