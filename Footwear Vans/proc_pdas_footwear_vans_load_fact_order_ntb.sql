@@ -52,21 +52,15 @@ BEGIN
         dim_customer_id,
         dim_product_id,
         dim_demand_category_id,
-        placed_date_id,
-        customer_requested_xf_date_id,
-        original_factory_confirmed_xf_date_id,
-        current_factory_confirmed_xf_date_id,
-        expected_xf_date_id,actual_xf_date_id,
-        delay_reason,initial_confirmed_date_id,
-        current_vendor_requested_xf_date_id,
-        current_customer_requested_xf_date_id,
-        customer_canceled_date_id,
-        original_customer_requested_date_id,
-        estimated_eta_date_id,
-        release_date_id,
-        lum_quantity,
-        quantity,
-		is_asap
+        quantity_lum,
+        quantity_non_lum,
+		is_asap,
+		material_id_sr,
+		pr_code,
+		pr_cut_code,
+		comment_region,
+		customer_requested_xf_dt,
+		original_customer_requested_dt
     )
 
 	-- EMEA
@@ -74,7 +68,7 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-		ISNULL(pr_code, 'UNDEFINED') as order_number,
+		'UNDEFINED' as order_number,
 		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
 			WHEN 'ASAP' THEN
 				CASE dp_m.[production_lt]
@@ -90,26 +84,18 @@ BEGIN
 			ELSE dp_m.id
 		END as dim_product_id,
 		@demand_category_id_ntb as dim_demand_category_id,
-		MAX(dd_buy.id) as placed_date_id,
-		NULL as customer_requested_xf_date_id,
-		NULL as original_factory_confirmed_xf_date_id,
-		NULL as current_factory_confirmed_xf_date_id,
-		NULL as expected_xf_date_id,
-		NULL as actual_xf_date_id,
-		NULL as delay_reason,
-		NULL as initial_confirmed_date_id,
-		NULL as current_vendor_requested_xf_date_id,
-		NULL as current_customer_requested_xf_date_id,
-		NULL as customer_canceled_date_id,
-		NULL as original_customer_requested_date_id,
-		NULL as estimated_eta_date_id,
-		NULL as release_date_id,
-		SUM(ntb.lum_qty) as lum_quantity,
-		SUM(ntb.sap_qty) as quantity,
+		SUM(ntb.lum_qty) as quantity_lum,
+		SUM(ntb.sap_qty) as quantity_non_lum,
 		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
 			WHEN 'ASAP' THEN 1
 			ELSE 0
-		END as is_asap
+		END as is_asap,
+		MAX(ntb.[dim_product_material_id]) as material_id_sr,
+		MAX(ntb.[pr_code]) as pr_code,
+		NULL as pr_cut_code,
+		NULL as comment_region,
+		NULL as customer_requested_xf_dt,
+		NULL as original_customer_requested_dt
 	FROM
 		(
 			SELECT
@@ -152,7 +138,6 @@ BEGIN
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		(UPPER(ntb.[exp_delivery_no_constraint_dt]) = 'ASAP' OR dd_xfw.[cw] IS NOT NULL)
 	GROUP BY
-		ISNULL(pr_code, 'UNDEFINED'),
 		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
 			WHEN 'ASAP' THEN
 				CASE dp_m.[production_lt]
@@ -177,7 +162,7 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-        ISNULL(pr_code, 'UNDEFINED') as order_number,
+        'UNDEFINED' as order_number,
         dd_xfac.id as dim_date_id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
@@ -190,23 +175,15 @@ BEGIN
 			ELSE dp_m.id
 		END as dim_product_id,
         @demand_category_id_ntb as dim_demand_category_id,
-        NULL as placed_date_id,
-        MAX(dd_xfac.id) as customer_requested_xf_date_id,
-        NULL as original_factory_confirmed_xf_date_id,
-        NULL as current_factory_confirmed_xf_date_id,
-        MAX(dd_xfac.id) as expected_xf_date_id,
-        NULL as actual_xf_date_id,
-        NULL as delay_reason,
-        NULL as initial_confirmed_date_id,
-        NULL as current_vendor_requested_xf_date_id,
-        NULL as current_customer_requested_xf_date_id,
-        NULL as customer_canceled_date_id,
-        NULL as original_customer_requested_date_id,
-        NULL as estimated_eta_date_id,
-        NULL as release_date_id,
-        SUM(ntb.lum_qty) as lum_quantity,
-        SUM(ntb.sap_qty) as quantity,
-		0 as is_asap
+        SUM(ntb.lum_qty) as quantity_lum,
+        SUM(ntb.sap_qty) as quantity_non_lum,
+		0 as is_asap,
+		MAX(ntb.[dim_product_material_id]) as material_id_sr,
+		MAX(ntb.[pr_code]) as pr_code,
+		MAX(ntb.[line_item]) as pr_cut_code,
+		MAX(ntb.[comment]) as comment_region,
+		MAX(ntb.xfac_dt) as customer_requested_xf_dt,
+		MAX(ntb.xfac_dt) as original_customer_requested_dt
     FROM
 		(
 			SELECT
@@ -242,7 +219,6 @@ BEGIN
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		ntb.lum_qty IS NOT NULL
     GROUP BY
-        ISNULL(pr_code, 'UNDEFINED'),
         dd_xfac.id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
@@ -261,7 +237,7 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-        ISNULL(pr_code, 'UNDEFINED') as order_number,
+        'UNDEFINED' as order_number,
         dd_xfac.id as dim_date_id,
         @dim_factory_id_placeholder as dim_factory_id,
 		CASE
@@ -273,23 +249,15 @@ BEGIN
 			ELSE dp_m.id
 		END as dim_product_id,
         @demand_category_id_ntb as dim_demand_category_id,
-        NULL as placed_date_id,
-        MAX(dd_xfac.id) as customer_requested_xf_date_id,
-        NULL as original_factory_confirmed_xf_date_id,
-        NULL as current_factory_confirmed_xf_date_id,
-        MAX(dd_xfac.id) as expected_xf_date_id,
-        MAX(dd_xfac.id) as actual_xf_date_id,
-        NULL as delay_reason,
-        NULL as initial_confirmed_date_id,
-        NULL as current_vendor_requested_xf_date_id,
-        NULL as current_customer_requested_xf_date_id,
-        NULL as customer_canceled_date_id,
-        NULL as original_customer_requested_date_id,
-        NULL as estimated_eta_date_id,
-        NULL as release_date_id,
-        SUM(ntb.lum_qty) as lum_quantity,
-        SUM(ntb.sap_qty) as quantity,
-		0 as is_asap
+        SUM(ntb.lum_qty) as quantity_lum,
+        SUM(ntb.sap_qty) as quantity_non_lum,
+		0 as is_asap,
+		MAX(ntb.[dim_product_material_id]) as material_id_sr,
+		MAX(ntb.[pr_code]) as pr_code,
+		NULL as pr_cut_code,
+		MAX(ntb.[comment_region]) as comment_region,
+		MAX(ntb.xfac_dt) as customer_requested_xf_dt,
+		MAX(ntb.xfac_dt) as original_customer_requested_dt
 	FROM
 		(
 			SELECT
@@ -321,7 +289,6 @@ BEGIN
 		ntb.lum_qty IS NOT NULL AND
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL)
     GROUP BY
-        ISNULL(pr_code, 'UNDEFINED'),
         dd_xfac.id,
 		CASE
 			WHEN dc.id IS NOT NULL THEN dc.id
@@ -338,7 +305,7 @@ BEGIN
 		@pdasid as dim_pdas_id,
         @businessid as dim_business_id,
         @buying_program_id as dim_buying_program_id,
-        ISNULL(customer_po_code, 'UNDEFINED') as order_number,
+        'UNDEFINED' as order_number,
         dd_xfac.id as dim_date_id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
@@ -355,23 +322,15 @@ BEGIN
 			ELSE dp_m.id
 		END as dim_product_id,
         @demand_category_id_ntb as dim_demand_category_id,
-        NULL as placed_date_id,
-        MAX(dd_req.id) as customer_requested_xf_date_id,
-        NULL as original_factory_confirmed_xf_date_id,
-        NULL as current_factory_confirmed_xf_date_id,
-        MAX(dd_xfac.id) as expected_xf_date_id,
-        NULL as actual_xf_date_id,
-        NULL as delay_reason,
-        NULL as initial_confirmed_date_id,
-        NULL as current_vendor_requested_xf_date_id,
-        NULL as current_customer_requested_xf_date_id,
-        NULL as customer_canceled_date_id,
-        NULL as original_customer_requested_date_id,
-        MAX(dd_eta.id) as estimated_eta_date_id,
-        MAX(dd_rel.id) as release_date_id,
-        SUM(ntb.lum_qty) as lum_quantity,
-        SUM(ntb.quantity) as quantity,
-		0 as is_asap
+        SUM(ntb.lum_qty) as quantity_lum,
+        SUM(ntb.quantity) as quantity_non_lum,
+		0 as is_asap,
+		MAX(ntb.[dim_product_material_id]) as material_id_sr,
+		MAX(ntb.[pr_code]) as pr_code,
+		MAX([item]) as pr_cut_code,
+		NULL as comment_region,
+		MAX(ntb.xfac_dt) as customer_requested_xf_dt,
+		MAX(ntb.req_dt) as original_customer_requested_dt
 	FROM
 		(
 			SELECT
@@ -393,7 +352,7 @@ BEGIN
 				ntb.dim_product_size = dp_ms.size
 
 		LEFT OUTER JOIN (SELECT [id], [name] FROM [dbo].[dim_customer]) dc_name
-			ON ntb.[ship_to] = dc_name.[name]
+			ON ntb.[dim_customer_name] = dc_name.[name]
 
 		LEFT OUTER JOIN (SELECT MAX([id]) as [id], [dc_plt] FROM [dbo].[dim_customer] GROUP BY [dc_plt]) dc_plt
 			ON ntb.[plnt] = dc_plt.[dc_plt]
@@ -408,15 +367,11 @@ BEGIN
 					ON m.parent = df.short_name
 			WHERE type = 'Factory Master'
 		) mapping_f ON ntb.dim_factory_short_name = mapping_f.child
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_req ON CONVERT(date, ntb.req_dt) = dd_req.full_date
 	    LEFT OUTER JOIN [dbo].[dim_date] dd_xfac ON CONVERT(date, ntb.xfac_dt) = dd_xfac.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_eta ON CONVERT(date, ntb.delivered_dt) = dd_eta.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_rel ON CONVERT(date, ntb.sr_sent_dt) = dd_rel.full_date
 	WHERE
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		ntb.lum_qty IS NOT NULL
     GROUP BY
-		ISNULL(customer_po_code, 'UNDEFINED'),
 		dd_xfac.id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id

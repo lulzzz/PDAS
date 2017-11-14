@@ -31,7 +31,7 @@ BEGIN
 
     /* APAC */
 
-	SET @source = 'PDAS_FTW_VANS_APAC_NTB_BULK.xlsx';
+	SET @source = 'PDAS_FTW_VANS_APAC_NTB.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
@@ -39,7 +39,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
+		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -64,7 +64,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
+		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -81,7 +81,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
+		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -100,7 +100,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_reva_vendor], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_factory_reva_vendor] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb_bulk]) staging
+		(SELECT DISTINCT [dim_factory_reva_vendor] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -123,22 +123,22 @@ BEGIN
 
     /* NORA */
 
-	SET @source = 'PDAS_FTW_VANS_NORA_NTB_BULK.xlsx';
+	SET @source = 'PDAS_FTW_VANS_NORA_NTB.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
 	SET @type = 'Customer not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
-	SELECT DISTINCT @system, @source, @type, ISNULL([sold_to_customer_name], '') as [value]
+	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
-		(SELECT DISTINCT [sold_to_customer_name] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
+		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
                 [name]
             FROM [dbo].[dim_customer]
         ) dim
-			ON staging.[sold_to_customer_name] = dim.[name]
+			ON staging.[dim_customer_name] = dim.[name]
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -147,7 +147,7 @@ BEGIN
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
             WHERE [type] = 'Customer Master'
         ) mapping
-			ON staging.[sold_to_customer_name] = mapping.[child]
+			ON staging.[dim_customer_name] = mapping.[child]
 	WHERE
 		(dim.[name] IS NULL AND mapping.[parent] IS NULL)
 
@@ -156,7 +156,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
+		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -173,7 +173,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
+		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -192,7 +192,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_acadia_vendor_code], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_factory_acadia_vendor_code] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb_bulk]) staging
+		(SELECT DISTINCT [dim_factory_acadia_vendor_code] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -215,7 +215,7 @@ BEGIN
 
     /* CASA */
 
-	SET @source = 'PDAS_FTW_VANS_CASA_NTB_BULK.xlsx';
+	SET @source = 'PDAS_FTW_VANS_CASA_NTB.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
@@ -223,7 +223,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
+		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -248,7 +248,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
+		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -265,7 +265,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
+		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -284,7 +284,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([confirmed_vendor_code], '') as [value]
 	FROM
-		(SELECT DISTINCT [confirmed_vendor_code] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb_bulk]) staging
+		(SELECT DISTINCT [confirmed_vendor_code] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -307,7 +307,7 @@ BEGIN
 
     /* EMEA */
 
-	SET @source = 'PDAS_FTW_VANS_EMEA_NTB_BULK.xlsx';
+	SET @source = 'PDAS_FTW_VANS_EMEA_NTB.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
@@ -315,7 +315,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
+		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -340,7 +340,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
+		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -357,7 +357,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
+		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -376,7 +376,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([vendor_name], '') as [value]
 	FROM
-		(SELECT DISTINCT [vendor_name] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb_bulk]) staging
+		(SELECT DISTINCT [vendor_name] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT

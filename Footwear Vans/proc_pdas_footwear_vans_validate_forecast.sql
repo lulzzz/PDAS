@@ -31,7 +31,7 @@ BEGIN
 
     /* APAC */
 
-	SET @source = 'PDAS_FTW_VANS_APAC_FORECAST_BULK.xlsx';
+	SET @source = 'PDAS_FTW_VANS_APAC_FORECAST.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
@@ -39,7 +39,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_market_name], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_market_name] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast_bulk]) staging
+		(SELECT DISTINCT [dim_market_name] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -64,7 +64,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast_bulk]) staging
+		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -80,7 +80,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_short_name], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_factory_short_name] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast_bulk]) staging
+		(SELECT DISTINCT [dim_factory_short_name] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -94,7 +94,7 @@ BEGIN
 
     /* US */
 
-    SET @source = 'PDAS_FTW_VANS_NORA_FORECAST_BULK.xlsx';
+    SET @source = 'PDAS_FTW_VANS_NORA_FORECAST.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check market from dim_customer (and mapping)
@@ -102,7 +102,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_region_region], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_region_region] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast_bulk]) staging
+		(SELECT DISTINCT [dim_region_region] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -130,7 +130,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast_bulk]) staging
+		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -146,7 +146,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL(staging.[season], '') + '/' + ISNULL(staging.[plan_month], '') as [value]
 	FROM
-		(SELECT DISTINCT [season], [plan_month] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast_bulk]) staging
+		(SELECT DISTINCT [season], [plan_month] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -162,7 +162,7 @@ BEGIN
 
     /* EMEA */
 
-    SET @source = 'PDAS_FTW_VANS_EMEA_FORECAST_BULK.xlsx';
+    SET @source = 'PDAS_FTW_VANS_EMEA_FORECAST.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
     -- Check material_id from dim_product
@@ -170,7 +170,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
-		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_emea_forecast_bulk]) staging
+		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_emea_forecast]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -186,7 +186,7 @@ BEGIN
   	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
   	SELECT DISTINCT @system, @source, @type, ISNULL(staging.[season], '') + '/' + ISNULL(staging.[plan_month], '') as [value]
   	FROM
-  		(SELECT DISTINCT [season], [plan_month] FROM [dbo].[staging_pdas_footwear_vans_emea_forecast_bulk]) staging
+  		(SELECT DISTINCT [season], [plan_month] FROM [dbo].[staging_pdas_footwear_vans_emea_forecast]) staging
           LEFT OUTER JOIN
           (
               SELECT DISTINCT

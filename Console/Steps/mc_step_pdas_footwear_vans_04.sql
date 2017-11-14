@@ -7,16 +7,16 @@ GO
 -- =============================================
 -- Author:		ebp Global
 -- Create date: 9/6/2017
--- Description:	Console procedure to run the PDAS Footwear Vans step 03.
+-- Description:	Console procedure to run the PDAS Footwear Vans step 04.
 -- =============================================
-ALTER PROCEDURE [dbo].[mc_step_pdas_footwear_vans_03]
+ALTER PROCEDURE [dbo].[mc_step_pdas_footwear_vans_04]
 	@mc_user_name nvarchar(100) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @mc_system_name nvarchar(100) = 'pdas_ftw_vans'
-	DECLARE @mc_proc_name nvarchar(100) = 'mc_step_pdas_footwear_vans_03'
+	DECLARE @mc_proc_name nvarchar(100) = 'mc_step_pdas_footwear_vans_04'
 
 	IF (@mc_user_name IN (SELECT [name] FROM [dbo].[mc_user]))
 	BEGIN
@@ -46,29 +46,9 @@ BEGIN
 		DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 		DECLARE	@buying_program_id int
 
-		-- Step 03 - Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
-		-- Capacity
-		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-		-- NTB
-		SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
-		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
-			@pdasid = @pdasid,
-			@businessid = @dim_business_id_footwear_vans,
-			@buying_program_id = @buying_program_id
-
-		-- Forecast
-		SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
-		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
-			@pdasid = @pdasid,
-			@businessid = @dim_business_id_footwear_vans,
-			@buying_program_id = @buying_program_id
-
-		-- NGC
-		--EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
-
-		-- Combine demand
-		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+		-- Unconstrained allocation
+		EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_unconstrained] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 
 		-- Prepare report tables for Excel frontend

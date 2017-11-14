@@ -92,7 +92,7 @@ BEGIN
         NULL as current_vendor_requested_xf_date_id,
         NULL as current_customer_requested_xf_date_id,
         NULL as customer_canceled_date_id,
-        NULL as original_customer_requested_date_id,
+        TODO as original_customer_requested_date_id,
         NULL as estimated_eta_date_id,
         NULL as release_date_id,
         SUM(ngc.lum_qty) as lum_quantity,
