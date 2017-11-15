@@ -719,7 +719,10 @@ def gen_types_from_pandas_to_sql(table):
         if 'datetime' in str(j):
             dtypedict.update({i: types.DateTime()})
         if 'float' in str(j):
-            dtypedict.update({i: types.Float(precision=3, asdecimal=True)})
+            if sum([1 if l > 100000000 else 0 for l in table[i].tolist() if not pd.isnull(l)]) > 0:
+                dtypedict.update({i: types.NVARCHAR(length=500)})
+            else:
+                dtypedict.update({i: types.Float(precision=3, asdecimal=True)})
         if 'int' in str(j):
             if max(
                 [l for l in table[i].tolist() if not pd.isnull(l)]
