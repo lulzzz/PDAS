@@ -4,6 +4,7 @@ SELECT
 	, f_1.[dim_business_id]
 	, f_1.[dim_buying_program_id]
 	, f_1.[dim_product_id]
+	, dim_product.dim_construction_type_id as dim_construction_type_id
 	, f_1.[dim_date_id]
 	, f_1.[dim_factory_id_original_unconstrained]
 	, f_1.[dim_factory_id_original_constrained]

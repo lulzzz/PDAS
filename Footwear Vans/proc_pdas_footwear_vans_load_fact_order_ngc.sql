@@ -29,40 +29,32 @@ BEGIN
 
 	-- Insert from staging
 	INSERT INTO [dbo].[fact_order](
-        dim_pdas_id,
-        dim_business_id,
-        dim_buying_program_id,
-        order_number,
-        dim_date_id,
-        dim_factory_id,
-        dim_customer_id,
-        dim_product_id,
-        dim_demand_category_id,
-        placed_date_id,
-        customer_requested_xf_date_id,
-        original_factory_confirmed_xf_date_id,
-        current_factory_confirmed_xf_date_id,
-        expected_xf_date_id,actual_xf_date_id,
-        delay_reason,initial_confirmed_date_id,
-        current_vendor_requested_xf_date_id,
-        current_customer_requested_xf_date_id,
-        customer_canceled_date_id,
-        original_customer_requested_date_id,
-        estimated_eta_date_id,
-        release_date_id,
-        lum_quantity,
-        quantity,
-		is_asap
+		[dim_pdas_id]
+		,[dim_business_id]
+		,[dim_buying_program_id]
+		,[order_number]
+		,[dim_date_id]
+		,[is_asap]
+		,[dim_factory_id]
+		,[dim_customer_id]
+		,[dim_product_id]
+		,[dim_demand_category_id]
+		,[customer_requested_xf_dt]
+		,[original_customer_requested_dt]
+		,[quantity_lum]
+		,[quantity_non_lum]
     )
 	SELECT
         @pdasid as dim_pdas_id,
         @businessid as dim_business_id,
         @buying_program_id as dim_buying_program_id,
         ISNULL(po_code, 'UNDEFINED') as order_number,
+		Shipped.Actual_CRD is not null OR not 12/30/1899 OR blank
 		CASE ISNULL(ngc.shipment_status, 0)
 			WHEN 1 THEN dd_original_crd.id
 			ELSE dd_revised_crd.id
 		END as dim_date_id,
+		0 as is_asap,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
 			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
@@ -79,25 +71,13 @@ BEGIN
 		END as dim_product_id,
 		CASE ISNULL(ngc.shipment_status, 0)
 			WHEN 1 THEN @dim_demand_category_id_shipped_order
-			ELSE @dim_demand_category_id_shipped_order
+			ELSE @dim_demand_category_id_open_order
 		END as dim_demand_category_id,
-        MAX(dd_po_issue.id) as placed_date_id,
-        MAX(dd_revised_crd.id) as customer_requested_xf_date_id,
-        NULL as original_factory_confirmed_xf_date_id,
-        MAX(dd_shipped.id) as current_factory_confirmed_xf_date_id,
-        NULL as expected_xf_date_id,
-        NULL as actual_xf_date_id,
-        NULL as delay_reason,
-        NULL as initial_confirmed_date_id,
-        NULL as current_vendor_requested_xf_date_id,
-        NULL as current_customer_requested_xf_date_id,
-        NULL as customer_canceled_date_id,
-        TODO as original_customer_requested_date_id,
-        NULL as estimated_eta_date_id,
-        NULL as release_date_id,
-        SUM(ngc.lum_qty) as lum_quantity,
-        SUM(ngc.order_qty) as quantity,
-		0 as is_asap
+		MAX(revised_crd_dt) as [customer_requested_xf_dt],
+		MAX(original_crd_dt) as [original_customer_requested_dt],
+		SUM(ngc.lum_qty) as [quantity_lum],
+		SUM(ngc.order_qty) as [quantity_non_lum]
+
 	FROM
 		(
 			SELECT
@@ -108,9 +88,6 @@ BEGIN
 				,REPLACE(dim_customer_dc_code_brio, ' ', '') as dim_customer_dc_code_brio
 				,revised_crd_dt
 				,original_crd_dt
-				,po_issue_dt
-			    ,shipped_dt
-			    ,shipment_closed_on_dt
 				,po_code
 				,shipment_status
 				,shipped_qty
@@ -151,9 +128,6 @@ BEGIN
 		LEFT OUTER JOIN [dbo].[dim_date] dd_revised_crd ON ngc.revised_crd_dt = dd_revised_crd.full_date
 		LEFT OUTER JOIN [dbo].[dim_date] dd_original_crd ON ngc.original_crd_dt = dd_original_crd.full_date
 
-		LEFT OUTER JOIN [dbo].[dim_date] dd_po_issue ON ngc.po_issue_dt = dd_po_issue.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_shipped ON ngc.shipped_dt = dd_shipped.full_date
-	    LEFT OUTER JOIN [dbo].[dim_date] dd_shipment_closed_on ON ngc.shipment_closed_on_dt = dd_shipment_closed_on.full_date
 	WHERE
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		(
@@ -161,7 +135,6 @@ BEGIN
 			OR
 			(ISNULL(ngc.shipment_status, 0) = 0 AND dd_revised_crd.id IS NOT NULL)
 		)
-		--and dd_original_crd.id >= 20170101
     GROUP BY
 		ISNULL(po_code, 'UNDEFINED'),
 		CASE ISNULL(ngc.shipment_status, 0)
@@ -184,7 +157,7 @@ BEGIN
 		END,
 		CASE ISNULL(ngc.shipment_status, 0)
 			WHEN 1 THEN @dim_demand_category_id_shipped_order
-			ELSE @dim_demand_category_id_shipped_order
+			ELSE @dim_demand_category_id_open_order
 		END
 
 END

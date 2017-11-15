@@ -1,5 +1,12 @@
 declare @user nvarchar(100) = 'FGAMPER'
 
+/*
+delete from [mc_user_table_perm] where [mc_user_name] = @user
+delete from [mc_user_proc_perm] where [mc_user_name] = @user
+delete from [mc_user_report_perm] where [mc_user_name] = @user
+delete from [mc_user_system_perm] where [mc_user_name] = @user
+*/
+
 insert into [dbo].[mc_user_proc_perm]
 ([permission_type]
   ,[mc_user_name]

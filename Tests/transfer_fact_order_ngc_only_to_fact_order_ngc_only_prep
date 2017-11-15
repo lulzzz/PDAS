@@ -1,0 +1,45 @@
+insert into [dbo].[fact_order_ngc_only_prep]
+(
+	[dim_pdas_id]
+	,[dim_business_id]
+	,[dim_buying_program_id]
+	,[order_number]
+	,[dim_date_id]
+	,[is_asap]
+	,[dim_factory_id]
+	,[dim_customer_id]
+	,[dim_product_id]
+	,[dim_demand_category_id]
+	,[pr_code]
+	,[pr_cut_code]
+	,[customer_requested_xf_dt]
+	,[original_customer_requested_dt]
+	,[quantity_lum]
+	,[quantity_non_lum]
+	,[material_id_sr]
+	,[comment_region]
+)
+SELECT
+	[dim_pdas_id]
+	,[dim_business_id]
+	,[dim_buying_program_id]
+	,[order_number]
+	,[dim_date_id]
+	,[is_asap]
+	,[dim_factory_id]
+	,[dim_customer_id]
+	,[dim_product_id]
+	,[dim_demand_category_id]
+	,NULL as [pr_code]
+	,NULL as [pr_cut_code]
+	,dd1.full_date as [customer_requested_xf_dt]
+	,dd2.full_date as [original_customer_requested_dt]
+	,[lum_quantity] as [quantity_lum]
+	,[quantity] as [quantity_non_lum]
+	,NULL as [material_id_sr]
+	,NULL as [comment_region]
+FROM [fact_order_ngc_only] f
+	left JOIN DIM_date dd1
+		on f.[customer_requested_xf_date_id] = dd1.id
+	left JOIN DIM_date dd2
+		on f.[original_customer_requested_date_id] = dd2.id

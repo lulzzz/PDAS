@@ -122,8 +122,8 @@ BEGIN
 	UPDATE f
 	SET
 		f.[region_moq] = moq.[From by Region]
-		,f.[region_above_moq] = CASE
-			WHEN f.[quantity_region] > moq.[From by Region] THEN 1
+		,f.[region_below_moq] = CASE
+			WHEN f.[quantity_region] < moq.[From by Region] THEN 1
 			ELSE 0
 		END
 	FROM
@@ -148,7 +148,7 @@ BEGIN
 		[dim_business_id] = @businessid and
 		ddc.[name] IN ('Forecast', 'Need to Buy')
 
-	-- ,f.[customer_above_moq] =
+	-- ,f.[customer_below_moq] =
 	-- ,f.[customer_moq] =
 	-- ,f.[upcharge] =
 	-- ,f.[is_rejected] =
