@@ -688,9 +688,8 @@ def convert_numeric_col(table):
             dict_count_format = {}
             dict_count_format['integer'] = sum([1 if is_integer(l) else 0 for l in table_test[col] if not pd.isnull(l)]) / total_count
             dict_count_format['float'] = sum([1 if is_float(l) else 0 for l in table_test[col] if not pd.isnull(l)]) / total_count
-            dict_count_format['no_conversion'] = sum([1 if ((is_float(l) or is_integer(l)) and l>100000000) else 0 for l in table_test[col] if not pd.isnull(l)]) / total_count
             max_format = max(dict_count_format, key=dict_count_format.get)
-            if dict_count_format[max_format] < 0.80 or dict_count_format['no_conversion'] > 0:
+            if dict_count_format[max_format] < 0.80:
                 continue
             else:
                 if max_format == 'float':
@@ -702,6 +701,7 @@ def convert_numeric_col(table):
         table[list_col_int] = table[list_col_int].replace('-', np.NaN)
         table[list_col_int] = table[list_col_int].applymap(lambda x: normalize_numeric_format(x))  # Decision to separate INT and FLOAT although same functions applied
         table[list_col_int] = table[list_col_int].apply(pd.to_numeric, errors='coerce')
+        table[list_col_int] = table[list_col_int].applymap(lambda x: format(x, '.0f'))
     if list_col_float:
         table[list_col_float] = table[list_col_float].replace('-', np.NaN)
         table[list_col_float] = table[list_col_float].applymap(lambda x: normalize_numeric_format(x))

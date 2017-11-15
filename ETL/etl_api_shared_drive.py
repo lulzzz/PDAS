@@ -33,7 +33,7 @@ def get_data_from_extracts():
         if os.path.splitext(os.path.join(cp.SOURCE_FILE_PATH, f))[1] in ('.xlsx', '.xls'):
             xl = pd.ExcelFile(os.path.join(cp.SOURCE_FILE_PATH, f))
             if 'PDAS' in xl.sheet_names:
-                df = pd.read_excel(os.path.join(cp.SOURCE_FILE_PATH, f), sheetname='PDAS', dtype=object)
+                df = pd.read_excel(os.path.join(cp.SOURCE_FILE_PATH, f), sheetname='PDAS', converters = {"Purch.req.": str})
                 magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''File {} has {} rows and {} columns'''.format(f, df.shape[0], df.shape[1]))
             else:
                 magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Couldn't process the file {} (reason: No sheet named "PDAS")'''.format(f))
