@@ -688,11 +688,14 @@ def convert_numeric_col(table):
             dict_count_format = {}
             dict_count_format['integer'] = sum([1 if is_integer(l) else 0 for l in table_test[col] if not pd.isnull(l)]) / total_count
             dict_count_format['float'] = sum([1 if is_float(l) else 0 for l in table_test[col] if not pd.isnull(l)]) / total_count
+            dict_count_format['no_conversion'] = sum([1 if ((is_float(l) or is_integer(l)) and l>100000000) else 0 for l in table_test[col] if not pd.isnull(l)]) / total_count
             max_format = max(dict_count_format, key=dict_count_format.get)
             if dict_count_format[max_format] < 0.80:
                 continue
             else:
-                if max_format == 'float':
+                if max_format == 'no_conversion':
+                    continue
+                elif max_format == 'float':
                     list_col_float.append(col)
                 else:
                     list_col_int.append(col)
