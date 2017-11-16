@@ -24,7 +24,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_updater]
 	@dim_demand_category_id INT,
 	@order_number NVARCHAR(45),
 	@allocation_logic NVARCHAR(1000),
-	@dim_factory_id_original_unconstrained INT
+	@dim_factory_id_original_unconstrained INT,
+	@component_factory_short_name NVARCHAR(45)
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -37,7 +38,8 @@ BEGIN
 		SET [dim_factory_id_original_unconstrained] = @dim_factory_id_original_unconstrained,
 			[dim_factory_id_original_constrained] = @dim_factory_id_original_unconstrained,
 			[dim_factory_id] = @dim_factory_id_original_unconstrained,
-			[allocation_logic_unconstrained] = @allocation_logic
+			[allocation_logic_unconstrained] = @allocation_logic,
+			[component_factory_short_name] = @component_factory_short_name
 		WHERE
 			[dim_pdas_id] = @pdasid AND
 			[dim_business_id] = @businessid AND

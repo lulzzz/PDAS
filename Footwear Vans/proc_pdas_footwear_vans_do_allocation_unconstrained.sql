@@ -610,7 +610,7 @@ BEGIN
 					SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
 					IF (DATEDIFF(day,@date_buy_01,@date_crd_01) >= 73) OR (DATEDIFF(day,@date_buy_01,@date_crd_01) < 73 AND @helper_fty_qt_rqt_vendor_01 IS NULL)
 					BEGIN
-						SET @allocation_logic = @allocation_logic +' => ' + 'Lead time: ' + (DATEDIFF(day,@date_buy_01,@date_crd_01)) + 'VQT: ' + @helper_fty_qt_rqt_vendor_01
+						SET @allocation_logic = @allocation_logic +' => ' + 'Lead time: ' + CONVERT(NVARCHAR(10),(DATEDIFF(day,@date_buy_01,@date_crd_01))) + 'VQT: ' + @helper_fty_qt_rqt_vendor_01
 						IF @dim_customer_country_region_01 = 'EMEA'
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
@@ -842,7 +842,8 @@ BEGIN
 							@dim_demand_category_id = @dim_demand_category_id_01,
 							@order_number = @order_number_01,
 							@allocation_logic = @allocation_logic,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
+							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
+							@component_factory_short_name = NULL
 					END
 				END
 
@@ -851,7 +852,7 @@ BEGIN
 					SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
 					IF (DATEDIFF(day,@date_buy_01,@date_crd_01) >= 73) OR (DATEDIFF(day,@date_buy_01,@date_crd_01) < 73 AND @helper_fty_qt_rqt_vendor_01 IS NULL)
 					BEGIN
-						SET @allocation_logic = @allocation_logic +' => ' + 'Lead time: ' + (DATEDIFF(day,@date_buy_01,@date_crd_01)) + 'VQT: ' + @helper_fty_qt_rqt_vendor_01
+						SET @allocation_logic = @allocation_logic +' => ' + 'Lead time: ' + CONVERT(NVARCHAR(10),(DATEDIFF(day,@date_buy_01,@date_crd_01))) + 'VQT: ' + @helper_fty_qt_rqt_vendor_01
 						IF @dim_customer_country_region_01 = 'EMEA'
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
@@ -1082,7 +1083,8 @@ BEGIN
 							@dim_demand_category_id = @dim_demand_category_id_01,
 							@order_number = @order_number_01,
 							@allocation_logic = @allocation_logic,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
+							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
+							@component_factory_short_name = NULL
 					END
 				END
 			END
@@ -1264,7 +1266,7 @@ BEGIN
 					SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
 					IF (DATEDIFF(day,@date_buy_01,@date_crd_01) >= 73) OR (DATEDIFF(day,@date_buy_01,@date_crd_01) < 73 AND @helper_fty_qt_rqt_vendor_01 IS NULL)
 					BEGIN
-						SET @allocation_logic = @allocation_logic +' => ' + 'Lead time: ' + (DATEDIFF(day,@date_buy_01,@date_crd_01)) + ' VQT: ' + @helper_fty_qt_rqt_vendor_01
+						SET @allocation_logic = @allocation_logic +' => ' + 'Lead time: ' + CONVERT(NVARCHAR(10),(DATEDIFF(day,@date_buy_01,@date_crd_01))) + ' VQT: ' + @helper_fty_qt_rqt_vendor_01
 						IF @dim_customer_country_region_01 = 'EMEA'
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
@@ -1393,7 +1395,8 @@ BEGIN
 							@dim_demand_category_id = @dim_demand_category_id_01,
 							@order_number = @order_number_01,
 							@allocation_logic = @allocation_logic,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
+							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
+							@component_factory_short_name = NULL
 					END
 
 				END
@@ -1403,7 +1406,7 @@ BEGIN
 					SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
 					IF (DATEDIFF(day,@date_buy_01,@date_crd_01) >= 73) OR (DATEDIFF(day,@date_buy_01,@date_crd_01) < 73 AND @helper_fty_qt_rqt_vendor_01 IS NULL)
 					BEGIN
-						SET @allocation_logic = @allocation_logic +' => ' + 'Lead time: ' + (DATEDIFF(day,@date_buy_01,@date_crd_01)) + ' VQT ' + @helper_fty_qt_rqt_vendor_01
+						SET @allocation_logic = @allocation_logic +' => ' + 'Lead time: ' + CONVERT(NVARCHAR(10),(DATEDIFF(day,@date_buy_01,@date_crd_01))) + ' VQT ' + @helper_fty_qt_rqt_vendor_01
 						IF @dim_customer_country_region_01 = 'EMEA'
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
@@ -1532,7 +1535,8 @@ BEGIN
 							@dim_demand_category_id = @dim_demand_category_id_01,
 							@order_number = @order_number_01,
 							@allocation_logic = @allocation_logic,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
+							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
+							@component_factory_short_name = NULL
 					END
 				END
 			END
@@ -1577,7 +1581,8 @@ BEGIN
 					@dim_demand_category_id = @dim_demand_category_id_01,
 					@order_number = @order_number_01,
 					@allocation_logic = @allocation_logic,
-					@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01
+					@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
+					@component_factory_short_name = NULL
 			END
 
 			FETCH NEXT FROM @cursor_01

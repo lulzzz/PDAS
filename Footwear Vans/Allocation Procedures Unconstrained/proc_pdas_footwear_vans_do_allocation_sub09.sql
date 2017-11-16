@@ -266,5 +266,6 @@ BEGIN
 		@dim_demand_category_id = @dim_demand_category_id,
 		@order_number = @order_number,
 		@allocation_logic = @allocation_logic,
-		@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_02
+		@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_02,
+		@component_factory_short_name = NULL
 END

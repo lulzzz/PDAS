@@ -45,15 +45,18 @@ def get_data_from_extracts():
             magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Couldn't process the file {} (reason: File not found)'''.format(f))
             continue
         # From Pandas to staging area
-        magic.convert_numeric_col(df)
-        df.columns = [magic.rewrite_with_technical_convention(col) for col in df.columns]
-        db_dicttypes = magic.gen_types_from_pandas_to_sql(df)
+        #magic.convert_numeric_col(df)
+        #df.columns = [magic.rewrite_with_technical_convention(col) for col in df.columns]
+
         # load the staging table
         tablename = magic.get_table_column_values_as_list(engine, 'pdas_metadata', 'table_name', {'src_name': [f]})[0]
         magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Loading table {} in staging area'''.format(tablename))
         magic.delete_from_table(engine, tablename)
         new_names = magic.get_column_names(engine, tablename)
         df = df.rename(columns={old_col: new_col for old_col, new_col in zip(df.columns, new_names)})
+        df = magic.set_pandas_dtypes_with_db_table_types(df, magic.get_column_types(engine, tablename))
+        df = df.fillna(np.nan)
+        db_dicttypes = magic.gen_types_from_pandas_to_sql(df)
         flag = magic.load_df_into_db(engine, df, tablename, dict_types=db_dicttypes, mode='append')
         if flag == 0:
             magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''FAIL Loading table {}'''.format(f))

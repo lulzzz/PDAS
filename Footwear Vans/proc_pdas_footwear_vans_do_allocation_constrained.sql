@@ -77,6 +77,7 @@ BEGIN
 		DECLARE @helper_fty_qt_rqt_vendor_01 NVARCHAR(45)
 		DECLARE @current_fill_01 int
 		DECLARE @max_capacity_01 int
+		DECLARE @fill_status NVARCHAR(1000)
 		/* DECLARE @dim_product_id  */
 
 		-- Cursors
@@ -322,6 +323,7 @@ BEGIN
 		BEGIN
 			-- Reset allocation logic
 			SET @allocation_logic = ''
+			SET @fill_status = ''
 
 			SET @current_fill_01 =
 			(
@@ -374,7 +376,7 @@ BEGIN
 
 			IF @current_fill_01 IS NULL
 			BEGIN
-				SET @allocation_logic = @dim_factory_original_short_name_01
+				SET @fill_status = @dim_factory_original_short_name_01
 				+ ' quantity not found for '
 				+ @dim_date_year_cw_accounting_01
 				+ ' construction type '
@@ -382,7 +384,7 @@ BEGIN
 			END
 			ELSE IF @max_capacity_01 IS NULL
 			BEGIN
-				SET @allocation_logic = @dim_factory_original_short_name_01
+				SET @fill_status = @dim_factory_original_short_name_01
 				+ ' capacity not found for '
 				+ @dim_date_year_cw_accounting_01
 				+ ' construction type '
@@ -390,24 +392,23 @@ BEGIN
 			END
 			ELSE IF @max_capacity_01 = 0
 			BEGIN
-				SET @allocation_logic = @allocation_logic +
-					@dim_factory_original_short_name_01 +
-					' Weekly fill rate: ' +
-					CONVERT(NVARCHAR(10), @current_fill_01) + '/' +
-					CONVERT(NVARCHAR(10), @max_capacity_01)
+				SET @fill_status = @dim_factory_original_short_name_01
+				+ ' Weekly fill rate: '
+				+ CONVERT(NVARCHAR(10), @current_fill_01) + '/'
+				+ CONVERT(NVARCHAR(10), @max_capacity_01)
 			END
 			ELSE
 			BEGIN
-				SET @allocation_logic = @allocation_logic +
-					@dim_factory_original_short_name_01 +
-					' Weekly fill rate: ' +
-					CONVERT(NVARCHAR(10), @current_fill_01) + '/' +
-					CONVERT(NVARCHAR(10), @max_capacity_01) + ' (' +
-					FORMAT(CONVERT(FLOAT, @current_fill_01)/CONVERT(FLOAT, @max_capacity_01),'P') + ')'
+				SET @fill_status = @dim_factory_original_short_name_01
+				+ ' Weekly fill rate: '
+				+ CONVERT(NVARCHAR(10), @current_fill_01) + '/'
+				+ CONVERT(NVARCHAR(10), @max_capacity_01) + ' ('
+				+ FORMAT(CONVERT(FLOAT, @current_fill_01)/CONVERT(FLOAT, @max_capacity_01),'P') + ')'
 			END
 
 			IF @current_fill_01 > @max_capacity_01
 			BEGIN
+				SET @allocation_logic = @allocation_logic + '[OVERLOAD] ' + @fill_status
 				IF @dim_factory_original_short_name_01 = 'BRT'
 				BEGIN
 					SET @allocation_logic = @allocation_logic + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
@@ -613,6 +614,7 @@ BEGIN
 
 			ELSE
 			BEGIN
+				SET @allocation_logic = @allocation_logic + '[AVAILABLE] ' + @fill_status
 				EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_updater]
 					@pdasid = @pdasid,
 					@businessid = @businessid,
