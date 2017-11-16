@@ -6,6 +6,7 @@ DECLARE	@current_date date = GETDATE()
 DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
 DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 DECLARE	@buying_program_id int
+SET @buying_program_id = (SELECT [dim_buying_program_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 
 -- Step 01 - Start new PDAS release
 -- EXEC [dbo].[proc_pdas_footwear_vans_create_system_key]
@@ -32,15 +33,12 @@ SELECT * FROM [dbo].[system_log_file] WHERE [system] = 'pdas_ftw_vans' ORDER BY 
 EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 -- NTB
-SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
 EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
 	@pdasid = @pdasid,
 	@businessid = @dim_business_id_footwear_vans,
 	@buying_program_id = @buying_program_id
-SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Retail Quick Turn')
 
 -- Forecast
-SET @buying_program_id = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
 EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
 	@pdasid = @pdasid,
 	@businessid = @dim_business_id_footwear_vans,

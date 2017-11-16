@@ -1,6 +1,7 @@
 SELECT
 	-- fact_demand_total
-	 f_1.[dim_pdas_id]
+	CONVERT(NVARCHAR(100), CONVERT(NVARCHAR(10), f_1.dim_pdas_id) + '-' + CONVERT(NVARCHAR(10), f_1.[dim_business_id]) + '-' + CONVERT(NVARCHAR(10), f_1.dim_buying_program_id) + '-' + CONVERT(NVARCHAR(10), f_1.dim_demand_category_id) + '-' + CONVERT(NVARCHAR(10), f_1.dim_product_id) + '-' + CONVERT(NVARCHAR(10), f_1.dim_date_id) + '-' + CONVERT(NVARCHAR(10), f_1.dim_customer_id) + '-' + f_1.[order_number]) AS id
+	, f_1.[dim_pdas_id]
 	, f_1.[dim_business_id]
 	, f_1.[dim_buying_program_id]
 	, f_1.[dim_product_id]
@@ -12,6 +13,7 @@ SELECT
 	   WHEN f_1.dim_factory_id_original_unconstrained = f_1.dim_factory_id_original_constrained THEN 'N'
 	   ELSE 'Y'
 	END AS [is_reallocated]
+	, f_1.[dim_factory_id_final]
 	, f_1.[dim_factory_id]
 	, f_1.[dim_customer_id]
 	, f_1.[dim_demand_category_id]
@@ -31,7 +33,6 @@ SELECT
 	, f_1.[edit_dt]
 	, f_1.[allocation_logic_unconstrained]
 	, f_1.[allocation_logic_constrained]
-
 	, f_1.[customer_moq]
 	,CASE f_1.[customer_below_moq]
 	   WHEN 1 THEN 'Y'
@@ -50,7 +51,32 @@ SELECT
 	, f_1.[material_id_sr]
 	, f_1.[component_factory_short_name]
 	, f_1.[production_lt_actual_buy]
+	, f_1.[production_lt_actual_vendor]
 	, f_1.[comment_region]
+	, f_1.[sold_to_customer_name]
+	, f_1.[mcq]
+	, f_1.[musical_cnt]
+	, f_1.[delivery_d]
+	, f_1.[confirmed_price_in_solid_size]
+	, f_1.[fabriq_moq]
+	, f_1.[confirmed_crd_dt]
+	, f_1.[confirmed_unit_price_memo]
+	, f_1.[min_surcharge]
+	, f_1.[confirmed_unit_price_vendor]
+	, f_1.[nominated_supplier_name]
+	, f_1.[comment_vendor]
+	, f_1.[confirmed_comp_eta_hk]
+	, f_1.[comment_comp_factory]
+	, f_1.[buy_comment]
+	, f_1.[status_orig_req]
+	, f_1.[smu]
+	, f_1.[order_reference]
+	, f_1.[sku_footlocker]
+	, f_1.[prepack_code]
+	, f_1.[exp_delivery_with_constraint]
+	, f_1.[exp_delivery_without_constraint]
+	, f_1.[coo]
+	, f_1.[remarks_region]
 
 	-- dim_pdas
 	,dim_pdas.[name] AS [dim_pdas_name]
@@ -71,12 +97,15 @@ SELECT
 	,dim_product.[style_id] AS [dim_product_style_id]
 	,dim_product.[color_description] AS [dim_product_color_description]
 	,dim_product.[style_name] AS [dim_product_style_name]
+	,dim_product.[style_name_new] AS [dim_product_style_name_new]
 	,dim_product.[material_description] AS [dim_product_material_description]
 	,dim_product.[product_type] AS [dim_product_product_type]
 	,dim_product.[cat_sub_sbu] AS [dim_product_cat_sub_sbu]
 	,dim_product.[type] AS [dim_product_type]
 	,dim_product.[gender] AS [dim_product_gender]
+	,dim_product.[gender_new] AS [dim_product_gender_new]
 	,dim_product.[lifecycle] AS [dim_product_lifecycle]
+	,dim_product.[product_cycle] AS [product_cycle]
 	,dim_product.[style_complexity] AS [dim_product_style_complexity]
 	,dim_product.[construction_type_name] AS [dim_product_construction_type_name]
 	,CASE dim_product.[pre_build_mtl]
@@ -103,6 +132,9 @@ SELECT
 		WHEN 1 THEN 'Y'
 		ELSE 'N'
 	END AS [dim_product_brt_in_house]
+	,dim_product.material_id_emea AS [dim_product_material_id_emea]
+	,dim_product.sku AS [dim_product_sku]
+
 
 	-- dim_date
 	,dim_date.[full_date] AS [dim_date_full_date]
@@ -135,13 +167,25 @@ SELECT
 	,dim_factory_original_constrained.region AS [dim_factory_original_constrained_region]
 	,dim_factory_original_constrained.country AS [dim_factory_original_constrained_country]
 
-	-- dim_factory
+	-- dim_factory (constrained overwritten by VFA)
+	,dim_factory_final.short_name AS [dim_factory_final_short_name]
+
+	-- dim_factory (constrained overwritten by VFA)
 	,dim_factory.vendor_group AS [dim_factory_vendor_group]
 	,dim_factory.short_name AS [dim_factory_short_name]
 	,dim_factory.port AS [dim_factory_port]
 	,dim_factory.region AS [dim_factory_region]
 	,dim_factory.country AS [dim_factory_country]
-
+	,dim_factory.valid_acadia_fty_plant_code AS [dim_factory_valid_acadia_fty_plant_code]
+	,dim_factory.valid_acadia_vendor_code_1505_1510 AS [dim_factory_valid_acadia_vendor_code_1505_1510]
+	,dim_factory.valid_acadia_vendor_code_1550_mexico AS [dim_factory_valid_acadia_vendor_code_1550_mexico]
+	,dim_factory.condor_factory_code_brazil AS [dim_factory_condor_factory_code_brazil]
+	,dim_factory.condor_vendor_code_brazil AS [dim_factory_condor_vendor_code_brazil]
+	,dim_factory.condor_factory_code_chile AS [dim_factory_condor_factory_code_chile]
+	,dim_factory.condor_vendor_code_chile AS [dim_factory_condor_vendor_code_chile]
+	,dim_factory.eu_supplier_code AS [dim_factory_eu_supplier_code]
+	,dim_factory.reva_vendor_fty AS [dim_factory_reva_vendor_fty]
+	,dim_factory.reva_agent_vendor AS [dim_factory_reva_agent_vendor]
 
 	-- dim_customer
 	,dim_customer.[name] AS [dim_customer_name]
@@ -220,6 +264,16 @@ FROM
 			 ON df.dim_location_id = dl.[id]
 	) dim_factory_original_constrained
 		ON f_1.dim_factory_id_original_constrained = dim_factory_original_constrained.id
+
+	INNER JOIN
+	(
+		SELECT df.*, dl.[region], dl.[country]
+		FROM
+			dim_factory df
+			INNER JOIN dim_location dl
+			 ON df.dim_location_id = dl.[id]
+	) dim_factory_final
+		ON f_1.dim_factory_id_final = dim_factory_final.id
 
 	INNER JOIN
 	(

@@ -38,12 +38,15 @@ BEGIN
 		,[dim_date_id]
 		,[dim_factory_id_original_unconstrained]
 		,[dim_factory_id_original_constrained]
+		,[dim_factory_id_final]
 		,[dim_factory_id]
 		,[dim_customer_id]
 		,[dim_demand_category_id]
 		,[order_number]
 		,[pr_code]
 		,[pr_cut_code]
+		,[po_code_customer]
+		,[so_code]
 		,[is_asap]
 		,[quantity_lum]
 		,[quantity_non_lum]
@@ -52,6 +55,18 @@ BEGIN
 		,[material_id_sr]
 		,[production_lt_actual_buy]
 		,[comment_region]
+		,[sold_to_customer_name]
+		,[mcq]
+		,[musical_cnt]
+		,[delivery_d]
+		,[smu]
+		,[order_reference]
+		,[sku_footlocker]
+		,[prepack_code]
+		,[exp_delivery_with_constraint]
+		,[exp_delivery_without_constraint]
+		,[coo]
+		,[remarks_region]
     )
 	-- fact_order
 	SELECT
@@ -71,12 +86,18 @@ BEGIN
 		,CASE [dim_demand_category_id]
 			WHEN @dim_demand_category_id_ntb THEN @dim_factory_id_placeholder
 			ELSE [dim_factory_id]
+		END AS [dim_factory_id_final]
+		,CASE [dim_demand_category_id]
+			WHEN @dim_demand_category_id_ntb THEN @dim_factory_id_placeholder
+			ELSE [dim_factory_id]
 		END AS [dim_factory_id]
 		,[dim_customer_id]
 		,[dim_demand_category_id]
 		,[order_number]
 		,[pr_code]
 		,[pr_cut_code]
+		,[po_code_customer]
+		,[so_code]
 		,[is_asap]
 		,[quantity_lum]
 		,[quantity_non_lum]
@@ -91,6 +112,18 @@ BEGIN
 		,[material_id_sr]
 		,DATEDIFF(day, @pdas_release_full_d, dd.[full_date]) as [production_lt_actual_buy]
 		,[comment_region]
+		,[sold_to_customer_name]
+		,[mcq]
+		,[musical_cnt]
+		,[delivery_d]
+		,[smu]
+		,[order_reference]
+		,[sku_footlocker]
+		,[prepack_code]
+		,[exp_delivery_with_constraint]
+		,[exp_delivery_without_constraint]
+		,[coo]
+		,[remarks_region]
 	FROM
 		[dbo].[fact_order] f
 		INNER JOIN [dbo].[dim_date] dd
@@ -100,8 +133,27 @@ BEGIN
 		AND [dim_business_id] = @businessid
 
 
-	UNION
 	-- fact_forecast
+	INSERT INTO [dbo].[fact_demand_total]
+    (
+		[dim_pdas_id]
+		,[dim_business_id]
+		,[dim_buying_program_id]
+		,[dim_product_id]
+		,[dim_date_id]
+		,[dim_factory_id_original_unconstrained]
+		,[dim_factory_id_original_constrained]
+		,[dim_factory_id_final]
+		,[dim_factory_id]
+		,[dim_customer_id]
+		,[dim_demand_category_id]
+		,[order_number]
+		,[is_asap]
+		,[quantity_lum]
+		,[quantity_non_lum]
+		,[quantity_unconsumed]
+		,[quantity]
+    )
 	SELECT
 		[dim_pdas_id]
 		,[dim_business_id]
@@ -110,20 +162,16 @@ BEGIN
 		,[dim_date_id]
 		,[dim_factory_id] AS [dim_factory_id_original_unconstrained]
 		,[dim_factory_id] AS [dim_factory_id_original_constrained]
+		,[dim_factory_id] AS [dim_factory_id_final]
         ,[dim_factory_id]
 		,[dim_customer_id]
 		,@dim_demand_category_id_forecast AS [dim_demand_category_id]
 		,'UNDEFINED' AS [order_number]
-		,NULL AS [pr_code]
-		,NULL AS [pr_cut_code]
 		,0 AS [is_asap]
 		,[quantity] AS [quantity_lum]
 		,[quantity] AS [quantity_non_lum]
 		,[quantity] AS [quantity_unconsumed]
 		,[quantity]
-		,NULL as [material_id_sr]
-		,NULL as [production_lt_actual_buy]
-		,NULL as [comment_region]
 	FROM [dbo].[fact_forecast]
 	WHERE
 		[dim_pdas_id] = @pdasid

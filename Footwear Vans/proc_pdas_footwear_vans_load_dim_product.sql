@@ -362,6 +362,7 @@ BEGIN
                 AND siu.mode = 'Update'
     WHERE dim_business_id = @businessid
     ;
+
     /*
         Update attributes with Priority List data
     */
@@ -434,6 +435,57 @@ BEGIN
 	WHERE
 		(dct.[id] IS NOT NULL OR dct_mapping.[id] IS NOT NULL)
     ;
+
+
+    /*
+        Update attributes with NTB data
+    */
+    UPDATE dp
+    SET
+        dp.material_id_emea = ntb.eu_material,
+        dp.product_cycle = ntb.prod_cycle
+    FROM
+        [dbo].[dim_product] dp
+        INNER JOIN
+        (
+            SELECT
+                CONVERT(NVARCHAR(11),
+                [dim_product_material_id]) AS [dim_product_material_id],
+                [dim_product_size],
+                [eu_material],
+                [prod_cycle]
+            FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]
+        ) ntb
+            ON
+                dp.material_id = ntb.dim_product_material_id AND
+                dp.size = ntb.dim_product_size
+
+        UPDATE dp
+        SET
+            dp.sku = ntb.sku
+        FROM
+            [dbo].[dim_product] dp
+            INNER JOIN
+            (
+                SELECT
+                    CONVERT(NVARCHAR(11),
+                    [dim_product_material_id]) AS [dim_product_material_id],
+                    [dim_product_size],
+                    [sku]
+                FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]
+            ) ntb
+                ON
+                    dp.material_id = ntb.dim_product_material_id AND
+                    dp.size = ntb.dim_product_size
+
+
+    /*
+        Update by using existing fields in dim_product
+    */
+    UPDATE [dbo].[dim_product]
+    SET
+        [gender_new] = LEFT(ISNULL([style_name], ''), 2),
+        [style_name_new] = STUFF(ISNULL([style_name], ''), 1, 2, '')
 
 
     /*

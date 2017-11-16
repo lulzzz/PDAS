@@ -84,6 +84,16 @@ BEGIN
 				,[is_placeholder]
 				,[placeholder_level]
 				,[allocation_group]
+				,[valid_acadia_fty_plant_code]
+				,[valid_acadia_vendor_code_1505_1510]
+				,[valid_acadia_vendor_code_1550_mexico]
+				,[condor_factory_code_brazil]
+				,[condor_vendor_code_brazil]
+				,[condor_factory_code_chile]
+				,[condor_vendor_code_chile]
+				,[eu_supplier_code]
+				,[reva_vendor_fty]
+				,[reva_agent_vendor]
 			)
 			SELECT
 				dim_b.[id] AS [dim_business_id]
@@ -99,6 +109,16 @@ BEGIN
 				,0 [is_placeholder]
                 ,NULL AS [placeholder_level]
 				,temp.[Allocation Group] AS [allocation_group]
+				,temp.[Valid Acadia FTY Plant code]
+				,temp.[Valid Acadia Vendor code (1505/1510)]
+				,temp.[Valid Acadia Vendor code (1550 Mexico)]
+				,temp.[CONDOR Factory Code (Brazil)]
+				,temp.[CONDOR Vendor Code (Brazil)]
+				,temp.[CONDOR Factory Code (Chile)]
+				,temp.[CONDOR Vendor Code (Chile)]
+				,temp.[EU Supplier Code]
+				,temp.[Reva Vendor (FTY)]
+				,temp.[Reva Agent (Vendor)]
 			FROM
 				[dbo].[mc_temp_pdas_footwear_vans_factory] temp
 				INNER JOIN (SELECT [id], [country] FROM [dbo].[dim_location]) dim_l
@@ -124,6 +144,17 @@ BEGIN
 										ELSE 0
 									END
 				,dim.[allocation_group] = temp.[Allocation Group]
+
+				,dim.[valid_acadia_fty_plant_code] = temp.[Valid Acadia FTY Plant code]
+				,dim.[valid_acadia_vendor_code_1505_1510] = temp.[Valid Acadia Vendor code (1505/1510)]
+				,dim.[valid_acadia_vendor_code_1550_mexico] = temp.[Valid Acadia Vendor code (1550 Mexico)]
+				,dim.[condor_factory_code_brazil] = temp.[CONDOR Factory Code (Brazil)]
+				,dim.[condor_vendor_code_brazil] = temp.[CONDOR Vendor Code (Brazil)]
+				,dim.[condor_factory_code_chile] = temp.[CONDOR Factory Code (Chile)]
+				,dim.[condor_vendor_code_chile] = temp.[CONDOR Vendor Code (Chile)]
+				,dim.[eu_supplier_code] = temp.[EU Supplier Code]
+				,dim.[reva_vendor_fty] = temp.[Reva Vendor (FTY)]
+				,dim.[reva_agent_vendor] = temp.[Reva Agent (Vendor)]
 			FROM
 				[dbo].[dim_factory] dim
 				INNER JOIN [dbo].[mc_temp_pdas_footwear_vans_factory] temp

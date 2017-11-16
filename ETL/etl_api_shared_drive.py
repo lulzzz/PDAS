@@ -19,7 +19,9 @@ def get_data_from_extracts():
     engine = magic.db_connect(connection_name='pdas_db')
     df_metadata_before = magic.get_table_to_df(engine, 'pdas_metadata')
     # Scan folder and sub-folders
-    for f in df_metadata_before[df_metadata_before['etl_type'] == 'file']['src_name'].values.tolist():
+    for f,table_name in df_metadata_before[df_metadata_before['etl_type'] == 'file'][['src_name','table_name']].values.tolist():
+    #for f in df_metadata_before[df_metadata_before['etl_type'] == 'file']['src_name'].values.tolist():
+
         # Work with files defined in metadata table only
         if not(os.path.isfile(cp.SOURCE_FILE_PATH + '\\' + f)):
             continue
@@ -47,14 +49,19 @@ def get_data_from_extracts():
         # From Pandas to staging area
         magic.convert_numeric_col(df)
         df.columns = [magic.rewrite_with_technical_convention(col) for col in df.columns]
+        df = set_pandas_dtypes_with_db_table_types(df, get_column_types(engine, table_name))
         db_dicttypes = magic.gen_types_from_pandas_to_sql(df)
         # load the staging table
         tablename = magic.get_table_column_values_as_list(engine, 'pdas_metadata', 'table_name', {'src_name': [f]})[0]
         magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Loading table {} in staging area'''.format(tablename))
         magic.delete_from_table(engine, tablename)
+        magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Staging area table cleared''')
         new_names = magic.get_column_names(engine, tablename)
+        magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Collecting staging area columns name (which could be different from the source file names)''')
         df = df.rename(columns={old_col: new_col for old_col, new_col in zip(df.columns, new_names)})
+        magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Renamed source file columns into staging area columns''')
         flag = magic.load_df_into_db(engine, df, tablename, dict_types=db_dicttypes, mode='append')
+        magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Loading data into staging area table''')
         if flag == 0:
             magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''FAIL Loading table {}'''.format(f))
             magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Processing ETL for file {} ended in error'''.format(f))
@@ -68,7 +75,7 @@ def get_data_from_extracts():
 
 
 if __name__ == '__main__':
-    magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, '''#### ETL BEGIN ####\n\n\n''', with_time_stamp=False)
-    magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, '''## FILES ##''', with_time_stamp=False)
+    magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, '''\n\n\n#### ETL BEGIN ####\n''', with_time_stamp=False)
+    magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, '''## FILES ##\n''', with_time_stamp=False)
     get_data_from_extracts()
     magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, '''\n\n''', with_time_stamp=False)
