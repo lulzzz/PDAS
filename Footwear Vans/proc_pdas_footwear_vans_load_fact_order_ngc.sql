@@ -49,9 +49,8 @@ BEGIN
         @businessid as dim_business_id,
         @buying_program_id as dim_buying_program_id,
         ISNULL(po_code, 'UNDEFINED') as order_number,
-		Shipped.Actual_CRD is not null OR not 12/30/1899 OR blank
-		CASE ISNULL(ngc.shipment_status, 0)
-			WHEN 1 THEN dd_original_crd.id
+		CASE
+			WHEN dd_original_crd.id IS NOT NULL THEN dd_original_crd.id
 			ELSE dd_revised_crd.id
 		END as dim_date_id,
 		0 as is_asap,

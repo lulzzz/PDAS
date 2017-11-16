@@ -30,7 +30,12 @@ BEGIN
                     ON 	UPPER(temp.[Factory]) = UPPER(dim_f.[short_name])
             WHERE
 				ISNULL(dim_f.[flag], 0) = 0 OR
-                (ISNULL([EMEA], 0) + ISNULL([NORA], 0) + ISNULL([CASA], 0) + ISNULL([APAC], 0) <> 1)
+				CONVERT(nvarchar(10),
+					CONVERT(float, ISNULL([EMEA], 0)) +
+					CONVERT(float, ISNULL([NORA], 0)) +
+					CONVERT(float, ISNULL([CASA], 0)) +
+					CONVERT(float, ISNULL([APAC], 0))
+				) <> CONVERT(nvarchar(10), 1)
         )
 
 		IF @test IS NULL
