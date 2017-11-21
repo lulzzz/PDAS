@@ -55,7 +55,7 @@ BEGIN
 	-- Duty Beneficial: US Direct
 	IF @loop = 1
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + @loop + ']'
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
 
 		IF @dim_customer_sold_to_party = 'US Direct'
 		BEGIN
@@ -122,13 +122,15 @@ BEGIN
 		END
 	END
 
-	ELSE IF @loop = 1
+	ELSE IF @loop = 2
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + @loop + ']'
-	ELSE IF @dim_customer_sold_to_party = 'US DC'
-	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
-		SET @allocation_logic = @allocation_logic +' => ' + 'not RQT MTL' +' => ' + 'SJD'
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
+
+		IF @dim_customer_sold_to_party = 'US DC'
+		BEGIN
+			SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
+			SET @allocation_logic = @allocation_logic +' => ' + 'not RQT MTL' +' => ' + 'SJD'
+		END
 	END
 
 	IF @dim_factory_id_original_constrained_02 IS NULL

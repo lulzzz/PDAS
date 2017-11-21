@@ -82,38 +82,43 @@ BEGIN
 	)
 
 	/* Sub decision tree logic */
-	-- Duty Beneficial: Brazil DC
-	IF @dim_customer_sold_to_party = 'Brazil DC'
+	-- Brazil DC
+	IF @loop = 1
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
-		-- BRT MTL?
-		IF @dim_product_brt_in_house_02 = 1
-		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'BRT')
-			SET @allocation_logic = @allocation_logic +' => ' + 'BRT MTL'
-		END
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
 
-		-- Flex?
-		ELSE IF @dim_product_style_complexity LIKE '%Flex%'
+		IF @dim_customer_sold_to_party = 'Brazil DC'
 		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-			SET @allocation_logic = @allocation_logic +' => ' + 'Flex' + ' => ' + 'SJV'
-		END
-
-		-- First priority = COO China?
-		ELSE IF @dim_location_country_code_a2_02 = 'CN'
-		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'BRT')
-			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' +'BRT'
-		END
-
-		ELSE
-		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO not China'
-			IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+			SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
+			-- BRT MTL?
+			IF @dim_product_brt_in_house_02 = 1
 			BEGIN
-				SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+				SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'BRT')
+				SET @allocation_logic = @allocation_logic +' => ' + 'BRT MTL'
+			END
+
+			-- Flex?
+			ELSE IF @dim_product_style_complexity LIKE '%Flex%'
+			BEGIN
+				SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+				SET @allocation_logic = @allocation_logic +' => ' + 'Flex' + ' => ' + 'SJV'
+			END
+
+			-- First priority = COO China?
+			ELSE IF @dim_location_country_code_a2_02 = 'CN'
+			BEGIN
+				SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'BRT')
+				SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' +'BRT'
+			END
+
+			ELSE
+			BEGIN
+				SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+				SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO not China'
+				IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+				BEGIN
+					SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+				END
 			END
 		END
 	END

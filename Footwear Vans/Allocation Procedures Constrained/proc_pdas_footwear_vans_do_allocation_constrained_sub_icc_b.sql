@@ -25,7 +25,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_icc
 	@dim_customer_id INT,
 	@dim_customer_sold_to_party NVARCHAR(100),
 	@dim_demand_category_id INT,
-	@allocation_logic NVARCHAR(1000)
+	@allocation_logic NVARCHAR(1000),
+	@loop INT
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -115,131 +116,142 @@ BEGIN
 	END
 
 	/* Sub decision tree logic */
-	-- Duty Beneficial: Chile DC and China DC
-	IF @dim_customer_sold_to_party IN ('Chile DC', 'China DC')
+	-- Non-duty Beneficial
+	IF @loop = 1
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
-		-- RQT MTL?
-		IF @dim_product_material_id IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
+
+		IF @dim_customer_sold_to_party IN ('APAC Direct', 'Brazil DC', 'Canada DC', 'Canada Direct', 'EU Crossdock', 'EU DC', 'EU Direct', 'Hong Kong DC', 'India DC', 'International', 'Korea DC', 'Korea Direct', 'Malaysia DC', 'Mexico DC', 'Mexico Direct', 'Singapore DC', 'US DC', 'US Direct')
 		BEGIN
-			SET @allocation_logic = @allocation_logic +' => ' + 'RQT MTL'
-
-			IF @dim_factory_original_region = 'EMEA'
-			BEGIN
-				-- Vendor = DTC or SJV?
-				IF @helper_retail_qt_rqt_vendor_02 in ('DTC', 'SJV')
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTC')
-					SET @allocation_logic = @allocation_logic +' => ' + 'DTC'
-				END
-				-- Fixed Vendor
-				ELSE
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
-				END
-			END
-
-			ELSE IF @dim_factory_original_region IN ('NORA', 'CASA')
-			BEGIN
-				-- Vendor = DTC or SJV?
-				IF @dim_product_material_id in ('DTC', 'SJV')
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-					SET @allocation_logic = @allocation_logic +' => ' + 'SJV'
-				END
-				-- Fixed Vendor
-				ELSE
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
-				END
-			END
-
-			ELSE IF @dim_factory_original_region IN ('APAC')
-			BEGIN
-				-- HSC
-				IF @dim_customer_sold_to_party LIKE 'China%'
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
-					SET @allocation_logic = @allocation_logic +' => ' + 'HSC'
-				END
-				-- Fixed Vendor
-				ELSE
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
-				END
-			END
-		END
-
-		-- Flex?
-		ELSE IF @dim_product_style_complexity LIKE '%Flex%'
-		BEGIN
-			SET @allocation_logic = @allocation_logic +' => ' + 'Flex'
-			IF @dim_factory_name_priority_list_primary_02 = 'ICC'
-			BEGIN
-				SET @allocation_logic = @allocation_logic +' => ' + '1st priority = ICC' + ' => ' + 'ICC'
-			END
-			ELSE
+			SET @allocation_logic = @allocation_logic +' => ' + 'Non-duty Beneficial: ' + @dim_customer_sold_to_party
+			IF @dim_product_style_complexity LIKE '%Flex%'
 			BEGIN
 				SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-				SET @allocation_logic = @allocation_logic +' => ' + '1st priority = not ICC' + ' => ' + 'SJV'
+				SET @allocation_logic = @allocation_logic +' => ' + 'Flex' + ' => ' + 'SJV'
 			END
-		END
-		ELSE
-		BEGIN
-			SET @allocation_logic = @allocation_logic +' => ' + 'Not Flex' + ' => ' + 'ICC'
+			ELSE
+			BEGIN
+				SET @allocation_logic = @allocation_logic +' => ' + 'Not Flex'
+				-- Dual Source?
+				IF @fact_priority_list_source_count_02 = 2
+						OR (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 2
+						OR @dim_product_style_complexity LIKE '%Flex%'
+						OR ((SELECT max([short_name]) from @mtl_factories_02) <> ''
+							AND (SELECT (@dim_factory_name_priority_list_secondary_02)
+								INTERSECT (SELECT [short_name] FROM @mtl_factories_02)) IS NULL)
+				BEGIN
+					SET @allocation_logic = @allocation_logic +' => ' + 'Dual Source'+' => ' + '2nd priority'
+					IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+						SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
+					END
+
+					ELSE
+					BEGIN
+						SET @allocation_logic = @allocation_logic +' => ' + 'Not found'+' => ' + '1st priority'
+						IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+						BEGIN
+							SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+							SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+						END
+						ELSE
+						BEGIN
+							SET @allocation_logic = @allocation_logic +' => ' + 'Not found' + ' => ' + 'ICC'
+						END
+					END
+				END
+				ELSE
+				BEGIN
+					SET @allocation_logic = @allocation_logic +' => ' + 'ICC'
+				END
+			END
 		END
 	END
 
-	-- Non-duty Beneficial
-	ELSE
+	-- Duty Beneficial: Chile DC and China DC
+	ELSE IF @loop = 2
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + 'Non-duty Beneficial: ' + @dim_customer_sold_to_party
-		IF @dim_product_style_complexity LIKE '%Flex%'
-		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-			SET @allocation_logic = @allocation_logic +' => ' + 'Flex' + ' => ' + 'SJV'
-		END
-		ELSE
-		BEGIN
-			SET @allocation_logic = @allocation_logic +' => ' + 'Not Flex'
-			-- Dual Source?
-			IF @fact_priority_list_source_count_02 = 2
-					OR (@dim_product_clk_mtl_02 + @dim_product_dtp_mtl_02 + @dim_product_sjd_mtl_02) >= 2
-					OR @dim_product_style_complexity LIKE '%Flex%'
-					OR ((SELECT max([short_name]) from @mtl_factories_02) <> ''
-						AND (SELECT (@dim_factory_name_priority_list_secondary_02)
-							INTERSECT (SELECT [short_name] FROM @mtl_factories_02)) IS NULL)
-			BEGIN
-				SET @allocation_logic = @allocation_logic +' => ' + 'Dual Source'+' => ' + '2nd priority'
-				IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
-				END
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
 
-				ELSE
+		IF @dim_customer_sold_to_party IN ('Chile DC', 'China DC')
+		BEGIN
+			SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
+			-- RQT MTL?
+			IF @dim_product_material_id IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
+			BEGIN
+				SET @allocation_logic = @allocation_logic +' => ' + 'RQT MTL'
+
+				IF @dim_factory_original_region = 'EMEA'
 				BEGIN
-					SET @allocation_logic = @allocation_logic +' => ' + 'Not found'+' => ' + '1st priority'
-					IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+					-- Vendor = DTC or SJV?
+					IF @helper_retail_qt_rqt_vendor_02 in ('DTC', 'SJV')
 					BEGIN
-						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-						SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTC')
+						SET @allocation_logic = @allocation_logic +' => ' + 'DTC'
 					END
+					-- Fixed Vendor
 					ELSE
 					BEGIN
-						SET @allocation_logic = @allocation_logic +' => ' + 'Not found' + ' => ' + 'ICC'
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+						SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
 					END
+				END
+
+				ELSE IF @dim_factory_original_region IN ('NORA', 'CASA')
+				BEGIN
+					-- Vendor = DTC or SJV?
+					IF @dim_product_material_id in ('DTC', 'SJV')
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+						SET @allocation_logic = @allocation_logic +' => ' + 'SJV'
+					END
+					-- Fixed Vendor
+					ELSE
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+						SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
+					END
+				END
+
+				ELSE IF @dim_factory_original_region IN ('APAC')
+				BEGIN
+					-- HSC
+					IF @dim_customer_sold_to_party LIKE 'China%'
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
+						SET @allocation_logic = @allocation_logic +' => ' + 'HSC'
+					END
+					-- Fixed Vendor
+					ELSE
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+						SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
+					END
+				END
+			END
+
+			-- Flex?
+			ELSE IF @dim_product_style_complexity LIKE '%Flex%'
+			BEGIN
+				SET @allocation_logic = @allocation_logic +' => ' + 'Flex'
+				IF @dim_factory_name_priority_list_primary_02 = 'ICC'
+				BEGIN
+					SET @allocation_logic = @allocation_logic +' => ' + '1st priority = ICC' + ' => ' + 'ICC'
+				END
+				ELSE
+				BEGIN
+					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+					SET @allocation_logic = @allocation_logic +' => ' + '1st priority = not ICC' + ' => ' + 'SJV'
 				END
 			END
 			ELSE
 			BEGIN
-				SET @allocation_logic = @allocation_logic +' => ' + 'ICC'
+				SET @allocation_logic = @allocation_logic +' => ' + 'Not Flex' + ' => ' + 'ICC'
 			END
 		END
 	END
+
 
 	IF @dim_factory_id_original_constrained_02 IS NULL
 	BEGIN
