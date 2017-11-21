@@ -25,7 +25,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_brt
 	@dim_customer_id INT,
 	@dim_customer_sold_to_party NVARCHAR(100),
 	@dim_demand_category_id INT,
-	@allocation_logic NVARCHAR(1000)
+	@allocation_logic NVARCHAR(1000),
+	@loop INT
 AS
 BEGIN
 	SET NOCOUNT ON;

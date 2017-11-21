@@ -298,7 +298,7 @@
 					FROM [dbo].[helper_pdas_footwear_vans_fty_qt]
 					WHERE [MTL] = @dim_product_material_id_01
 				)
-				
+
 				IF @dim_customer_sold_to_category_01 = 'DC'
 				BEGIN
 					SET @allocation_logic = @allocation_logic +' => ' + 'Sold to category: ' + @dim_customer_sold_to_category_01
@@ -529,7 +529,7 @@
 						END
 					END
 
-					IF @dim_buying_program_name_01 = 'Retail Quick Turn'
+					IF @dim_buying_program_name_01 IN ('Retail Quick Turn', 'Retail Quick Turn Built To Forecast')
 					BEGIN
 						SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
 						IF @dim_customer_country_region_01 = 'EMEA'
@@ -1222,7 +1222,7 @@
 						END
 					END
 
-					IF @dim_buying_program_name_01 = 'Retail Quick Turn'
+					IF @dim_buying_program_name_01 IN ('Retail Quick Turn', 'Retail Quick Turn Built To Forecast')
 					BEGIN
 						SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
 						IF @dim_customer_country_region_01 = 'EMEA'

@@ -25,7 +25,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_sjd
 	@dim_customer_id INT,
 	@dim_customer_sold_to_party NVARCHAR(100),
 	@dim_demand_category_id INT,
-	@allocation_logic NVARCHAR(1000)
+	@allocation_logic NVARCHAR(1000),
+	@loop INT
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -52,70 +53,78 @@ BEGIN
 
 	/* Sub decision tree logic */
 	-- Duty Beneficial: US Direct
-	IF @dim_customer_sold_to_party = 'US Direct'
+	IF @loop = 1
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
-		-- RQT MTL?
-		IF @dim_product_material_id IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + @loop + ']'
+
+		IF @dim_customer_sold_to_party = 'US Direct'
 		BEGIN
-			SET @allocation_logic = @allocation_logic +' => ' + 'RQT MTL'
-
-			IF @dim_factory_original_region = 'EMEA'
+			SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
+			-- RQT MTL?
+			IF @dim_product_material_id IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
 			BEGIN
-				-- Vendor = DTC or SJV?
-				IF @helper_retail_qt_rqt_vendor_02 in ('DTC', 'SJV')
+				SET @allocation_logic = @allocation_logic +' => ' + 'RQT MTL'
+
+				IF @dim_factory_original_region = 'EMEA'
 				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTC')
-					SET @allocation_logic = @allocation_logic +' => ' + 'DTC'
+					-- Vendor = DTC or SJV?
+					IF @helper_retail_qt_rqt_vendor_02 in ('DTC', 'SJV')
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTC')
+						SET @allocation_logic = @allocation_logic +' => ' + 'DTC'
+					END
+					-- Fixed Vendor
+					ELSE
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+						SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
+					END
 				END
-				-- Fixed Vendor
-				ELSE
+
+				ELSE IF @dim_factory_original_region IN ('NORA', 'CASA')
 				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
+					-- Vendor = DTC or SJV?
+					IF @dim_product_material_id in ('DTC', 'SJV')
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+						SET @allocation_logic = @allocation_logic +' => ' + 'SJV'
+					END
+					-- Fixed Vendor
+					ELSE
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+						SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
+					END
+				END
+
+				ELSE IF @dim_factory_original_region IN ('APAC')
+				BEGIN
+					-- HSC
+					IF @dim_customer_sold_to_party LIKE 'China%'
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
+						SET @allocation_logic = @allocation_logic +' => ' + 'HSC'
+					END
+					-- Fixed Vendor
+					ELSE
+					BEGIN
+						SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+						SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
+					END
 				END
 			END
 
-			ELSE IF @dim_factory_original_region IN ('NORA', 'CASA')
+			ELSE
 			BEGIN
-				-- Vendor = DTC or SJV?
-				IF @dim_product_material_id in ('DTC', 'SJV')
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-					SET @allocation_logic = @allocation_logic +' => ' + 'SJV'
-				END
-				-- Fixed Vendor
-				ELSE
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
-				END
+				SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
+				SET @allocation_logic = @allocation_logic +' => ' + 'not RQT MTL' +' => ' + 'SJV'
 			END
-
-			ELSE IF @dim_factory_original_region IN ('APAC')
-			BEGIN
-				-- HSC
-				IF @dim_customer_sold_to_party LIKE 'China%'
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
-					SET @allocation_logic = @allocation_logic +' => ' + 'HSC'
-				END
-				-- Fixed Vendor
-				ELSE
-				BEGIN
-					SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-					SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02
-				END
-			END
-		END
-
-		ELSE
-		BEGIN
-			SET @dim_factory_id_original_constrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-			SET @allocation_logic = @allocation_logic +' => ' + 'not RQT MTL' +' => ' + 'SJV'
 		END
 	END
 
+	ELSE IF @loop = 1
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + @loop + ']'
 	ELSE IF @dim_customer_sold_to_party = 'US DC'
 	BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
