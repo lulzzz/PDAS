@@ -32,11 +32,14 @@ BEGIN
 		DECLARE @test nvarchar(500) =
 		(
 			SELECT TOP 1
+				ISNULL([Sold to Party], '')  + ' / ' +
                 ISNULL([Status], '')  + ' / ' +
                 ISNULL([MTL], '')  + ' / ' +
                 ISNULL([Factory], '')  + ' / ' +
                 ISNULL([Buying Program], '')
 			FROM [dbo].[mc_temp_pdas_footwear_vans_retail_qt]  temp
+				LEFT JOIN (SELECT DISTINCT [sold_to_party], 1 as flag FROM [dbo].[dim_customer]) dim_c
+					ON 	UPPER(temp.[Sold to Party]) = UPPER(dim_c.[sold_to_party])
                 LEFT JOIN (SELECT DISTINCT [material_id], 1 as flag FROM [dbo].[dim_product]) dim_p
                     ON 	temp.[MTL] = dim_p.[material_id]
                 LEFT JOIN (SELECT DISTINCT [short_name], 1 as flag FROM [dbo].[dim_factory]) dim_f
@@ -45,6 +48,7 @@ BEGIN
                     ON 	UPPER(temp.[Buying Program]) = UPPER(dim_bp.[name])
             WHERE
 				ISNULL(dim_f.[flag], 0) = 0 OR
+				ISNULL(dim_c.[flag], 0) = 0 OR
                 ISNULL(dim_p.[flag], 0) = 0 OR
                 ISNULL(dim_bp.[flag], 0) = 0 OR
                 UPPER([Status]) NOT IN (
@@ -60,7 +64,7 @@ BEGIN
 			-- Remove duplicates
             DECLARE @table_count_before int = (SELECT COUNT(*) FROM [dbo].[mc_temp_pdas_footwear_vans_retail_qt])
 			DELETE x FROM (
-				SELECT *, rn=row_number() OVER (PARTITION BY [MTL], [Factory], [Buying Program] ORDER BY [MTL], [Factory], [Buying Program])
+				SELECT *, rn=row_number() OVER (PARTITION BY [Sold to Party], [MTL], [Factory], [Buying Program] ORDER BY [Sold to Party], [MTL], [Factory], [Buying Program])
 				FROM [dbo].[mc_temp_pdas_footwear_vans_retail_qt]
 			) x
 			WHERE rn > 1;
@@ -80,7 +84,7 @@ BEGIN
     		ELSE
     		BEGIN
 
-    			SET @output_param = 'Duplicated MTL/Factory/Buying Program combinations. Not allowed by PDAS.'
+    			SET @output_param = 'Duplicated Sold to Party/MTL/Factory/Buying Program combinations. Not allowed by PDAS.'
     			RETURN -999
 
     		END
