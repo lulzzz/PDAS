@@ -121,7 +121,7 @@ BEGIN
 	-- Non Duty Beneficial
 	IF @loop = 1
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + @loop + ']'
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
 
 		IF @dim_customer_sold_to_party IN ('APAC Direct', 'Brazil DC', 'Canada Direct', 'Chile DC', 'China DC', 'EU Direct', 'Hong Kong DC', 'International', 'Korea Direct', 'Malaysia DC', 'Mexico DC', 'Mexico Direct', 'Singapore DC', 'US DC', 'US Direct')
 		BEGIN
@@ -160,7 +160,7 @@ BEGIN
 
 	ELSE IF @loop = 2
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + @loop + ']'
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
 
 		IF @dim_customer_sold_to_party IN ('EU DC', 'EU Crossdock')
 		BEGIN

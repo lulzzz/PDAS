@@ -119,7 +119,7 @@ BEGIN
 	-- 'EU DC', 'EU Crossdock'
 	IF @loop = 1
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + @loop + ']'
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
 
 		IF @dim_customer_sold_to_party IN ('EU DC', 'EU Crossdock')
 		BEGIN
@@ -164,9 +164,9 @@ BEGIN
 	END
 
 	-- Korea DC
-	IF @loop = 2
+	ELSE IF @loop = 2
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + @loop + ']'
+		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
 
 		IF @dim_customer_sold_to_party IN ('Korea DC')
 		BEGIN
