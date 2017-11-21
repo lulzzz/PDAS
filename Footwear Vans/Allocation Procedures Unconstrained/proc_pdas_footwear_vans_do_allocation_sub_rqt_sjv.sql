@@ -35,7 +35,7 @@ BEGIN
 	/* Variable assignments */
 	SET @helper_retail_qt_rqt_vendor_02 =
 	(
-		SELECT [Factory]
+		SELECT MAX([Factory])
 		FROM [dbo].[helper_pdas_footwear_vans_retail_qt]
 		WHERE [MTL] = @dim_product_material_id
 	)
@@ -67,5 +67,6 @@ BEGIN
 		@dim_demand_category_id = @dim_demand_category_id,
 		@order_number = @order_number,
 		@allocation_logic = @allocation_logic,
-		@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_02
+		@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_02,
+		@component_factory_short_name = NULL
 END

@@ -298,9 +298,7 @@
 					FROM [dbo].[helper_pdas_footwear_vans_fty_qt]
 					WHERE [MTL] = @dim_product_material_id_01
 				)
-
-				--PRINT('Sold to category: ' + @dim_customer_sold_to_category_01 + ' - Buying program: ' + @dim_buying_program_name_01 + ' - Region: ' + @dim_customer_country_region_01 + ' - Sold to party: ' + @dim_customer_sold_to_party_01)
-
+				
 				IF @dim_customer_sold_to_category_01 = 'DC'
 				BEGIN
 					SET @allocation_logic = @allocation_logic +' => ' + 'Sold to category: ' + @dim_customer_sold_to_category_01

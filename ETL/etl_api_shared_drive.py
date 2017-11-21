@@ -19,19 +19,23 @@ def get_data_from_extracts():
     engine = magic.db_connect(connection_name='pdas_db')
     df_metadata_before = magic.get_table_to_df(engine, 'pdas_metadata')
     # Scan folder and sub-folders
-    for f,table_name in df_metadata_before[df_metadata_before['etl_type'] == 'file'][['src_name','table_name']].values.tolist():
-    #for f in df_metadata_before[df_metadata_before['etl_type'] == 'file']['src_name'].values.tolist():
+    for f in df_metadata_before[df_metadata_before['etl_type'] == 'file']['src_name'].values.tolist():
 
         # Work with files defined in metadata table only
         if not(os.path.isfile(cp.SOURCE_FILE_PATH + '\\' + f)):
             continue
+
+        # Log the timestamp of the file
         magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Processing ETL for file {} started'''.format(f))
         timestamp_old = magic.get_table_column_values_as_list(engine, 'pdas_metadata', 'timestamp_file', {'src_name': [f]})[0].strftime("%Y-%m-%d %H:%M:%S")
         timestamp_new = magic.get_modified_date(os.path.join(cp.SOURCE_FILE_PATH, f))
         if timestamp_old == timestamp_new:
             magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''File {} already loaded for this modified date {}'''.format(f, timestamp_new))
             continue
+
         magic.set_table_column_value(engine, 'pdas_metadata', 'state', 'TBL', 'src_name', f)
+
+        # Read Excel file
         if os.path.splitext(os.path.join(cp.SOURCE_FILE_PATH, f))[1] in ('.xlsx', '.xls'):
             xl = pd.ExcelFile(os.path.join(cp.SOURCE_FILE_PATH, f))
             if 'PDAS' in xl.sheet_names:
@@ -40,46 +44,41 @@ def get_data_from_extracts():
             else:
                 magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Couldn't process the file {} (reason: No sheet named "PDAS")'''.format(f))
                 sys.exit(1)
+
+        # Read CSV file
         elif os.path.splitext(os.path.join(cp.SOURCE_FILE_PATH, f))[1] in ('.csv'):
             sep = magic.find_delimiter(os.path.join(cp.SOURCE_FILE_PATH, f))
             df = pd.read_csv(os.path.join(cp.SOURCE_FILE_PATH, f), sep=sep, error_bad_lines=False, encoding='latin-1', low_memory=False, warn_bad_lines=False)
+
+        # Error message
         else:
             magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Couldn't process the file {} (reason: File not found)'''.format(f))
             continue
+
         # From Pandas to staging area
-<<<<<<< HEAD
         #magic.convert_numeric_col(df)
         #df.columns = [magic.rewrite_with_technical_convention(col) for col in df.columns]
 
-=======
-        magic.convert_numeric_col(df)
-        df.columns = [magic.rewrite_with_technical_convention(col) for col in df.columns]
-        df = set_pandas_dtypes_with_db_table_types(df, get_column_types(engine, table_name))
-        db_dicttypes = magic.gen_types_from_pandas_to_sql(df)
->>>>>>> 5a09cf097a5e90ee31632133e5fef3e08665c32c
         # load the staging table
         tablename = magic.get_table_column_values_as_list(engine, 'pdas_metadata', 'table_name', {'src_name': [f]})[0]
         magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Loading table {} in staging area'''.format(tablename))
         magic.delete_from_table(engine, tablename)
-        magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Staging area table cleared''')
         new_names = magic.get_column_names(engine, tablename)
-        magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Collecting staging area columns name (which could be different from the source file names)''')
         df = df.rename(columns={old_col: new_col for old_col, new_col in zip(df.columns, new_names)})
-<<<<<<< HEAD
         df = magic.set_pandas_dtypes_with_db_table_types(df, magic.get_column_types(engine, tablename))
-        df = df.fillna(np.nan)
         db_dicttypes = magic.gen_types_from_pandas_to_sql(df)
-=======
-        magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Renamed source file columns into staging area columns''')
->>>>>>> 5a09cf097a5e90ee31632133e5fef3e08665c32c
-        flag = magic.load_df_into_db(engine, df, tablename, dict_types=db_dicttypes, mode='append')
-        magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Loading data into staging area table''')
+        if len(df) > 0:
+            flag = magic.load_df_into_db(engine, df, tablename, dict_types=db_dicttypes, mode='append')
+        else:
+            flag = 1
+
         if flag == 0:
             magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''FAIL Loading table {}'''.format(f))
             magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Processing ETL for file {} ended in error'''.format(f))
             sys.exit(1)
         else:
             magic.write_to_file(cp.LOG_FILE_SHARED_DRIVE, r'''Processing ETL for file {} ended successfully'''.format(f))
+
             # Update timestamp column
             magic.set_table_column_value(engine, 'pdas_metadata', 'timestamp_file', timestamp_new, 'src_name', f)
             magic.set_table_column_value(engine, 'pdas_metadata', 'state', 'OK', 'src_name', f)

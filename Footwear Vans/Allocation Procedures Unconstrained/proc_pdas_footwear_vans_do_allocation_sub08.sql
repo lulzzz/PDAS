@@ -38,10 +38,10 @@ BEGIN
 	DECLARE @dim_product_dtp_mtl_02 SMALLINT
 	DECLARE @dim_product_sjd_mtl_02 SMALLINT
 	DECLARE @fact_priority_list_source_count_02 INT = 0
-	DECLARE @component_factory_short_name_02 NVARCHAR(45)
+	DECLARE @component_factory_short_name_02 NVARCHAR(45) = NULL
 
 	/* Variable assignments */
-
+	print @dim_product_material_id
 	SET @dim_factory_name_priority_list_primary_02 =
 	(
 		SELECT df.[short_name]

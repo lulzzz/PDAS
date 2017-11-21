@@ -32,7 +32,7 @@ BEGIN
 
 	IF @dim_factory_id_original_unconstrained IS NOT NULL
 	BEGIN
-
+	
 		/* Update the dim_factory_id_original (PDAS recommendation) and dim_factory_id (value that user can overwrite in Console) */
 		UPDATE [dbo].[fact_demand_total]
 		SET [dim_factory_id_original_unconstrained] = @dim_factory_id_original_unconstrained,
