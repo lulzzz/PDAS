@@ -381,15 +381,15 @@ BEGIN
 		SUM(ntb.lum_qty) as quantity_lum,
 		SUM(ntb.quantity) as quantity_non_lum,
 		0 as is_asap,
-		MAX(ntb.[dim_product_material_id]) as material_id_sr,
-		MAX(ntb.[pr_code]) as pr_code,
-		MAX([item]) as pr_cut_code,
-		MAX(ntb.[sales_doc]) as so_code,
-		MAX(ntb.customer_po_code) as po_code_customer,
+		MAX(ISNULL(ntb.[dim_product_material_id], '')) as material_id_sr,
+		MAX(ISNULL(ntb.[pr_code], '')) as pr_code,
+		MAX(ISNULL([item], '')) as pr_cut_code,
+		MAX(ISNULL(ntb.[sales_doc], '')) as so_code,
+		MAX(ISNULL(ntb.[customer_po_code], '')) as po_code_customer,
 		NULL as comment_region,
 		MAX(ntb.xfac_dt) as customer_requested_xf_dt,
 		MAX(ntb.req_dt) as original_customer_requested_dt,
-		MAX(ntb.[sold_to_pt]) as [sold_to_customer_name],
+		MAX(ISNULL(ntb.[sold_to_pt], '')) as [sold_to_customer_name],
 		CASE LEN(MAX(ntb.[dim_product_material_id]))
 			WHEN 11 THEN 1
 			ELSE RIGHT(MAX(ntb.dim_product_size), 2)
@@ -414,6 +414,8 @@ BEGIN
 				,CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id_corrected]
 			FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]
 		) AS ntb
+		INNER JOIN [dbo].[dim_date] dd_xfac
+			ON CONVERT(date, ntb.xfac_dt) = dd_xfac.full_date
 		LEFT OUTER JOIN
 		(
 			SELECT [id], [material_id]
@@ -443,7 +445,6 @@ BEGIN
 					ON m.parent = df.short_name
 			WHERE type = 'Factory Master'
 		) mapping_f ON ntb.dim_factory_short_name = mapping_f.child
-		LEFT OUTER JOIN [dbo].[dim_date] dd_xfac ON CONVERT(date, ntb.xfac_dt) = dd_xfac.full_date
 	WHERE
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		ntb.lum_qty IS NOT NULL
@@ -467,7 +468,6 @@ BEGIN
 			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
 			ELSE @dim_factory_id_placeholder
 		END
-
 
 
 END
