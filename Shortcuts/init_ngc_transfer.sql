@@ -1,4 +1,6 @@
 declare @min_dt date = (select min(original_crd_dt) from staging_pdas_footwear_vans_ngc_po)
+declare @max_dt date = '2017-11-01'
+
 
 insert into staging_pdas_footwear_vans_ngc_po
 (
@@ -67,5 +69,5 @@ select
     ,NULL --CONVERT(date, [shipment_closed_on_dt])
     ,[is_po_completed]
     ,[dc_name]
-from [dbo].[staging_pdas_footwear_vans_ngc_po_init2014]
-where original_crd_dt < @min_dt
+from [dbo].[staging_pdas_footwear_vans_ngc_po_201710_future]
+where revised_crd_dt >= @max_dt

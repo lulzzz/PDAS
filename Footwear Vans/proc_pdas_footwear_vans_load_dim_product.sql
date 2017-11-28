@@ -440,10 +440,13 @@ BEGIN
     /*
         Update attributes with NTB data
     */
+    -- EMEA
     UPDATE dp
     SET
         dp.material_id_emea = ntb.eu_material,
-        dp.product_cycle = ntb.prod_cycle
+        dp.product_cycle = ntb.prod_cycle,
+        dp.material_description_erp = ntb.dim_product_material_description,
+        dp.color_description_erp = ntb.dim_product_color_description
     FROM
         [dbo].[dim_product] dp
         INNER JOIN
@@ -453,30 +456,79 @@ BEGIN
                 [dim_product_material_id]) AS [dim_product_material_id],
                 [dim_product_size],
                 [eu_material],
-                [prod_cycle]
+                [prod_cycle],
+                [dim_product_material_description],
+                [dim_product_color_description]
             FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]
         ) ntb
             ON
                 dp.material_id = ntb.dim_product_material_id AND
                 dp.size = ntb.dim_product_size
 
-        UPDATE dp
-        SET
-            dp.sku = ntb.sku
-        FROM
-            [dbo].[dim_product] dp
-            INNER JOIN
-            (
-                SELECT
-                    CONVERT(NVARCHAR(11),
-                    [dim_product_material_id]) AS [dim_product_material_id],
-                    [dim_product_size],
-                    [sku]
-                FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]
-            ) ntb
-                ON
-                    dp.material_id = ntb.dim_product_material_id AND
-                    dp.size = ntb.dim_product_size
+    -- NORA
+    UPDATE dp
+    SET
+        dp.material_description_erp = ntb.dim_product_material_description,
+        dp.color_description_erp = ntb.dim_product_color_description
+    FROM
+        [dbo].[dim_product] dp
+        INNER JOIN
+        (
+            SELECT
+                CONVERT(NVARCHAR(11),
+                [dim_product_material_id]) AS [dim_product_material_id],
+                [dim_product_size],
+                [dim_product_material_description],
+                [dim_product_color_description]
+            FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]
+        ) ntb
+            ON
+                dp.material_id = ntb.dim_product_material_id AND
+                dp.size = ntb.dim_product_size
+
+    -- NORA
+    UPDATE dp
+    SET
+        dp.material_description_erp = ntb.dim_product_material_description,
+        dp.color_description_erp = ntb.dim_product_color_description
+    FROM
+        [dbo].[dim_product] dp
+        INNER JOIN
+        (
+            SELECT
+                CONVERT(NVARCHAR(11),
+                [dim_product_material_id]) AS [dim_product_material_id],
+                [dim_product_size],
+                [dim_product_material_description],
+                [dim_product_color_description]
+            FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]
+        ) ntb
+            ON
+                dp.material_id = ntb.dim_product_material_id AND
+                dp.size = ntb.dim_product_size
+
+    -- APAC
+    UPDATE dp
+    SET
+        dp.sku = ntb.sku,
+        dp.material_description_erp = ntb.dim_product_material_description,
+        dp.color_description_erp = ntb.dim_product_color_description
+    FROM
+        [dbo].[dim_product] dp
+        INNER JOIN
+        (
+            SELECT
+                CONVERT(NVARCHAR(11),
+                [dim_product_material_id]) AS [dim_product_material_id],
+                [dim_product_size],
+                [sku],
+                [dim_product_material_decription] as [dim_product_material_description],
+                [dim_product_color_description]
+            FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]
+        ) ntb
+            ON
+                dp.material_id = ntb.dim_product_material_id AND
+                dp.size = ntb.dim_product_size
 
 
     /*
@@ -485,7 +537,8 @@ BEGIN
     UPDATE [dbo].[dim_product]
     SET
         [gender_new] = LEFT(ISNULL([style_name], ''), 2),
-        [style_name_new] = STUFF(ISNULL([style_name], ''), 1, 2, '')
+        [style_name_new] = STUFF(ISNULL([style_name], ''), 1, 3, ''),
+        [style_id_erp] = LEFT(ISNULL([material_id], ''), 8)
 
 
     /*

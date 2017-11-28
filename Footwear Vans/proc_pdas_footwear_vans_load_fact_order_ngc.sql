@@ -48,7 +48,7 @@ BEGIN
         @pdasid as dim_pdas_id,
         @businessid as dim_business_id,
         @buying_program_id as dim_buying_program_id,
-        ISNULL(po_code, 'UNDEFINED') as order_number,
+        ISNULL(po_code_cut, 'UNDEFINED') as order_number,
 		CASE
 			WHEN dd_original_crd.id IS NOT NULL THEN dd_original_crd.id
 			ELSE dd_revised_crd.id
@@ -88,6 +88,7 @@ BEGIN
 				,revised_crd_dt
 				,original_crd_dt
 				,po_code
+				,po_code_cut
 				,shipment_status
 				,shipped_qty
 				,lum_qty
@@ -135,9 +136,9 @@ BEGIN
 			(ISNULL(ngc.shipment_status, 0) = 0 AND dd_revised_crd.id IS NOT NULL)
 		)
     GROUP BY
-		ISNULL(po_code, 'UNDEFINED'),
-		CASE ISNULL(ngc.shipment_status, 0)
-			WHEN 1 THEN dd_original_crd.id
+		ISNULL(po_code_cut, 'UNDEFINED'),
+		CASE
+			WHEN dd_original_crd.id IS NOT NULL THEN dd_original_crd.id
 			ELSE dd_revised_crd.id
 		END,
 		CASE

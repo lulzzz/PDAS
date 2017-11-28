@@ -34,7 +34,8 @@ BEGIN
 				[variable] NOT IN (
 					'Release Locker',
 					'Release Note',
-					'Buying Program Name'
+					'Buying Program Name',
+					'Buy Month'
 				)
 				OR
 				([variable] = 'Release Locker' AND [value] NOT IN ('ON', 'OFF'))
@@ -82,6 +83,12 @@ BEGIN
 							SELECT TOP 1 [value]
 							FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
 							WHERE [type] = 'System' AND [variable] = 'Release Note'
+						)
+					,[buy_month] =
+						(
+							SELECT TOP 1 [value]
+							FROM [dbo].[mc_temp_pdas_footwear_vans_configuration]
+							WHERE [type] = 'System' AND [variable] = 'Buy Month'
 						)
 					,[dim_buying_program_id] =
 						(

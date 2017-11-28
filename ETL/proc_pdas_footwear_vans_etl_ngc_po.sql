@@ -10,13 +10,53 @@ GO
 
 -- Declare variables
 DECLARE	@current_dt datetime = GETDATE()
-DECLARE	@starting_month_dt datetime = (SELECT DATEADD(month, -2, DATEADD(month, DATEDIFF(month, 0, @current_dt), 0)))
+DECLARE	@starting_dt datetime = DATEADD(day, -15, GETDATE())
 
--- Clear staging area table
-DELETE FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
+-- Create temp table
+CREATE TABLE #select_cursor01 (
+    [shipment] [nvarchar](500) NULL,
+	[dim_factory_vendor_code] [nvarchar](500) NULL,
+	[dim_factory_factory_code] [nvarchar](500) NULL,
+	[po_code_cut] [nvarchar](500) NULL,
+	[dim_product_sbu] [nvarchar](500) NULL,
+	[dim_product_size] [nvarchar](500) NULL,
+	[dim_product_color_description] [nvarchar](500) NULL,
+	[dimension] [nvarchar](500) NULL,
+	[po_issue_dt] [datetime2](0) NULL,
+	[shipment_status] [nvarchar](500) NULL,
+	[source] [nvarchar](500) NULL,
+	[order_qty] [int] NULL,
+	[shipped_qty] [int] NULL,
+	[dim_product_style_id] [nvarchar](500) NULL,
+	[ship_to_address] [nvarchar](500) NULL,
+	[ship_to_address_bis] [nvarchar](500) NULL,
+	[po_code] [nvarchar](500) NULL,
+	[po_type] [nvarchar](500) NULL,
+	[vf_sla] [nvarchar](500) NULL,
+	[dim_customer_dc_code_brio] [nvarchar](500) NULL,
+	[original_crd_dt] [datetime2](0) NULL,
+	[revised_crd_dt] [datetime2](0) NULL,
+	[shipped_dt] [datetime2](0) NULL,
+	[notes] [nvarchar](max) NULL,
+	[delay_reason] [nvarchar](500) NULL,
+	[discharge_port] [nvarchar](500) NULL,
+	[lum_qty] [int] NULL,
+	[source_system] [nvarchar](500) NULL,
+	[shipment_closed_on_dt] [datetime2](0) NULL,
+	[is_po_completed] [nvarchar](500) NULL,
+	[dc_name] [nvarchar](500) NULL
+)
 
--- Insert new data from NGC
-INSERT INTO [dbo].[staging_pdas_footwear_vans_ngc_po]
+-- Create table index
+CREATE INDEX idx_temp_ngc01 ON #temp_ngc
+(
+    [po_code_cut],
+    [dim_product_style_id],
+    [dim_product_size]
+)
+
+-- Dump data into temp table
+INSERT INTO #temp_ngc
 (
     [shipment]
     ,[dim_factory_vendor_code]
@@ -82,40 +122,63 @@ SELECT
     Shipment.firstclosedon AS [shipment_closed_on_dt],
     Prbunhea.done AS [is_po_completed],
     Shipmast.shipname AS [dc_name]
-	FROM
-        [ITGC2W000187].[ESPSODV14RPT].[dbo].Prbunhea
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Nbbundet WITH (nolock)
-            ON (Prbunhea.Id_Cut=Nbbundet.Id_Cut)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shshipto WITH (nolock)
-            ON (Prbunhea.Rdacode=Shshipto.Factory)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].shshipto as Shshipto_2 WITH (nolock)
-            ON (Prbunhea.Rfactory=Shshipto_2.Factory)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipped WITH (nolock)
-            ON
-            (
-                Prbunhea.Season=Shipped.Season AND
-                Prbunhea.Style=Shipped.Style AND
-                Prbunhea.Lot=Shipped.Cut AND
-                Nbbundet.Color=Shipped.Color AND
-                Nbbundet.Size=Shipped.Size AND
-                Nbbundet.Dimension=Shipped.Dimension
-            )
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipment WITH (nolock)
-            ON (Shipped.Shipment=Shipment.Shipment)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipmast WITH (nolock)
-            ON (Shipmast.shipno=Prbunhea.Store_No)
-        LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].prscale WITH (nolock)
-            ON (nbbundet.size=prscale.scale)
+FROM
+    [ITGC2W000187].[ESPSODV14RPT].[dbo].Prbunhea
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Nbbundet WITH (nolock)
+        ON (Prbunhea.Id_Cut=Nbbundet.Id_Cut)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shshipto WITH (nolock)
+        ON (Prbunhea.Rdacode=Shshipto.Factory)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].shshipto as Shshipto_2 WITH (nolock)
+        ON (Prbunhea.Rfactory=Shshipto_2.Factory)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipped WITH (nolock)
+        ON
+        (
+            Prbunhea.Season=Shipped.Season AND
+            Prbunhea.Style=Shipped.Style AND
+            Prbunhea.Lot=Shipped.Cut AND
+            Nbbundet.Color=Shipped.Color AND
+            Nbbundet.Size=Shipped.Size AND
+            Nbbundet.Dimension=Shipped.Dimension
+        )
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipment WITH (nolock)
+        ON (Shipped.Shipment=Shipment.Shipment)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipmast WITH (nolock)
+        ON (Shipmast.shipno=Prbunhea.Store_No)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].prscale WITH (nolock)
+        ON (nbbundet.size=prscale.scale)
 
-    WHERE
-		Prbunhea.revdd >= @starting_month_dt
-		AND Prbunhea.Misc21 IN ('CONDOR', 'JBA-VF', 'JBA-VS', 'REVA', 'S65')
-		AND Prbunhea.Misc6 IN ('OCN', 'OIN', 'OSA', 'VF ASIA', 'VF INDIA', 'VF Thailand', 'VFA', 'VFA Bangladesh', 'VFA Guangzhou', 'VFA HongKong', 'VFA India', 'VFA Indonesia', 'VFA Qingdao', 'VFA Shanghai', 'VFA Vietnam', 'VFA Zhuhai', 'VFI')
-		AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
-		AND Prbunhea.Misc25 IN ('DS', 'DYO', 'PG', 'REGULAR', 'ZCS', 'ZCUS', 'ZDIR', 'ZFGP', 'ZOT', 'ZRDS', 'ZTP', 'ZVFL', 'ZVFS')
-		AND NOT (Prbunhea.Qtyship=0 AND Prbunhea.Done=1)
-		AND Prbunhea.POLocation NOT IN('CANCELED')
-		AND NOT (Nbbundet.qty=0)
+WHERE
+    Prbunhea.Modifiedon >= @starting_dt
+	AND Prbunhea.Misc21 IN ('CONDOR', 'JBA-VF', 'JBA-VS', 'REVA', 'S65')
+	AND Prbunhea.Misc6 IN ('OCN', 'OIN', 'OSA', 'VF ASIA', 'VF INDIA', 'VF Thailand', 'VFA', 'VFA Bangladesh', 'VFA Guangzhou', 'VFA HongKong', 'VFA India', 'VFA Indonesia', 'VFA Qingdao', 'VFA Shanghai', 'VFA Vietnam', 'VFA Zhuhai', 'VFI')
+	AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
+	AND Prbunhea.Misc25 IN ('DS', 'DYO', 'PG', 'REGULAR', 'ZCS', 'ZCUS', 'ZDIR', 'ZFGP', 'ZOT', 'ZRDS', 'ZTP', 'ZVFL', 'ZVFS')
+	AND NOT (Prbunhea.Qtyship=0 AND Prbunhea.Done=1)
+	AND Prbunhea.POLocation NOT IN('CANCELED')
+	AND NOT (Nbbundet.qty=0)
+
+-- Insert new rows
+INSERT INTO [dbo].[staging_pdas_footwear_vans_ngc_po]
+SELECT temp.*
+FROM
+    #temp_ngc temp
+    LEFT OUTER JOIN
+    (
+        SELECT
+            [po_code_cut]
+            ,[dim_product_style_id]
+            ,[dim_product_size]
+        FROM #temp_ngc
+    ) as staging
+        ON
+            staging.[po_code_cut] = temp.[po_code_cut]
+            and staging.[dim_product_style_id] = temp.[dim_product_style_id]
+            and staging.[dim_product_size] = temp.[dim_product_size]
+WHERE
+    staging.[po_code_cut] IS NULL
+
+-- Update existing rows
+
 
 
 -- Update timestamp of NGC load

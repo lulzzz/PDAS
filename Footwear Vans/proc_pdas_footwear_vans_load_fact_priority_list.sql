@@ -37,10 +37,7 @@ BEGIN
         MAX(df1.[id]) as dim_factory_id_1,
         MAX(df2.[id]) as dim_factory_id_2,
 		MAX(pl.[total_prdn_lt_days]) as production_lt,
-      	CASE MAX(pl.[llt])
-			WHEN 'Y' THEN 1
-			ELSE 0
-		END as llt,
+      	MAX(pl.[llt]) as llt,
       	MAX(pl.[is_asia_development_buy_ready]) as co_cu_new,
       	MAX(pl.[is_asia_development_buy_ready]) as asia_development_buy_ready
 	FROM

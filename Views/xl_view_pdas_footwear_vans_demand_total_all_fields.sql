@@ -17,9 +17,13 @@ SELECT
 	, f_1.[dim_factory_id]
 	, f_1.[dim_customer_id]
 	, f_1.[dim_demand_category_id]
+	, NULL as [order_number_original]
 	, f_1.[order_number]
+	, LEFT(f_1.[order_number], 10) as [order_number_short]
 	, f_1.[pr_code]
 	, f_1.[pr_cut_code]
+	, f_1.[po_code_customer]
+	, f_1.[so_code]
 	,CASE f_1.is_asap
 	   WHEN 1 THEN 'ASAP'
 	   ELSE ''
@@ -61,7 +65,13 @@ SELECT
 	, f_1.[fabriq_moq]
 	, f_1.[confirmed_crd_dt]
 	, f_1.[confirmed_unit_price_memo]
+	, f_1.[confirmed_unit_price_po]
+	, f_1.[cy_csf_load]
 	, f_1.[min_surcharge]
+	, CASE dim_customer.region
+		WHEN 'APAC' THEN 'RMB'
+		ELSE 'USD'
+	END as [currency]
 	, f_1.[confirmed_unit_price_vendor]
 	, f_1.[nominated_supplier_name]
 	, f_1.[comment_vendor]
@@ -69,6 +79,7 @@ SELECT
 	, f_1.[comment_comp_factory]
 	, f_1.[buy_comment]
 	, f_1.[status_orig_req]
+	, f_1.[performance_orig_req]
 	, f_1.[smu]
 	, f_1.[order_reference]
 	, f_1.[sku_footlocker]
@@ -77,9 +88,12 @@ SELECT
 	, f_1.[exp_delivery_without_constraint]
 	, f_1.[coo]
 	, f_1.[remarks_region]
+	, NULL as [system_error]
+	, NULL as [need_to_reallocate]
 
 	-- dim_pdas
 	,dim_pdas.[name] AS [dim_pdas_name]
+	,dim_pdas.[buy_month] AS [dim_pdas_buy_month]
 	,dim_pdas.[full_date] AS [dim_pdas_full_date]
 	,dim_pdas.[comment] AS [dim_pdas_comment]
 
@@ -95,10 +109,13 @@ SELECT
 	,dim_product.[material_id] AS [dim_product_material_id]
 	,dim_product.[size] AS [dim_product_size]
 	,dim_product.[style_id] AS [dim_product_style_id]
+	,dim_product.[style_id_erp] AS [dim_product_style_id_erp]
 	,dim_product.[color_description] AS [dim_product_color_description]
+	,dim_product.[color_description_erp] AS [dim_product_color_description_erp]
 	,dim_product.[style_name] AS [dim_product_style_name]
 	,dim_product.[style_name_new] AS [dim_product_style_name_new]
 	,dim_product.[material_description] AS [dim_product_material_description]
+	,dim_product.[material_description_erp] AS [dim_product_material_description_erp]
 	,dim_product.[product_type] AS [dim_product_product_type]
 	,dim_product.[cat_sub_sbu] AS [dim_product_cat_sub_sbu]
 	,dim_product.[type] AS [dim_product_type]
@@ -168,24 +185,25 @@ SELECT
 	,dim_factory_original_constrained.country AS [dim_factory_original_constrained_country]
 
 	-- dim_factory (constrained overwritten by VFA)
-	,dim_factory_final.short_name AS [dim_factory_final_short_name]
-
-	-- dim_factory (constrained overwritten by VFA)
 	,dim_factory.vendor_group AS [dim_factory_vendor_group]
 	,dim_factory.short_name AS [dim_factory_short_name]
 	,dim_factory.port AS [dim_factory_port]
 	,dim_factory.region AS [dim_factory_region]
 	,dim_factory.country AS [dim_factory_country]
-	,dim_factory.valid_acadia_fty_plant_code AS [dim_factory_valid_acadia_fty_plant_code]
-	,dim_factory.valid_acadia_vendor_code_1505_1510 AS [dim_factory_valid_acadia_vendor_code_1505_1510]
-	,dim_factory.valid_acadia_vendor_code_1550_mexico AS [dim_factory_valid_acadia_vendor_code_1550_mexico]
-	,dim_factory.condor_factory_code_brazil AS [dim_factory_condor_factory_code_brazil]
-	,dim_factory.condor_vendor_code_brazil AS [dim_factory_condor_vendor_code_brazil]
-	,dim_factory.condor_factory_code_chile AS [dim_factory_condor_factory_code_chile]
-	,dim_factory.condor_vendor_code_chile AS [dim_factory_condor_vendor_code_chile]
-	,dim_factory.eu_supplier_code AS [dim_factory_eu_supplier_code]
-	,dim_factory.reva_vendor_fty AS [dim_factory_reva_vendor_fty]
-	,dim_factory.reva_agent_vendor AS [dim_factory_reva_agent_vendor]
+
+	-- dim_factory (constrained overwritten by VFA and returned by vendor)
+	,dim_factory.vendor_group AS [dim_factory_final_vendor_group]
+	,dim_factory_final.short_name AS [dim_factory_final_short_name]
+	,dim_factory_final.valid_acadia_fty_plant_code AS [dim_factory_final_valid_acadia_fty_plant_code]
+	,dim_factory_final.valid_acadia_vendor_code_1505_1510 AS [dim_factory_final_valid_acadia_vendor_code_1505_1510]
+	,dim_factory_final.valid_acadia_vendor_code_1550_mexico AS [dim_factory_final_valid_acadia_vendor_code_1550_mexico]
+	,dim_factory_final.condor_factory_code_brazil AS [dim_factory_final_condor_factory_code_brazil]
+	,dim_factory_final.condor_vendor_code_brazil AS [dim_factory_final_condor_vendor_code_brazil]
+	,dim_factory_final.condor_factory_code_chile AS [dim_factory_final_condor_factory_code_chile]
+	,dim_factory_final.condor_vendor_code_chile AS [dim_factory_final_condor_vendor_code_chile]
+	,dim_factory_final.eu_supplier_code AS [dim_factory_final_eu_supplier_code]
+	,dim_factory_final.reva_vendor_fty AS [dim_factory_final_reva_vendor_fty]
+	,dim_factory_final.reva_agent_vendor AS [dim_factory_final_reva_agent_vendor]
 
 	-- dim_customer
 	,dim_customer.[name] AS [dim_customer_name]
