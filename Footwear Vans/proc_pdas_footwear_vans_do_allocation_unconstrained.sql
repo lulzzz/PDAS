@@ -317,6 +317,8 @@
 								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
+								@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+								@dim_customer_country_region = @dim_customer_country_region_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
 								@order_number = @order_number_01,
 								@allocation_logic = @allocation_logic
@@ -337,6 +339,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -355,6 +359,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -373,6 +379,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -391,6 +399,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -409,6 +419,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -431,6 +443,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -449,6 +463,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -467,6 +483,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -485,6 +503,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -503,6 +523,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -521,6 +543,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -532,76 +556,20 @@
 					IF @dim_buying_program_name_01 IN ('Retail Quick Turn', 'Retail Quick Turn Built To Forecast')
 					BEGIN
 						SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
-						IF @dim_customer_country_region_01 = 'EMEA'
-						BEGIN
-							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
-							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_dtc]
-								@pdasid = @pdasid,
-								@businessid = @businessid,
-								@dim_buying_program_id = @dim_buying_program_id_01,
-								@dim_product_id = @dim_product_id_01,
-								@dim_product_material_id = @dim_product_material_id_01,
-								@dim_product_style_complexity = @dim_product_style_complexity_01,
-								@dim_date_id = @dim_date_id_01,
-								@dim_customer_id = @dim_customer_id_01,
-								@dim_demand_category_id = @dim_demand_category_id_01,
-								@order_number = @order_number_01,
-								@allocation_logic = @allocation_logic
-						END
-
-						IF @dim_customer_country_region_01 in ('NORA', 'CASA')
-						BEGIN
-							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
-							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_sjv]
-								@pdasid = @pdasid,
-								@businessid = @businessid,
-								@dim_buying_program_id = @dim_buying_program_id_01,
-								@dim_product_id = @dim_product_id_01,
-								@dim_product_material_id = @dim_product_material_id_01,
-								@dim_product_style_complexity = @dim_product_style_complexity_01,
-								@dim_date_id = @dim_date_id_01,
-								@dim_customer_id = @dim_customer_id_01,
-								@dim_demand_category_id = @dim_demand_category_id_01,
-								@order_number = @order_number_01,
-								@allocation_logic = @allocation_logic
-						END
-
-						IF @dim_customer_country_region_01 = 'APAC'
-						BEGIN
-							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
-							IF @dim_customer_sold_to_party_01 LIKE 'China%'
-							BEGIN
-								SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
-								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_hsc]
-									@pdasid = @pdasid,
-									@businessid = @businessid,
-									@dim_buying_program_id = @dim_buying_program_id_01,
-									@dim_product_id = @dim_product_id_01,
-									@dim_product_material_id = @dim_product_material_id_01,
-									@dim_product_style_complexity = @dim_product_style_complexity_01,
-									@dim_date_id = @dim_date_id_01,
-									@dim_customer_id = @dim_customer_id_01,
-									@dim_demand_category_id = @dim_demand_category_id_01,
-									@order_number = @order_number_01,
-									@allocation_logic = @allocation_logic
-							END
-							ELSE
-							BEGIN
-								SET @allocation_logic = @allocation_logic +' => ' + 'Sold to party: ' + @dim_customer_sold_to_party_01
-								EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_other]
-									@pdasid = @pdasid,
-									@businessid = @businessid,
-									@dim_buying_program_id = @dim_buying_program_id_01,
-									@dim_product_id = @dim_product_id_01,
-									@dim_product_material_id = @dim_product_material_id_01,
-									@dim_product_style_complexity = @dim_product_style_complexity_01,
-									@dim_date_id = @dim_date_id_01,
-									@dim_customer_id = @dim_customer_id_01,
-									@dim_demand_category_id = @dim_demand_category_id_01,
-									@order_number = @order_number_01,
-									@allocation_logic = @allocation_logic
-							END
-						END
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+							@dim_customer_country_region = @dim_customer_country_region_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic
 					END
 
 					IF @dim_buying_program_name_01 = 'Ad-Hoc Out of Sync'
@@ -622,6 +590,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -643,6 +613,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -660,6 +632,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -677,6 +651,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -694,6 +670,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -711,6 +689,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -732,6 +712,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -749,6 +731,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -766,6 +750,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -783,6 +769,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -800,6 +788,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -817,6 +807,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -864,6 +856,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -884,6 +878,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -901,6 +897,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -918,6 +916,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -935,6 +935,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -952,6 +954,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -973,6 +977,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -990,6 +996,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1007,6 +1015,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1024,6 +1034,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1041,6 +1053,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1058,6 +1072,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1097,7 +1113,7 @@
 						IF @dim_customer_country_region_01 = 'EMEA'
 						BEGIN
 							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
-							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub01]
+							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
 								@pdasid = @pdasid,
 								@businessid = @businessid,
 								@dim_buying_program_id = @dim_buying_program_id_01,
@@ -1106,6 +1122,8 @@
 								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
+								@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+								@dim_customer_country_region = @dim_customer_country_region_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
 								@order_number = @order_number_01,
 								@allocation_logic = @allocation_logic
@@ -1126,6 +1144,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -1143,6 +1163,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -1160,6 +1182,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -1177,6 +1201,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -1198,6 +1224,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -1215,6 +1243,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -1225,39 +1255,20 @@
 					IF @dim_buying_program_name_01 IN ('Retail Quick Turn', 'Retail Quick Turn Built To Forecast')
 					BEGIN
 						SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
-						IF @dim_customer_country_region_01 = 'EMEA'
-						BEGIN
-							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
-							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_dtc]
-								@pdasid = @pdasid,
-								@businessid = @businessid,
-								@dim_buying_program_id = @dim_buying_program_id_01,
-								@dim_product_id = @dim_product_id_01,
-								@dim_product_material_id = @dim_product_material_id_01,
-								@dim_product_style_complexity = @dim_product_style_complexity_01,
-								@dim_date_id = @dim_date_id_01,
-								@dim_customer_id = @dim_customer_id_01,
-								@dim_demand_category_id = @dim_demand_category_id_01,
-								@order_number = @order_number_01,
-								@allocation_logic = @allocation_logic
-						END
-
-						IF @dim_customer_country_region_01 in ('NORA', 'CASA', 'APAC')
-						BEGIN
-							SET @allocation_logic = @allocation_logic +' => ' + 'Region: ' + @dim_customer_country_region_01
-							EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt_sjv]
-								@pdasid = @pdasid,
-								@businessid = @businessid,
-								@dim_buying_program_id = @dim_buying_program_id_01,
-								@dim_product_id = @dim_product_id_01,
-								@dim_product_material_id = @dim_product_material_id_01,
-								@dim_product_style_complexity = @dim_product_style_complexity_01,
-								@dim_date_id = @dim_date_id_01,
-								@dim_customer_id = @dim_customer_id_01,
-								@dim_demand_category_id = @dim_demand_category_id_01,
-								@order_number = @order_number_01,
-								@allocation_logic = @allocation_logic
-						END
+						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt]
+							@pdasid = @pdasid,
+							@businessid = @businessid,
+							@dim_buying_program_id = @dim_buying_program_id_01,
+							@dim_product_id = @dim_product_id_01,
+							@dim_product_material_id = @dim_product_material_id_01,
+							@dim_product_style_complexity = @dim_product_style_complexity_01,
+							@dim_date_id = @dim_date_id_01,
+							@dim_customer_id = @dim_customer_id_01,
+							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+							@dim_customer_country_region = @dim_customer_country_region_01,
+							@dim_demand_category_id = @dim_demand_category_id_01,
+							@order_number = @order_number_01,
+							@allocation_logic = @allocation_logic
 					END
 
 					IF @dim_buying_program_name_01 = 'Ad Hoc Vendor Quick Turn'
@@ -1278,6 +1289,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -1298,6 +1311,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1315,6 +1330,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1332,6 +1349,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1353,6 +1372,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1370,6 +1391,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1418,6 +1441,8 @@
 									@dim_product_style_complexity = @dim_product_style_complexity_01,
 									@dim_date_id = @dim_date_id_01,
 									@dim_customer_id = @dim_customer_id_01,
+									@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+									@dim_customer_country_region = @dim_customer_country_region_01,
 									@dim_demand_category_id = @dim_demand_category_id_01,
 									@order_number = @order_number_01,
 									@allocation_logic = @allocation_logic
@@ -1438,6 +1463,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1455,6 +1482,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1472,6 +1501,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1493,6 +1524,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1510,6 +1543,8 @@
 										@dim_product_style_complexity = @dim_product_style_complexity_01,
 										@dim_date_id = @dim_date_id_01,
 										@dim_customer_id = @dim_customer_id_01,
+										@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+										@dim_customer_country_region = @dim_customer_country_region_01,
 										@dim_demand_category_id = @dim_demand_category_id_01,
 										@order_number = @order_number_01,
 										@allocation_logic = @allocation_logic
@@ -1558,6 +1593,8 @@
 								@dim_product_style_complexity = @dim_product_style_complexity_01,
 								@dim_date_id = @dim_date_id_01,
 								@dim_customer_id = @dim_customer_id_01,
+								@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
+								@dim_customer_country_region = @dim_customer_country_region_01,
 								@dim_demand_category_id = @dim_demand_category_id_01,
 								@order_number = @order_number_01,
 								@allocation_logic = @allocation_logic
