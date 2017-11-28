@@ -18,9 +18,9 @@ BEGIN
 	DECLARE @run_date_id INT = (SELECT MAX([id]) FROM [dbo].[dim_date] WHERE [full_date] = @run_date)
 
 	DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
-	DECLARE @pdas_d int = (SELECT [date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
+	DECLARE @pdas_d int = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 
-	DECLARE @release_name nvarchar(45) = 'PDAS Release ' + CONVERT(nvarchar(6), @run_date)
+	DECLARE @release_name nvarchar(45) = 'PDAS Release ' + CONVERT(nvarchar(8), @pdas_d)
 
 	IF (
 		@run_date_id > @pdas_d
@@ -42,7 +42,7 @@ BEGIN
 		INSERT INTO [dbo].[dim_pdas]
 		(
 			[name]
-			,[date_id]
+			,[dim_date_id]
 		)
 		VALUES
 		(

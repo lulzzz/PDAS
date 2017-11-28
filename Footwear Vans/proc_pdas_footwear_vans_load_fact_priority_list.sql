@@ -11,7 +11,7 @@ BEGIN
 
 	-- Declare variables
 	DECLARE @pdas_release_full_date_id int
-	SET @pdas_release_full_date_id = (SELECT [date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
+	SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 
 	-- Check if the session has already been loaded
 	DELETE FROM [dbo].[fact_priority_list]

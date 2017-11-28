@@ -21,7 +21,7 @@ BEGIN
 	DECLARE @dim_customer_id_placeholder_emea int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'EMEA')
 	DECLARE @dim_customer_id_placeholder_apac int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'APAC')
 
-	DECLARE @dim_date_id_pdas_release_day int = (SELECT MAX(dd.[id]) FROM [dbo].[dim_date] dd INNER JOIN [dbo].[dim_pdas] pdas ON pdas.date_id = dd.id)
+	DECLARE @dim_date_id_pdas_release_day int = (SELECT MAX(dd.[id]) FROM [dbo].[dim_date] dd INNER JOIN [dbo].[dim_pdas] pdas ON pdas.dim_date_id = dd.id)
 	DECLARE @dim_date_id_pdas_release_day_future int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(yy, 1, full_date) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
 
 	DECLARE @dim_date_id_asap_73 int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(day, 73, [full_date]) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
@@ -82,7 +82,7 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-		'UNDEFINED' as order_number,
+		ISNULL(ntb.[pr_code], 'UNDEFINED') as order_number,
 		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
 			WHEN 'ASAP' THEN
 				CASE dp_m.[production_lt]
@@ -105,7 +105,7 @@ BEGIN
 			ELSE 0
 		END as is_asap,
 		MAX(ntb.[dim_product_material_id]) as material_id_sr,
-		MAX(ntb.[pr_code]) as pr_code,
+		MAX(ISNULL(ntb.[pr_code], '')) as pr_code,
 		NULL as pr_cut_code,
 		MAX(ntb.so_code) as so_code,
 		NULL as po_code_customer,
@@ -166,6 +166,7 @@ BEGIN
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		(UPPER(ntb.[exp_delivery_no_constraint_dt]) = 'ASAP' OR dd_xfw.[cw] IS NOT NULL)
 	GROUP BY
+		ISNULL(ntb.[pr_code], 'UNDEFINED'),
 		CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
 			WHEN 'ASAP' THEN
 				CASE dp_m.[production_lt]
@@ -190,7 +191,7 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-		'UNDEFINED' as order_number,
+		ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[line_item], 'UNDEFINED') as order_number,
 		dd_xfac.id as dim_date_id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
@@ -207,8 +208,8 @@ BEGIN
 		SUM(ntb.sap_qty) as quantity_non_lum,
 		0 as is_asap,
 		MAX(ntb.[dim_product_material_id]) as material_id_sr,
-		MAX(ntb.[pr_code]) as pr_code,
-		MAX(ntb.[line_item]) as pr_cut_code,
+		MAX(ISNULL(ntb.[pr_code], '')) as pr_code,
+		MAX(ISNULL(ntb.[line_item], '')) as pr_cut_code,
 		MAX(ntb.so_code) as so_code,
 		MAX(ntb.[customer_po_code]) as po_code_customer,
 		MAX(ntb.[comment]) as comment_region,
@@ -261,6 +262,7 @@ BEGIN
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		ntb.lum_qty IS NOT NULL
 	GROUP BY
+		ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[line_item], 'UNDEFINED'),
 		dd_xfac.id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
@@ -279,7 +281,7 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-		'UNDEFINED' as order_number,
+		ISNULL(ntb.[pr_code], 'UNDEFINED') as order_number,
 		dd_xfac.id as dim_date_id,
 		@dim_factory_id_placeholder as dim_factory_id,
 		CASE
@@ -295,7 +297,7 @@ BEGIN
 		SUM(ntb.sap_qty) as quantity_non_lum,
 		0 as is_asap,
 		MAX(ntb.[dim_product_material_id]) as material_id_sr,
-		MAX(ntb.[pr_code]) as pr_code,
+		ISNULL(ntb.[pr_code], 'UNDEFINED') as pr_code,
 		NULL as pr_cut_code,
 		NULL as so_code,
 		MAX(ntb.[customer_po_code]) as po_code_customer,
@@ -345,6 +347,7 @@ BEGIN
 		ntb.lum_qty IS NOT NULL AND
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL)
 	GROUP BY
+		ISNULL(ntb.[pr_code], 'UNDEFINED'),
 		dd_xfac.id,
 		CASE
 			WHEN dc.id IS NOT NULL THEN dc.id
@@ -361,7 +364,7 @@ BEGIN
 		@pdasid as dim_pdas_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
-		'UNDEFINED' as order_number,
+		ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[item], 'UNDEFINED') as order_number,
 		dd_xfac.id as dim_date_id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
@@ -449,6 +452,7 @@ BEGIN
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 		ntb.lum_qty IS NOT NULL
 	GROUP BY
+		ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[item], 'UNDEFINED'),
 		dd_xfac.id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
@@ -468,6 +472,5 @@ BEGIN
 			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
 			ELSE @dim_factory_id_placeholder
 		END
-
 
 END

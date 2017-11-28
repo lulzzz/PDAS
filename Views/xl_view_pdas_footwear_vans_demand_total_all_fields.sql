@@ -222,7 +222,7 @@ FROM
 		FROM
 			dim_pdas
 			INNER JOIN (SELECT [id], [full_date] FROM [dbo].[dim_date]) dd
-				ON dim_pdas.date_id = dd.[id]
+				ON dim_pdas.dim_date_id = dd.[id]
 	) dim_pdas
 		ON f_1.dim_pdas_id = dim_pdas.id
 

@@ -95,6 +95,13 @@ BEGIN
 	WHERE
 		dim.[material_id] IS NULL
 
+	-- Check short_name from dim_factory
+    SET @type = 'XFD is not a valid date';
+	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	SELECT DISTINCT @system, @source, @type, ISNULL(staging.xfac_dt, '') as [value]
+	FROM [dbo].[staging_pdas_footwear_vans_apac_ntb] staging
+	WHERE ISDATE(CONVERT(NVARCHAR(23), staging.xfac_dt)) = 0
+
     -- Check short_name from dim_factory
     SET @type = 'Factory short name not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
@@ -212,6 +219,13 @@ BEGIN
 	WHERE
 		(dim.[short_name] IS NULL AND mapping.[parent] IS NULL)
 
+	-- Check short_name from dim_factory
+    SET @type = 'XFD is not a valid date';
+	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	SELECT DISTINCT @system, @source, @type, ISNULL(staging.xfac_dt, '') as [value]
+	FROM [dbo].[staging_pdas_footwear_vans_nora_ntb] staging
+	WHERE ISDATE(CONVERT(NVARCHAR(23), staging.xfac_dt)) = 0
+
 
     /* CASA */
 
@@ -242,6 +256,13 @@ BEGIN
 			ON staging.[dim_customer_name] = mapping.[child]
 	WHERE
 		(dim.[name] IS NULL AND mapping.[parent] IS NULL)
+
+	-- Check short_name from dim_factory
+    SET @type = 'XFD is not a valid date';
+	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	SELECT DISTINCT @system, @source, @type, ISNULL(staging.xfac_dt, '') as [value]
+	FROM [dbo].[staging_pdas_footwear_vans_casa_ntb] staging
+	WHERE ISDATE(CONVERT(NVARCHAR(23), staging.xfac_dt)) = 0
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
