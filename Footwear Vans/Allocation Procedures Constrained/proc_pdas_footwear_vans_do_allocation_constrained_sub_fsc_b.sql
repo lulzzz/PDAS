@@ -16,6 +16,7 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_fsc
 	@pdas_release_month_date_id INT,
 	@dim_buying_program_id INT,
 	@dim_factory_id_original_unconstrained INT,
+	@dim_factory_id_original_constrained INT,
 	@dim_product_material_id NVARCHAR(45),
 	@dim_product_style_complexity NVARCHAR(45),
 	@dim_construction_type_name NVARCHAR(100),
@@ -32,7 +33,7 @@ BEGIN
 	SET NOCOUNT ON;
 
     /* Variable declarations */
-	DECLARE @dim_factory_id_original_constrained_02 INT = @dim_factory_id_original_unconstrained
+	DECLARE @dim_factory_id_original_constrained_02 INT = @dim_factory_id_original_constrained
 	DECLARE @dim_product_clk_mtl_02 SMALLINT
 	DECLARE @dim_product_dtp_mtl_02 SMALLINT
 	DECLARE @dim_product_sjd_mtl_02 SMALLINT
@@ -86,6 +87,7 @@ BEGIN
 					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
+					AND [dim_pdas_id] = @pdasid
 			) fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_1] = df.[id]
@@ -101,6 +103,7 @@ BEGIN
 					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
+					AND [dim_pdas_id] = @pdasid
 			) AS fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_2] = df.[id]
@@ -121,7 +124,7 @@ BEGIN
 	BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
 
-		IF @dim_customer_sold_to_party IN ('APAC Direct', 'Brazil DC', 'Canada DC', 'Canada Direct', 'EU Crossdock', 'EU DC', 'EU Direct', 'Hong Kong DC', 'India DC', 'International', 'Korea DC', 'Korea Direct', 'Malaysia DC', 'Mexico DC', 'Mexico Direct', 'Singapore DC', 'US DC', 'US Direct')
+		IF @dim_customer_sold_to_party IN ('APAC Direct', 'Brazil DC', 'Canada DC', 'Canada Direct', 'EU Crossdock', 'EU DC', 'EU Direct', 'Hong Kong DC', 'India DC', 'International', 'Korea DC', 'Korea Direct', 'Malaysia DC', 'Mexico DC', 'Mexico Direct', 'Singapore DC', 'US DC', 'US Direct', 'US Direct - Retail', 'US Direct - WHS', 'US RT', 'US WS')
 		BEGIN
 			SET @allocation_logic = @allocation_logic +' => ' + 'Non-duty Beneficial: ' + @dim_customer_sold_to_party
 			IF @dim_product_style_complexity LIKE '%Flex%'

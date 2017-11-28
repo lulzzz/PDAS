@@ -21,6 +21,8 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub09]
 	@dim_product_style_complexity NVARCHAR(45),
 	@dim_date_id INT,
 	@dim_customer_id INT,
+	@dim_customer_sold_to_party NVARCHAR(100),
+	@dim_customer_country_region NVARCHAR(100),
 	@dim_demand_category_id INT,
 	@order_number NVARCHAR(45),
 	@allocation_logic NVARCHAR(1000)
@@ -31,7 +33,6 @@ BEGIN
     /* Variable declarations */
 	DECLARE @dim_factory_id_original_unconstrained_02 INT = NULL
 	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
-	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
 	DECLARE @fact_priority_list_source_count_02 INT = 0
 	DECLARE @dim_location_country_code_a2_primary_02 NVARCHAR(2)
 	DECLARE @dim_location_country_code_a2_secondary_02 NVARCHAR(2)
@@ -52,6 +53,7 @@ BEGIN
 					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
+					AND [dim_pdas_id] = @pdasid
 			) fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_1] = df.[id]
@@ -67,6 +69,7 @@ BEGIN
 					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
+					AND [dim_pdas_id] = @pdasid
 			) AS fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_2] = df.[id]
@@ -93,13 +96,6 @@ BEGIN
 		WHERE [id] = @dim_product_id
 	)
 
-	SET @helper_retail_qt_rqt_vendor_02 =
-	(
-		SELECT MAX([Factory])
-		FROM [dbo].[helper_pdas_footwear_vans_retail_qt]
-		WHERE [MTL] = @dim_product_material_id
-	)
-
 	IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 	BEGIN
 		SET @fact_priority_list_source_count_02 = @fact_priority_list_source_count_02 + 1
@@ -119,6 +115,7 @@ BEGIN
 					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
+					AND [dim_pdas_id] = @pdasid
 			) AS fpl
 			INNER JOIN
 			(
@@ -140,6 +137,7 @@ BEGIN
 					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
+					AND [dim_pdas_id] = @pdasid
 			) AS fpl
 			INNER JOIN
 			(
@@ -172,34 +170,43 @@ BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + 'Flex'
 	END
 
-	-- RQT MTL?
-	ELSE IF @dim_product_material_id IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
-	BEGIN
-		-- Vendor = DTC or SJV?
-		IF @dim_factory_name_priority_list_primary_02 in ('DTC', 'SJV')
-		BEGIN
-			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'SJV')
-			SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
-		END
-		ELSE
-		BEGIN
-			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
-			SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
-		END
-	END
-
 	-- Single Source?
 	ELSE IF @fact_priority_list_source_count_02 = 1 AND (@dim_product_clk_mtl + @dim_product_dtp_mtl + @dim_product_sjd_mtl) <= 1
 	BEGIN
-		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
 		SET @allocation_logic = @allocation_logic +' => ' + 'Single Source'
+		IF @dim_factory_name_priority_list_primary_02 = 'SJV'
+		BEGIN
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
+			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = SJV'+' => ' +'HSC'
+		END
+		ELSE
+		BEGIN
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = not SJV'+' => ' +'1st priority'
+		END
+	END
+
+	-- Second priority null?
+	ELSE IF @dim_factory_name_priority_list_primary_02 IS NULL
+	BEGIN
+		SET @allocation_logic = @allocation_logic +' => ' + '2nd priority = 0'
+		IF @dim_factory_name_priority_list_primary_02 = 'SJV'
+		BEGIN
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
+			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = SJV'+' => ' +'HSC'
+		END
+		ELSE
+		BEGIN
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
+			SET @allocation_logic = @allocation_logic +' => ' + '1st priority = not SJV'+' => ' +'1st priority'
+		END
 	END
 
 	-- 1st priority = COO China?
 	ELSE IF @dim_location_country_code_a2_primary_02 = 'CN'
 	BEGIN
 		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' +'First priority'
+		SET @allocation_logic = @allocation_logic +' => ' + '1st priority = COO China' +' => ' +'1st priority'
 		IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 		BEGIN
 			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02

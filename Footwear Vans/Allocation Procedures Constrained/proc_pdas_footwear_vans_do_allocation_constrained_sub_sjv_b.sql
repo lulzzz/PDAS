@@ -16,6 +16,7 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_sjv
 	@pdas_release_month_date_id INT,
 	@dim_buying_program_id INT,
 	@dim_factory_id_original_unconstrained INT,
+	@dim_factory_id_original_constrained INT,
 	@dim_product_material_id NVARCHAR(45),
 	@dim_product_style_complexity NVARCHAR(45),
 	@dim_construction_type_name NVARCHAR(100),
@@ -32,7 +33,7 @@ BEGIN
 	SET NOCOUNT ON;
 
     /* Variable declarations */
-	DECLARE @dim_factory_id_original_constrained_02 INT = @dim_factory_id_original_unconstrained
+	DECLARE @dim_factory_id_original_constrained_02 INT = @dim_factory_id_original_constrained
 	DECLARE @dim_product_clk_mtl_02 SMALLINT
 	DECLARE @dim_product_dtp_mtl_02 SMALLINT
 	DECLARE @dim_product_sjd_mtl_02 SMALLINT
@@ -86,6 +87,7 @@ BEGIN
 					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
+					AND [dim_pdas_id] = @pdasid
 			) fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_1] = df.[id]
@@ -101,6 +103,7 @@ BEGIN
 					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
 	                	ON f.[dim_product_id] = dp.[id]
 				WHERE [material_id] = @dim_product_material_id
+					AND [dim_pdas_id] = @pdasid
 			) AS fpl
 			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 				ON fpl.[dim_factory_id_2] = df.[id]
@@ -116,17 +119,24 @@ BEGIN
 	END
 
 	/* Sub decision tree logic */
-	IF @loop < 7
+	IF @loop < 6
 	BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + '[loop: ' + CONVERT(NVARCHAR(2), @loop) + ']'
 
-		IF @dim_customer_sold_to_party IN ('Korea DC', 'Korea Direct', 'India DC', 'EU DC', 'EU Crossdock', 'Chile DC', 'China DC')
+		IF (@loop = 5 AND @dim_customer_sold_to_party IN ('Korea DC', 'Korea Direct'))
+			OR (@loop = 4 AND @dim_customer_sold_to_party IN ('EU DC', 'EU Crossdock'))
+			OR (@loop = 3 AND @dim_customer_sold_to_party IN ('India DC'))
+			OR (@loop = 2 AND @dim_customer_sold_to_party IN ('China DC'))
+			OR (@loop = 1 AND @dim_customer_sold_to_party IN ('Chile DC'))
 		BEGIN
-			IF @dim_customer_sold_to_party IN ('Korea DC', 'Korea Direct')
+			IF (@loop = 5 AND @dim_customer_sold_to_party IN ('Korea DC', 'Korea Direct'))
 			BEGIN
 				SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
 			END
-			ELSE IF @dim_customer_sold_to_party IN ('India DC', 'EU DC', 'EU Crossdock', 'Chile DC', 'China DC')
+			ELSE IF (@loop = 4 AND @dim_customer_sold_to_party IN ('EU DC', 'EU Crossdock'))
+				OR (@loop = 3 AND @dim_customer_sold_to_party IN ('India DC'))
+				OR (@loop = 2 AND @dim_customer_sold_to_party IN ('China DC'))
+				OR (@loop = 1 AND @dim_customer_sold_to_party IN ('Chile DC'))
 			BEGIN
 				SET @allocation_logic = @allocation_logic +' => ' + 'Non-duty Beneficial: ' + @dim_customer_sold_to_party
 			END

@@ -10,9 +10,9 @@ GO
 -- =============================================
 -- Author:		ebp Global
 -- Create date: 13/10/2017
--- Description:	Allocation sub procedure Other regions
+-- Description:	Allocation sub procedure under RQT Program branch
 -- =============================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub10]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_sub_rqt]
 	@pdasid INT,
 	@businessid INT,
 	@dim_buying_program_id INT,
@@ -32,33 +32,23 @@ BEGIN
 
     /* Variable declarations */
 	DECLARE @dim_factory_id_original_unconstrained_02 INT = NULL
-	DECLARE @dim_factory_name_priority_list_primary_02 NVARCHAR(45)
+	DECLARE @helper_retail_qt_rqt_vendor_02 NVARCHAR(45)
 
 	/* Variable assignments */
-
-	SET @dim_factory_name_priority_list_primary_02 =
+	SET @helper_retail_qt_rqt_vendor_02 =
 	(
-		SELECT df.[short_name]
-		FROM
-			(
-				SELECT [dim_factory_id_1]
-				FROM [dbo].[fact_priority_list] f
-					INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1) dp
-	                	ON f.[dim_product_id] = dp.[id]
-				WHERE [material_id] = @dim_product_material_id
-					AND [dim_pdas_id] = @pdasid
-			) fpl
-			INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
-				ON fpl.[dim_factory_id_1] = df.[id]
+		SELECT MAX([Factory])
+		FROM [dbo].[helper_pdas_footwear_vans_retail_qt]
+		WHERE [MTL] = @dim_product_material_id
+			AND [Region] = @dim_customer_country_region
+			AND [Sold to Party] = @dim_customer_sold_to_party
 	)
 
 	/* Sub decision tree logic */
-
-	SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-	SET @allocation_logic = @allocation_logic +' => ' + 'First priority'
-	IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
+	SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @helper_retail_qt_rqt_vendor_02)
+	IF @dim_factory_id_original_unconstrained_02 IS NOT NULL
 	BEGIN
-		SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
+		SET @allocation_logic = @allocation_logic +' => ' + @helper_retail_qt_rqt_vendor_02 + ' RQT MTL'
 	END
 
 	IF @dim_factory_id_original_unconstrained_02 IS NULL
