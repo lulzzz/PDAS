@@ -1,18 +1,7 @@
-USE [VCDWH]
-GO
+DECLARE @pdasid INT = 1
+DECLARE @businessid INT = 1
 
--- ==============================================================
--- Author:		ebp Global
--- Create date: 15/9/2017
--- Description:	Procedure to load the NGC orders in fact_order.
--- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc]
-	@pdasid INT,
-	@businessid INT
-AS
-BEGIN
-
-	-- Placeholders
+-- Placeholders
 	DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
     DECLARE	@buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
 	DECLARE @dim_customer_id_placeholder int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [name] = 'PLACEHOLDER' AND [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
@@ -21,14 +10,14 @@ BEGIN
 	DECLARE	@current_date date = GETDATE()
 
 	-- Check if the session has already been loaded
-	DELETE FROM [dbo].[fact_order]
+	DELETE FROM [dbo].[fact_order_ngc_only]
     WHERE
         dim_pdas_id = @pdasid
         AND dim_demand_category_id IN (@dim_demand_category_id_open_order, @dim_demand_category_id_shipped_order)
         AND dim_buying_program_id = @buying_program_id
 
 	-- Insert from staging
-	INSERT INTO [dbo].[fact_order](
+	INSERT INTO [dbo].[fact_order_ngc_only](
 		[dim_pdas_id]
 		,[dim_business_id]
 		,[dim_buying_program_id]
@@ -60,7 +49,6 @@ BEGIN
 			ELSE @dim_factory_id_placeholder
 		END as dim_factory_id,
 		CASE
-			WHEN dc_name.id IS NOT NULL THEN dc_name.id
 			WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
 			ELSE @dim_customer_id_placeholder
 		END as dim_customer_id,
@@ -75,10 +63,7 @@ BEGIN
 		MAX(revised_crd_dt) as [customer_requested_xf_dt],
 		MAX(original_crd_dt) as [original_customer_requested_dt],
 		SUM(ngc.lum_qty) as [quantity_lum],
-		CASE ISNULL(ngc.shipment_status, 0)
-			WHEN 1 THEN SUM(ngc.shipped_qty)
-			ELSE SUM(ngc.order_qty)
-		END as [quantity_non_lum]
+		SUM(ngc.order_qty) as [quantity_non_lum]
 
 	FROM
 		(
@@ -148,7 +133,6 @@ BEGIN
 			ELSE @dim_factory_id_placeholder
 		END,
 		CASE
-			WHEN dc_name.id IS NOT NULL THEN dc_name.id
 			WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
 			ELSE @dim_customer_id_placeholder
 		END,
@@ -160,5 +144,3 @@ BEGIN
 			WHEN 1 THEN @dim_demand_category_id_shipped_order
 			ELSE @dim_demand_category_id_open_order
 		END
-
-END
