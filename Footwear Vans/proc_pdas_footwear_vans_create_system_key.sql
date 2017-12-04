@@ -20,7 +20,7 @@ BEGIN
 	DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
 	DECLARE @pdas_d int = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 
-	DECLARE @release_name nvarchar(45) = 'PDAS Release ' + CONVERT(nvarchar(8), @pdas_d)
+	DECLARE @release_name nvarchar(45) = 'PDAS Release ' + CONVERT(nvarchar(8), @run_date_id)
 
 	IF (
 		@run_date_id > @pdas_d
@@ -37,7 +37,8 @@ BEGIN
 				WHEN 'Release Note' THEN ''
 			END
 		WHERE
-			[type] = 'System'
+			[type] = 'System' and 
+			[variable] IN ('Release Locker', 'Release Note')
 
 		INSERT INTO [dbo].[dim_pdas]
 		(

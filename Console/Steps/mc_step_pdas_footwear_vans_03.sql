@@ -46,6 +46,7 @@ BEGIN
 		DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 		DECLARE	@buying_program_id int
 		SET @buying_program_id = (SELECT [dim_buying_program_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
+		SET @buying_program_forecast_id = (SELECT [id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 
 		-- Step 03 - Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
 		-- Capacity

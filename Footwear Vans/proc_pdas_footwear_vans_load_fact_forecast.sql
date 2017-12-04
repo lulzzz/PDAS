@@ -56,11 +56,11 @@ BEGIN
 			ON nf.dim_product_material_id = dp.material_id
 		INNER JOIN
 		(
-			SELECT [season_year_short_crd], [month_name_short_accounting], MIN([id]) as [id]
+			SELECT [season_year_short_buy], [month_name_short_accounting], MIN([id]) as [id]
 			FROM [dbo].[dim_date]
-			GROUP BY [season_year_short_crd], [month_name_short_accounting]
+			GROUP BY [season_year_short_buy], [month_name_short_accounting]
 		) dd
-			ON dd.[season_year_short_crd] = SUBSTRING(nf.month_label, 1, 4)
+			ON dd.[season_year_short_buy] = SUBSTRING(nf.month_label, 1, 4)
 			AND dd.month_name_short_accounting =
 				CASE SUBSTRING(nf.month_label, 6, 3)
 					WHEN 'Jan' THEN 'Mar'
@@ -114,11 +114,11 @@ BEGIN
 			ON nf.dim_product_material_id = dp.material_id
 		INNER JOIN
 		(
-			SELECT [season_year_short_crd], [month_name_short_accounting], MIN([id]) as [id]
+			SELECT [season_year_short_buy], [month_name_short_accounting], MIN([id]) as [id]
 			FROM [dbo].[dim_date]
-			GROUP BY [season_year_short_crd], [month_name_short_accounting]
+			GROUP BY [season_year_short_buy], [month_name_short_accounting]
 		) dd
-			ON dd.[season_year_short_crd] = nf.season
+			ON dd.[season_year_short_buy] = nf.season
 			AND dd.month_name_short_accounting =
 				CASE nf.customer_type
 					WHEN 'XDC' THEN nf.plan_month

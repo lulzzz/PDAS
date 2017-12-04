@@ -150,14 +150,14 @@ BEGIN
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
-                [season_year_intro]
+                [season_year_buy]
                 ,[month_name_short_accounting]
             FROM [dbo].[dim_date]
         ) dim
-			ON   staging.[season] = dim.[season_year_intro]
+			ON   staging.[season] = dim.[season_year_buy]
                 AND staging.[plan_month] = dim.[month_name_short_accounting]
 	WHERE
-		dim.[season_year_intro] IS NULL
+		dim.[season_year_buy] IS NULL
 
 
     /* EMEA */
@@ -190,14 +190,14 @@ BEGIN
           LEFT OUTER JOIN
           (
               SELECT DISTINCT
-                  [season_year_short_crd]
+                  [season_year_short_buy]
                   ,[month_name_short_accounting]
               FROM [dbo].[dim_date]
           ) dim
-  			ON   staging.[season] = dim.[season_year_short_crd]
+  			ON   staging.[season] = dim.[season_year_short_buy]
                   AND staging.[plan_month] = dim.[month_name_short_accounting]
   	WHERE
-  		dim.[season_year_short_crd] IS NULL
+  		dim.[season_year_short_buy] IS NULL
 
 
 END

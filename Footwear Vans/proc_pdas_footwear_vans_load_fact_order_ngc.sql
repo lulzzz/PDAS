@@ -74,7 +74,10 @@ BEGIN
 		END as dim_demand_category_id,
 		MAX(revised_crd_dt) as [customer_requested_xf_dt],
 		MAX(original_crd_dt) as [original_customer_requested_dt],
-		SUM(ngc.lum_qty) as [quantity_lum],
+		CASE ISNULL(ngc.shipment_status, 0)
+			WHEN 1 THEN SUM(ngc.lum_shipped_qty)
+			ELSE SUM(ngc.lum_order_qty)
+		END as [quantity_lum]
 		CASE ISNULL(ngc.shipment_status, 0)
 			WHEN 1 THEN SUM(ngc.shipped_qty)
 			ELSE SUM(ngc.order_qty)
