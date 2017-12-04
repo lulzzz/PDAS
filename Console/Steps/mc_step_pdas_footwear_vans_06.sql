@@ -53,6 +53,9 @@ BEGIN
 		-- Prepare report tables for Excel frontend
 		EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
+		-- Validate source data (need to check the Vans Footwear Validation Report afterwards)
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_allocation_decision] @mc_user_name = @mc_user_name
+
 		/* END */
 
 		-- Update Console procedure table
