@@ -302,7 +302,7 @@
 				IF @dim_customer_sold_to_category_01 = 'DC'
 				BEGIN
 					SET @allocation_logic = @allocation_logic +' => ' + 'Sold to category: ' + @dim_customer_sold_to_category_01
-					IF @dim_buying_program_name_01 = 'Bulk Buy'
+					IF @dim_buying_program_name_01 = 'Bulk Buy' OR @dim_demand_category_name_01 = 'Forecast'
 					BEGIN
 						SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
 						IF @dim_customer_country_region_01 = 'EMEA'
@@ -1107,7 +1107,7 @@
 				IF @dim_customer_sold_to_category_01 = 'Direct+International'
 				BEGIN
 					SET @allocation_logic = @allocation_logic +' => ' + 'Sold to category: ' + @dim_customer_sold_to_category_01
-					IF @dim_buying_program_name_01 = 'Bulk Buy'
+					IF @dim_buying_program_name_01 = 'Bulk Buy' OR @dim_demand_category_name_01 = 'Forecast'
 					BEGIN
 						SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
 						IF @dim_customer_country_region_01 = 'EMEA'
@@ -1578,7 +1578,7 @@
 				IF @dim_customer_sold_to_category_01 = 'Crossdock'
 				BEGIN
 					SET @allocation_logic = @allocation_logic +' => ' + 'Sold to category: ' + @dim_customer_sold_to_category_01
-					IF @dim_buying_program_name_01 = 'Bulk Buy'
+					IF @dim_buying_program_name_01 = 'Bulk Buy' OR @dim_demand_category_name_01 = 'Forecast'
 					BEGIN
 						SET @allocation_logic = @allocation_logic +' => ' + 'Buying program: ' + @dim_buying_program_name_01
 						IF @dim_customer_country_region_01 = 'EMEA'
