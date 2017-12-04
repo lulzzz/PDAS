@@ -1,16 +1,6 @@
-USE [VCDWH]
-GO
+DECLARE @pdasid INT = 1
+DECLARE @businessid INT = 1
 
--- ==============================================================
--- Author:		ebp Global
--- Create date: 15/9/2017
--- Description:	Procedure to load the NGC orders in fact_order.
--- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc]
-	@pdasid INT,
-	@businessid INT
-AS
-BEGIN
 
 	-- Placeholders
 	DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
@@ -21,14 +11,10 @@ BEGIN
 	DECLARE	@current_date date = GETDATE()
 
 	-- Check if the session has already been loaded
-	DELETE FROM [dbo].[fact_order]
-    WHERE
-        dim_pdas_id = @pdasid
-        AND dim_demand_category_id IN (@dim_demand_category_id_open_order, @dim_demand_category_id_shipped_order)
-        AND dim_buying_program_id = @buying_program_id
+	DELETE FROM [dbo].[fact_order_ngc_only]
 
 	-- Insert from staging
-	INSERT INTO [dbo].[fact_order](
+	INSERT INTO [dbo].[fact_order_ngc_only](
 		[dim_pdas_id]
 		,[dim_business_id]
 		,[dim_buying_program_id]
@@ -158,5 +144,3 @@ BEGIN
 			ELSE dp_m.id
 		END,
 		ISNULL(ngc.shipment_status, 0)
-
-END
