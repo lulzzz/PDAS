@@ -3,7 +3,7 @@
 -- Create date: 15/9/2017
 -- Description:	Procedure to load the decisions of the VFA team to overwritte the PDAS recommendations.
 -- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_allocation_scenario_vfa]
+ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_overwrite]
 	@pdasid INT,
 	@businessid INT
 AS

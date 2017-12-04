@@ -211,8 +211,8 @@ SELECT
 	,dim_customer.[market] AS [dim_customer_market]
 	,dim_customer.[dc_plt] AS [dim_customer_dc_plt]
 	,dim_customer.[sold_to_party] AS [dim_customer_sold_to_party]
-	,dim_customer.region AS [dim_customer_region]
-	,dim_customer.country AS [dim_customer_country]
+	,dim_customer.[region] AS [dim_customer_region]
+	,dim_customer.[country] AS [dim_customer_country]
 
 	-- dim_demand_category
 	,dim_demand_category.[name] AS [dim_demand_category_name]
@@ -225,6 +225,16 @@ SELECT
 	,fact_priority_list.[co_cu_new] AS [fact_priority_list_co_cu_new]
 	,fact_priority_list.[asia_development_buy_ready] AS [fact_priority_list_asia_development_buy_ready]
 
+	-- helper_pdas_footwear_vans_fty_qt
+	,helper_pdas_footwear_vans_fty_qt.dim_factory_short_name as helper_pdas_footwear_vans_fty_qt_factory_short_name
+
+	-- helper_pdas_footwear_vans_retail_qt
+	,helper_pdas_footwear_vans_retail_qt.dim_factory_short_name as helper_pdas_footwear_vans_retail_qt_factory_short_name
+
+	-- placeholder fields
+	,NULL as [placeholder_field01]
+	,NULL as [placeholder_field02]
+	,NULL as [placeholder_field03]
 
 FROM
 	(
@@ -339,3 +349,39 @@ FROM
 			dim_pdas_id = (SELECT MAX(id) FROM dim_pdas)
 	) AS fact_priority_list
 		ON dim_product.material_id = fact_priority_list.[dim_product_material_id]
+
+	LEFT OUTER JOIN
+	(
+		SELECT
+			[MTL] as dim_product_material_id
+			,MAX([QT Leadtime]) as qt_leadtime
+			,MAX([Factory]) as dim_factory_short_name
+		FROM
+			[helper_pdas_footwear_vans_fty_qt]
+		GROUP BY
+			[MTL]
+	) helper_pdas_footwear_vans_fty_qt
+		ON helper_pdas_footwear_vans_fty_qt.dim_product_material_id = dim_product.material_id
+
+
+	LEFT OUTER JOIN
+	(
+		SELECT
+			[MTL] as dim_product_material_id
+      		,[Buying Program] as dim_buying_program_name
+      		,[Region] as dim_customer_region
+      		,[Sold to Party] as dim_customer_sold_to_party
+			,MAX([Factory]) as dim_factory_short_name
+		FROM
+			[helper_pdas_footwear_vans_retail_qt]
+		GROUP BY
+			[MTL]
+			,[Buying Program]
+			,[Region]
+			,[Sold to Party]
+	) helper_pdas_footwear_vans_retail_qt
+		ON
+			helper_pdas_footwear_vans_retail_qt.dim_product_material_id = dim_product.material_id
+			and helper_pdas_footwear_vans_retail_qt.dim_buying_program_name = dim_buying_program.name
+			and helper_pdas_footwear_vans_retail_qt.dim_customer_region = dim_customer.region
+			and helper_pdas_footwear_vans_retail_qt.dim_customer_sold_to_party = dim_customer.sold_to_party
