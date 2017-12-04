@@ -12,7 +12,7 @@ from functools import reduce
 locale.setlocale(locale.LC_ALL, '')
 from datetime import datetime
 from collections import Counter
-import settings as cp
+import etl_api_shared_drive as cp
 from sqlalchemy import Table, Column, ForeignKey, create_engine, UniqueConstraint, schema, types, update, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import reflection

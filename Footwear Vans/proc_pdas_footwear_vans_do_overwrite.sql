@@ -1,3 +1,10 @@
+USE [VCDWH]
+GO
+/****** Object:  StoredProcedure [dbo].[proc_pdas_footwear_vans_do_overwrite]    Script Date: 4/12/2017 4:15:44 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 -- ==============================================================
 -- Author:		ebp Global
 -- Create date: 15/9/2017
@@ -16,7 +23,7 @@ BEGIN
 	UPDATE target
 	SET
 		target.[dim_factory_id] = temp.[dim_factory_id]
-		,target.[comment] = temp.[vfa_comment]
+		,target.[comment_vfa] = temp.[Comment (VFA)]
 		,target.[edit_dt] = @current_dt
 	FROM
 		(
@@ -32,18 +39,18 @@ BEGIN
 		(
 			SELECT
 				temp.[id]
-				,temp.[vfa_comment]
+				,temp.[Comment (VFA)]
 				,df.[id] as	[dim_factory_id]
 			FROM
-				[dbo].[staging_pdas_footwear_vans_allocation_scenario_vfa] temp
+				[dbo].[staging_pdas_footwear_vans_allocation_report_vfa] temp
 				INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
-					ON temp.[factory_code] = df.[short_name]
+					ON temp.[Factory Code VFA] = df.[short_name]
 			WHERE
-				[factory_code] <> [factory_code_constrained]
+				[Factory Code VFA] <> [Factory Code (Constrained)]
 		) as temp
 			ON	target.[id] = temp.[id]
 	WHERE
 		target.[dim_factory_id] <> temp.[dim_factory_id] AND
-		target.[comment] <> temp.[vfa_comment]
+		target.[comment_vfa] <> temp.[Comment (VFA)]
 
 END
