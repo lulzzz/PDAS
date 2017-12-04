@@ -12,6 +12,26 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_moq_upcharge_adjustment]
 AS
 BEGIN
 
+	-- Reset data
+	UPDATE f
+	SET
+		[quantity_region_mtl_lvl] = NULL,
+		[quantity_customer_mtl_lvl] = NULL,
+		[customer_moq] = NULL,
+		[customer_below_moq] = NULL,
+		[region_moq] = NULL,
+		[region_below_moq] = NULL,
+		[upcharge] = NULL,
+		[is_rejected] = NULL
+	FROM
+		[dbo].[fact_demand_total] f
+		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
+			ON f.[dim_demand_category_id] = ddc.[id]
+	WHERE
+		[dim_pdas_id] = @pdasid
+		and [dim_business_id] = @businessid
+		and ddc.[name] IN ('Forecast', 'Need to Buy')
+
 	-- Drop temporary table if exists
 	IF OBJECT_ID('tempdb..#fact_demand_total_region_level') IS NOT NULL
 	BEGIN
@@ -21,11 +41,11 @@ BEGIN
 	-- Create temporary table
 	CREATE TABLE #fact_demand_total_region_level (
 		[dim_buying_program_id] INT
-		,[dim_product_id] INT
-		,[dim_date_id] INT
+		,[dim_demand_category_id] INT
+		-- ,[dim_date_id] INT
 		,[dim_factory_id] INT
 		,[region] NVARCHAR(100)
-		,[dim_demand_category_id] INT
+		,[material_id] NVARCHAR(45)
 		,[quantity] INT
 	)
 
@@ -33,22 +53,22 @@ BEGIN
 	CREATE INDEX idx_select_cursor01 ON #fact_demand_total_region_level
 	(
 		[dim_buying_program_id]
-		,[dim_product_id]
-		,[dim_date_id]
+		,[dim_demand_category_id]
+		-- ,[dim_date_id]
 		,[dim_factory_id]
 		,[region]
-		,[dim_demand_category_id]
+		,[material_id]
 	)
 
 	-- Fill temp table with data aggregated by region
 	INSERT INTO #fact_demand_total_region_level
 	SELECT
 		[dim_buying_program_id]
-		,[dim_product_id]
-		,[dim_date_id]
+		,[dim_demand_category_id]
+		-- ,[dim_date_id]
 		,[dim_factory_id]
 		,dc.[region]
-		,[dim_demand_category_id]
+		,dp.[material_id]
 		,SUM([quantity]) as [quantity]
 	FROM
 		[dbo].[fact_demand_total] f
@@ -65,27 +85,30 @@ BEGIN
 			ON dc.[id] = f.[dim_customer_id]
 		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
 			ON f.[dim_demand_category_id] = ddc.[id]
+		INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+			ON f.[dim_product_id] = dp.[id]
 	WHERE
 		[dim_pdas_id] = @pdasid and
 		[dim_business_id] = @businessid and
 		ddc.[name] IN ('Forecast', 'Need to Buy')
 	GROUP BY
 		[dim_buying_program_id]
-		,[dim_product_id]
-		,[dim_date_id]
+		,[dim_demand_category_id]
+		-- ,[dim_date_id]
 		,[dim_factory_id]
 		,dc.[region]
-		,[dim_demand_category_id]
+		,dp.[material_id]
 
-    -- Update quantity_region
+    -- Update quantity_region_mtl_lvl
 	UPDATE f
 	SET
-		f.[quantity_region] = f_agg.[quantity]
+		f.[quantity_region_mtl_lvl] = f_agg.[quantity]
 	FROM
     	(
             SELECT
 				f.*
 				,dc.[region]
+				,dp.[material_id]
             FROM
 				[dbo].[fact_demand_total] f
 				INNER JOIN
@@ -102,6 +125,8 @@ BEGIN
 
 				INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
 					ON f.[dim_demand_category_id] = ddc.[id]
+				INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+					ON f.[dim_product_id] = dp.[id]
             WHERE
 				[dim_pdas_id] = @pdasid and
 				[dim_business_id] = @businessid and
@@ -111,19 +136,24 @@ BEGIN
 		as f_agg
 			ON
 				f.[dim_buying_program_id] = f_agg.[dim_buying_program_id] AND
-				f.[dim_product_id] = f_agg.[dim_product_id] AND
-				f.[dim_date_id] = f_agg.[dim_date_id] AND
+				f.[dim_demand_category_id] = f_agg.[dim_demand_category_id] AND
+				-- f.[dim_date_id] = f_agg.[dim_date_id] AND
 				f.[dim_factory_id] = f_agg.[dim_factory_id] AND
 				f.[region] = f_agg.[region] AND
-				f.[dim_demand_category_id] = f_agg.[dim_demand_category_id]
+				f.[material_id] = f_agg.[material_id]
 
 
-	-- Update quantity_region
+
+
+
+
+
+	-- Update moq
 	UPDATE f
 	SET
 		f.[region_moq] = moq.[From by Region]
 		,f.[region_below_moq] = CASE
-			WHEN f.[quantity_region] < moq.[From by Region] THEN 1
+			WHEN f.[quantity_region_mtl_lvl] < moq.[From by Region] THEN 1
 			ELSE 0
 		END
 	FROM
@@ -152,5 +182,163 @@ BEGIN
 	-- ,f.[customer_moq] =
 	-- ,f.[upcharge] =
 	-- ,f.[is_rejected] =
+
+
+	-- Drop temporary table if exists
+	IF OBJECT_ID('tempdb..#fact_demand_total_customer_level') IS NOT NULL
+	BEGIN
+		DROP TABLE #fact_demand_total_customer_level;
+	END
+
+	-- Create temporary table
+	CREATE TABLE #fact_demand_total_customer_level (
+		[dim_buying_program_id] INT
+		,[dim_demand_category_id] INT
+		,[dim_date_id] INT
+		,[dim_factory_id] INT
+		,[dim_customer_id] INT
+		,[material_id] NVARCHAR(45)
+		,[quantity] INT
+	)
+
+	-- Create table index
+	CREATE INDEX idx_select_cursor01 ON #fact_demand_total_customer_level
+	(
+		[dim_buying_program_id]
+		,[dim_demand_category_id]
+		,[dim_date_id]
+		,[dim_factory_id]
+		,[dim_customer_id]
+		,[material_id]
+	)
+
+	-- Fill temp table with data aggregated by region
+	INSERT INTO #fact_demand_total_customer_level
+	SELECT
+		[dim_buying_program_id]
+		,[dim_demand_category_id]
+		,[dim_date_id]
+		,[dim_factory_id]
+		,[dim_customer_id]
+		,dp.[material_id]
+		,SUM([quantity]) as [quantity]
+	FROM
+		[dbo].[fact_demand_total] f
+		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
+			ON f.[dim_demand_category_id] = ddc.[id]
+		INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+			ON f.[dim_product_id] = dp.[id]
+	WHERE
+		[dim_pdas_id] = @pdasid and
+		[dim_business_id] = @businessid and
+		ddc.[name] IN ('Forecast', 'Need to Buy')
+	GROUP BY
+		[dim_buying_program_id]
+		,[dim_demand_category_id]
+		,[dim_date_id]
+		,[dim_factory_id]
+		,[dim_customer_id]
+		,dp.[material_id]
+
+	-- Update quantity_customer_mtl_lvl
+	UPDATE f
+	SET
+		f.[quantity_customer_mtl_lvl] = f_agg.[quantity]
+	FROM
+    	(
+            SELECT
+				f.*
+				,dp.[material_id]
+            FROM
+				[dbo].[fact_demand_total] f
+				INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
+					ON f.[dim_demand_category_id] = ddc.[id]
+				INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
+					ON f.[dim_product_id] = dp.[id]
+            WHERE
+				[dim_pdas_id] = @pdasid and
+				[dim_business_id] = @businessid and
+				ddc.[name] IN ('Forecast', 'Need to Buy')
+        ) f
+		INNER JOIN #fact_demand_total_customer_level
+		as f_agg
+			ON
+				f.[dim_buying_program_id] = f_agg.[dim_buying_program_id] AND
+				f.[dim_demand_category_id] = f_agg.[dim_demand_category_id] AND
+				f.[dim_date_id] = f_agg.[dim_date_id] AND
+				f.[dim_factory_id] = f_agg.[dim_factory_id] AND
+				f.[dim_customer_id] = f_agg.[dim_customer_id] AND
+				f.[material_id] = f_agg.[material_id]
+
+	-- Update customer_moq
+	UPDATE f
+	SET
+		f.[customer_moq] = CASE
+			WHEN f.[region_below_moq] = 1
+			THEN (
+				SELECT MAX([From by Customer])
+				FROM [dbo].[helper_pdas_footwear_vans_moq_policy]
+				WHERE [From by Region] <> f.[region_moq]
+					AND [Product Type] = dp.[product_type]
+			)
+			ELSE (
+				SELECT MAX([From by Customer])
+				FROM [dbo].[helper_pdas_footwear_vans_moq_policy]
+				WHERE [From by Region] = f.[region_moq]
+					AND [Product Type] = dp.[product_type]
+			)
+		END
+	FROM
+		[dbo].[fact_demand_total] f
+		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
+			ON f.[dim_demand_category_id] = ddc.[id]
+		INNER JOIN (SELECT [id], [product_type] FROM [dbo].[dim_product]) dp
+			ON f.[dim_product_id] = dp.[id]
+    WHERE
+		[dim_pdas_id] = @pdasid and
+		[dim_business_id] = @businessid and
+		ddc.[name] IN ('Forecast', 'Need to Buy')
+
+	-- Update customer_below_moq
+	UPDATE f
+	SET
+		f.[customer_below_moq] = CASE
+			WHEN f.[quantity_customer_mtl_lvl] < f.[customer_moq] THEN 1
+			ELSE 0
+		END
+	FROM
+		[dbo].[fact_demand_total] f
+		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
+			ON f.[dim_demand_category_id] = ddc.[id]
+		INNER JOIN (SELECT [id], [product_type] FROM [dbo].[dim_product]) dp
+			ON f.[dim_product_id] = dp.[id]
+    WHERE
+		[dim_pdas_id] = @pdasid and
+		[dim_business_id] = @businessid and
+		ddc.[name] IN ('Forecast', 'Need to Buy')
+
+
+	-- Update upcharge
+	UPDATE f
+	SET f.[upcharge] = CASE
+		WHEN f.[customer_below_moq] = 1 THEN h2.[Upcharge]
+		ELSE 0
+	END
+	FROM
+		[dbo].[fact_demand_total] f
+		INNER JOIN (SELECT [id], [product_type] FROM [dbo].[dim_product]) dp
+			ON f.[dim_product_id] = dp.[id]
+		INNER JOIN [dbo].[helper_pdas_footwear_vans_moq_policy] h
+			ON dp.[product_type] = h.[Product Type]
+			AND f.[customer_moq] = h.[From by Customer]
+		INNER JOIN
+		(
+			SELECT [Product Type]
+			      ,[From by Region]
+			      ,MAX([Upcharge]) AS [Upcharge]
+			  FROM [VCDWH].[dbo].[helper_pdas_footwear_vans_moq_policy]
+			  group by [product type], [from by region]
+	    ) h2
+			ON h.[From by Region] = h2.[From by Region]
 
 END
