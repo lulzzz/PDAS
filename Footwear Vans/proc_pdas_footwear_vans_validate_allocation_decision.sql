@@ -48,13 +48,13 @@ BEGIN
 			ON staging.[Factory Code VFA] = dim.[short_name]
 	WHERE dim.[short_name] IS NULL
 
-	-- Check short_name from dim_factory for alloc_2
+	-- Check comments
     SET @type = 'Missing comment VFA';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([Allocation Comment (VFA)], '') as [value]
 	FROM
-		(SELECT DISTINCT [Factory Code VFA], [Allocation Comment (VFA)], [Allocation Logic (Constrained)] FROM [dbo].[staging_pdas_footwear_vans_allocation_report_vfa]) staging
+		(SELECT DISTINCT [Factory Code VFA], [Allocation Comment (VFA)], [Factory Code (Constrained)] FROM [dbo].[staging_pdas_footwear_vans_allocation_report_vfa]) staging
 	WHERE
-		(staging.[Allocation Logic (Constrained)] <> staging.[Allocation Comment (VFA)] AND staging.[Allocation Comment (VFA)] IS NULL)
+		(staging.[Factory Code (Constrained)] <> staging.[Factory Code VFA] AND staging.[Allocation Comment (VFA)] IS NULL)
 
 END
