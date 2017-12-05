@@ -23,7 +23,7 @@ BEGIN
 	UPDATE target
 	SET
 		target.[dim_factory_id] = temp.[dim_factory_id]
-		,target.[comment_vfa] = temp.[Comment (VFA)]
+		,target.[comment_vfa] = temp.[Allocation Comment (VFA)]
 		,target.[edit_dt] = @current_dt
 	FROM
 		(
@@ -39,7 +39,7 @@ BEGIN
 		(
 			SELECT
 				temp.[id]
-				,temp.[Comment (VFA)]
+				,temp.[Allocation Comment (VFA)]
 				,df.[id] as	[dim_factory_id]
 			FROM
 				[dbo].[staging_pdas_footwear_vans_allocation_report_vfa] temp
@@ -50,7 +50,7 @@ BEGIN
 		) as temp
 			ON	target.[id] = temp.[id]
 	WHERE
-		target.[dim_factory_id] <> temp.[dim_factory_id] AND
-		target.[comment_vfa] <> temp.[Comment (VFA)]
+		target.[dim_factory_id] <> temp.[dim_factory_id]
+		AND ISNULL(target.[comment_vfa], '') <> ISNULL(temp.[Allocation Comment (VFA)], '')
 
 END

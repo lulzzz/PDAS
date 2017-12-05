@@ -165,13 +165,11 @@ BEGIN
 		[dbo].[staging_pdas_footwear_vans_nora_forecast] nf
 		INNER JOIN
 		(
-			SELECT [id], [name]
+			SELECT max([id]) as id, [market]
 			FROM [dbo].[dim_customer]
-			WHERE
-				is_placeholder = 1 AND
-				placeholder_level = 'Market'
+			GROUP BY market
 		) dc
-			ON nf.[dim_region_region] = dc.[name]
+			ON nf.[dim_region_region] = dc.[market]
 		LEFT OUTER JOIN
 		(
 			SELECT id, material_id

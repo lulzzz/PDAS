@@ -49,10 +49,7 @@ BEGIN
         @businessid as dim_business_id,
         @buying_program_id as dim_buying_program_id,
         ISNULL(po_code_cut, 'UNDEFINED') as order_number,
-		CASE
-			WHEN dd_original_crd.id IS NOT NULL THEN dd_original_crd.id
-			ELSE dd_revised_crd.id
-		END as dim_date_id,
+		dd_revised_crd.id as dim_date_id,
 		0 as is_asap,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
@@ -140,10 +137,7 @@ BEGIN
 		)
     GROUP BY
 		ISNULL(po_code_cut, 'UNDEFINED'),
-		CASE
-			WHEN dd_original_crd.id IS NOT NULL THEN dd_original_crd.id
-			ELSE dd_revised_crd.id
-		END,
+		dd_revised_crd.id,
 		CASE
 			WHEN df.id IS NOT NULL THEN df.id
 			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id

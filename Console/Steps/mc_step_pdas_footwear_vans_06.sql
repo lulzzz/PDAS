@@ -44,7 +44,6 @@ BEGIN
 
 		DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
 		DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
-		DECLARE	@buying_program_id int
 
 
 		-- Do manual overwrite
