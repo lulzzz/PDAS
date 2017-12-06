@@ -45,6 +45,7 @@ BEGIN
 		,[quantity_lum]
 		,[quantity_non_lum]
 		,[source_system]
+		,[so_code]
     )
 	SELECT
         @pdasid as dim_pdas_id,
@@ -80,7 +81,8 @@ BEGIN
 			WHEN 1 THEN SUM(ngc.shipped_qty)
 			ELSE SUM(ngc.order_qty)
 		END as [quantity_non_lum],
-		[source_system]
+		MAX([source_system]) as [source_system],
+		MAX(sales_order) as [so_code]
 
 	FROM
 		(
@@ -99,6 +101,7 @@ BEGIN
 				,order_qty
 				,lum_order_qty
 				,source_system
+				,sales_order
 			FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
 		) ngc
 
@@ -151,8 +154,7 @@ BEGIN
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
 		END,
-		ISNULL(ngc.shipment_status, 0),
-		[source_system]
+		ISNULL(ngc.shipment_status, 0)
 
 
 	-- Update dim_customer_id from initial customer mapping via PO/cut#
@@ -194,7 +196,7 @@ BEGIN
 		(
 			SELECT
 				SUBSTRING([so_code], 2, 255) as sales_order
-				,dim_customer_id as dim_customer_id
+				,MAX(dim_customer_id) as dim_customer_id
 			FROM
 				[dbo].[fact_order] f
 				INNER JOIN
@@ -215,12 +217,15 @@ BEGIN
 					@dim_demand_category_id_shipped_order
 				)
 				and [source_system] = 'S65'
+				and ISNULL([so_code], '') <> ''
+			GROUP BY 
+				f.[so_code]
 		) target
 		INNER JOIN -- NORA NTB
 		(
 			SELECT
 				f.[so_code] as sales_order
-				,f.dim_customer_id as dim_customer_id
+				,MAX(f.dim_customer_id) as dim_customer_id
 			FROM
 				[dbo].[fact_order] f
 				INNER JOIN
@@ -236,7 +241,10 @@ BEGIN
 			WHERE
 				[dim_pdas_id] = @pdasid and
 				[dim_business_id] = @businessid and
-				[dim_demand_category_id] = @demand_category_id_ntb
+				[dim_demand_category_id] = @demand_category_id_ntb and
+				ISNULL([so_code], '') <> ''
+			GROUP BY
+				f.[so_code]
 		) source
 			ON target.sales_order = source.sales_order
 
@@ -250,7 +258,7 @@ BEGIN
 		(
 			SELECT
 				[so_code] as sales_order
-				,dim_customer_id as dim_customer_id
+				,MAX(dim_customer_id) as dim_customer_id
 			FROM
 				[dbo].[fact_order] f
 				INNER JOIN
@@ -271,12 +279,15 @@ BEGIN
 					@dim_demand_category_id_shipped_order
 				)
 				and [source_system] = 'REVA'
+				and ISNULL([so_code], '') <> ''
+			GROUP BY
+				f.[so_code]
 		) target
 		INNER JOIN -- APAC NTB
 		(
 			SELECT
 				f.[po_code_customer] as sales_order
-				,f.dim_customer_id as dim_customer_id
+				,MAX(f.dim_customer_id) as dim_customer_id
 			FROM
 				[dbo].[fact_order] f
 				INNER JOIN
@@ -293,6 +304,9 @@ BEGIN
 				[dim_pdas_id] = @pdasid and
 				[dim_business_id] = @businessid and
 				[dim_demand_category_id] = @demand_category_id_ntb
+				and ISNULL([po_code_customer], '') <> ''
+			GROUP BY
+				f.[po_code_customer]
 		) source
 			ON target.sales_order = source.sales_order
 

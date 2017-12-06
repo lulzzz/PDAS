@@ -58,7 +58,7 @@ EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_unconstrained] @pdasid = @pdas
 EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 -- Include manual overwritte from VFA users
-EXEC [dbo].[proc_pdas_footwear_vans_load_allocation_scenario_vfa] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+EXEC [dbo].[proc_pdas_footwear_vans_do_overwrite] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 -- Adjust EMEA NTB based on cutoff days
 EXEC [dbo].[proc_pdas_footwear_vans_do_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
