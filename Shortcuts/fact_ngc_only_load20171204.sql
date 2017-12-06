@@ -81,7 +81,7 @@ DECLARE @businessid INT = 1
 				,lum_shipped_qty
 				,order_qty
 				,lum_order_qty
-			FROM [dbo].[staging_pdas_footwear_vans_ngc_po_csv]
+			FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
 		) ngc
 
 		LEFT OUTER JOIN

@@ -1,0 +1,238 @@
+USE [VCDWH]
+GO
+
+-- ==============================================================
+-- Author:		ebp Global
+-- Create date: 9/12/2017
+-- Description:	Code to transfer the NGC data into the staging area (delta only!)
+--              This procedure is meant to run on a nightly basis (SQL job agent task)
+-- ==============================================================
+
+-- Declare variables
+DECLARE	@current_dt datetime = GETDATE()
+DECLARE	@starting_dt_last_modified datetime = DATEADD(day, -2, GETDATE())
+DECLARE	@starting_dt_rev datetime = DATEADD(day, -30, GETDATE())
+
+-- Create temp table
+CREATE TABLE #select_cursor01 (
+    [Row #] [nvarchar](500) NULL,
+	[dim_factory_vendor_code] [nvarchar](500) NULL,
+	[dim_factory_factory_code] [nvarchar](500) NULL,
+	[po_code_cut] [nvarchar](500) NULL,
+	[dim_product_sbu] [nvarchar](500) NULL,
+	[dim_product_size] [nvarchar](500) NULL,
+	[dim_product_color_description] [nvarchar](500) NULL,
+	[dimension] [nvarchar](500) NULL,
+	[po_issue_dt] [datetime] NULL,
+	[shipment_status] [nvarchar](500) NULL,
+	[source] [nvarchar](500) NULL,
+	[order_qty] [int] NULL,
+	[shipped_qty] [int] NULL,
+	[dim_product_style_id] [nvarchar](500) NULL,
+	[ship_to_address] [nvarchar](500) NULL,
+	[ship_to_address_bis] [nvarchar](500) NULL,
+	[po_code] [nvarchar](500) NULL,
+	[po_type] [nvarchar](500) NULL,
+	[vf_sla] [nvarchar](500) NULL,
+	[dim_customer_dc_code_brio] [nvarchar](500) NULL,
+	[actual_crd_dt] [datetime] NULL,
+	[revised_crd_dt] [datetime] NULL,
+	[shipped_dt] [datetime] NULL,
+	[delay_reason] [nvarchar](500) NULL,
+	[shipment_id] [nvarchar](500) NULL,
+	[lum_order_qty] [int] NULL,
+	[lum_shipped_qty] [int] NULL,
+	[source_system] [nvarchar](500) NULL,
+	[shipment_closed_on_dt] [datetime] NULL,
+	[is_po_completed] [nvarchar](500) NULL,
+	[dc_name] [nvarchar](500) NULL,
+	[sales_order] [nvarchar](500) NULL
+)
+
+-- Create table index
+CREATE INDEX idx_temp_ngc01 ON #temp_ngc
+(
+    [po_code_cut],
+    [dim_product_style_id],
+    [dim_product_size]
+)
+
+-- Dump data into temp table
+INSERT INTO #temp_ngc
+(
+    [Row #]
+    ,[dim_factory_vendor_code]
+    ,[dim_factory_factory_code]
+    ,[po_code_cut]
+    ,[dim_product_sbu]
+    ,[dim_product_size]
+    ,[dim_product_color_description]
+    ,[dimension]
+    ,[po_issue_dt]
+    ,[shipment_status]
+    ,[source]
+    ,[order_qty]
+    ,[shipped_qty]
+    ,[dim_product_style_id]
+    ,[ship_to_address]
+    ,[ship_to_address_bis]
+    ,[po_code]
+    ,[po_type]
+    ,[vf_sla]
+    ,[dim_customer_dc_code_brio]
+    ,[actual_crd_dt]
+    ,[revised_crd_dt]
+    ,[shipped_dt]
+    ,[delay_reason]
+    ,[shipment_id]
+    ,[lum_order_qty]
+    ,[lum_shipped_qty]
+    ,[source_system]
+    ,[shipment_closed_on_dt]
+    ,[is_po_completed]
+    ,[dc_name]
+    ,[sales_order]
+)
+SELECT
+
+SELECT
+    LTRIM(RTRIM(Prbunhea_view.rdacode)) AS [dim_factory_vendor_code],
+    LTRIM(RTRIM(Prbunhea_view.rfactory)) AS [dim_factory_factory_code],
+    LTRIM(RTRIM(Prbunhea_view.lot)) AS [po_code_cut],
+    LTRIM(RTRIM(Prbunhea_view.misc1)) AS [dim_product_sbu],
+    LTRIM(RTRIM(Nbbundet_view.size)) AS [dim_product_size],
+    LTRIM(RTRIM(Nbbundet_view.color)) AS [dim_product_color_description],
+    LTRIM(RTRIM(Nbbundet_view.dimension)) AS [dimension],
+    LTRIM(RTRIM(Prbunhea_view.plan_date)) AS [po_issue_dt],
+    LTRIM(RTRIM(Shipment_view.closed)) AS [shipment_status],
+    LTRIM(RTRIM(Prbunhea_view.misc6)) AS [source],
+    LTRIM(RTRIM(Nbbundet_view.qty)) AS [order_qty],
+    LTRIM(RTRIM(Shipped_view.unitship)) AS [shipped_qty],
+    LTRIM(RTRIM(Prbunhea_view.style)) AS [dim_product_style_id],
+    LTRIM(RTRIM(Shshipto.ship_to_1)) AS [ship_to_address],
+    LTRIM(RTRIM(Shshipto_2.ship_to_1)) AS [ship_to_address_bis],
+    LTRIM(RTRIM(Prbunhea_view.ship_no)) AS [po_code],
+    LTRIM(RTRIM(Prbunhea_view.misc25)) AS [po_type],
+    LTRIM(RTRIM(Prbunhea_view.misc41)) AS [vf_sla],
+    LTRIM(RTRIM(Prbunhea_view.store_no)) AS [dim_customer_dc_code_brio],
+    LTRIM(RTRIM(Shipped_view.Actual_CRD)) AS [actual_crd_dt],
+    LTRIM(RTRIM(Prbunhea_view.revdd)) AS [revised_crd_dt],
+    LTRIM(RTRIM(Shipped_view.shipdate)) AS [shipped_dt],
+    LTRIM(RTRIM(Prbunhea_view.misc18)) AS [delay_reason],
+    LTRIM(RTRIM(Shipped_view.shipment)) AS [shipment_ID],
+    CASE
+            WHEN ISNULL(prscale.desce, 0) = 0 THEN Nbbundet_view.qty
+            ELSE LTRIM(RTRIM(Nbbundet_view.qty*prscale.desce))
+    END AS [lum_order_qty],
+    CASE
+            WHEN ISNULL(prscale.desce, 0) = 0 THEN shipped_view.unitship
+            ELSE LTRIM(RTRIM(shipped_view.unitship*prscale.desce))
+    END AS [lum_shipped_qty],
+    LTRIM(RTRIM( Prbunhea_view.misc21)) AS [source_system],
+    LTRIM(RTRIM(Shipment_view.firstclosedon)) AS [shipment_closed_on_dt],
+    LTRIM(RTRIM(Prbunhea_view.done)) AS [is_po_completed],
+    LTRIM(RTRIM(Shipmast.shipname)) AS [dc_name],
+    LTRIM(RTRIM(Prbunhea_view.misc27)) AS [sales_order]
+FROM
+    Prbunhea_view with(nolock)
+    LEFT OUTER JOIN Nbbundet_view
+        ON (Prbunhea_view.Id_Cut=Nbbundet_view.Id_Cut)
+    LEFT OUTER JOIN Shshipto
+        ON (Prbunhea_view.Rdacode=Shshipto.Factory)
+    LEFT OUTER JOIN Shshipto AS Shshipto_2
+        ON (Prbunhea_view.Rfactory=Shshipto_2.Factory)
+    LEFT OUTER JOIN Shipped_view
+        ON
+        (
+        Prbunhea_view.Season=Shipped_view.Season AND
+        Prbunhea_view.Style=Shipped_view.Style AND
+        Prbunhea_view.Lot=Shipped_view.Cut AND
+        Nbbundet_view.Color=Shipped_view.Color AND
+        Nbbundet_view.Size=Shipped_view.Size AND
+        Nbbundet_view.Dimension=Shipped_view.Dimension
+        )
+    LEFT OUTER JOIN Shipment_view
+        ON (Shipped_view.Shipment=Shipment_view.Shipment)
+    LEFT OUTER JOIN Shipmast
+        ON (Shipmast.shipno=Prbunhea_view.Store_No)
+    LEFT OUTER JOIN prscale
+        ON (Nbbundet_view.size=prscale.scale)
+
+WHERE
+    Prbunhea.Modifiedon >= @starting_dt_last_modified
+    AND Prbunhea_view.revdd >= @starting_dt_rev
+    AND Prbunhea_view.Misc6 NOT IN ('DIRECT BRAZIL')
+    AND Prbunhea_view.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
+    AND NOT (Prbunhea_view.Qtyship=0 AND Prbunhea_view.Done=1)
+    AND Prbunhea_view.POLocation NOT IN('CANCELED')
+    AND NOT (Nbbundet_view.qty=0)
+
+
+-- Insert new rows
+INSERT INTO [dbo].[staging_pdas_footwear_vans_ngc_po]
+SELECT temp.*
+FROM
+    #temp_ngc temp
+    LEFT OUTER JOIN
+    (
+        SELECT
+            [po_code_cut]
+            ,[dim_product_style_id]
+            ,[dim_product_size]
+        FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
+    ) as staging
+        ON
+            staging.[po_code_cut] = temp.[po_code_cut]
+            and staging.[dim_product_style_id] = temp.[dim_product_style_id]
+            and staging.[dim_product_size] = temp.[dim_product_size]
+WHERE
+    staging.[po_code_cut] IS NULL
+
+-- Update existing rows
+UPDATE staging
+SET
+    staging.[dim_factory_vendor_code] 	= temp.[dim_factory_vendor_code]
+    ,staging.[dim_factory_factory_code]	= temp.[dim_factory_factory_code]
+    ,staging.[dim_product_sbu]	= temp.[dim_product_sbu]
+    ,staging.[dim_product_color_description]	= temp.[dim_product_color_description]
+    ,staging.[dimension]	= temp.[dimension]
+    ,staging.[po_issue_dt]	= temp.[po_issue_dt]
+    ,staging.[shipment_status]	= temp.[shipment_status]
+    ,staging.[source]	= temp.[source]
+    ,staging.[order_qty]	= temp.[order_qty]
+    ,staging.[shipped_qty]	= temp.[shipped_qty]
+    ,staging.[ship_to_address]	= temp.[ship_to_address]
+    ,staging.[ship_to_address_bis]	= temp.[ship_to_address_bis]
+    ,staging.[po_code]	= temp.[po_code]
+    ,staging.[po_type]	= temp.[po_type]
+    ,staging.[vf_sla]	= temp.[vf_sla]
+    ,staging.[dim_customer_dc_code_brio]	= temp.[dim_customer_dc_code_brio]
+    ,staging.[actual_crd_dt]	= temp.[actual_crd_dt]
+    ,staging.[revised_crd_dt]	= temp.[revised_crd_dt]
+    ,staging.[shipped_dt]	= temp.[shipped_dt]
+    ,staging.[delay_reason]	= temp.[delay_reason]
+    ,staging.[shipment_id]	= temp.[shipment_id]
+    ,staging.[lum_order_qty]	= temp.[lum_order_qty]
+    ,staging.[lum_shipped_qty]	= temp.[lum_shipped_qty]
+    ,staging.[source_system]	= temp.[source_system]
+    ,staging.[shipment_closed_on_dt]	= temp.[shipment_closed_on_dt]
+    ,staging.[is_po_completed]	= temp.[is_po_completed]
+    ,staging.[dc_name]	= temp.[dc_name]
+    ,staging.[sales_order]	= temp.[sales_order]
+FROM
+    [dbo].[staging_pdas_footwear_vans_ngc_po] as staging
+    INNER JOIN #temp_ngc temp
+        ON
+            staging.[po_code_cut] = temp.[po_code_cut]
+            and staging.[dim_product_style_id] = temp.[dim_product_style_id]
+            and staging.[dim_product_size] = temp.[dim_product_size]
+
+
+
+-- Update timestamp of NGC load in metadata table
+UPDATE [dbo].[pdas_metadata]
+SET
+	[state] = 'OK',
+	[timestamp_file] = @current_dt
+WHERE
+	[table_name] = 'staging_pdas_footwear_vans_ngc_po'
