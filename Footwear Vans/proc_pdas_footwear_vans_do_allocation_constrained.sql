@@ -3,711 +3,242 @@ GO
 
 -- ==============================================================
 -- Author:		ebp Global
--- Create date: 9/18/2017
--- Description:	Procedure to do the allocation of demand to factories (decision tree implementation)
---				Constrained scenario
+-- Create date: 9/12/2017
+-- Description:	Code to transfer the NGC data into the staging area (delta only!)
+--              This procedure is meant to run on a nightly basis (SQL job agent task)
 -- ==============================================================
-ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_allocation_constrained]
-	@pdasid INT,
-	@businessid INT
-AS
+
+-- Declare variables
+DECLARE	@current_dt datetime = GETDATE()
+DECLARE	@starting_dt_last_modified datetime = DATEADD(day, -3, GETDATE())
+DECLARE	@starting_dt_rev datetime = DATEADD(day, -30, GETDATE())
+
+
+-- Drop temporary table if exists
+IF OBJECT_ID('tempdb..##temp_ngc') IS NOT NULL
 BEGIN
-
-	IF
-	(
-		SELECT COUNT(*)
-		FROM
-			[dbo].[fact_demand_total]
-		WHERE
-			[dim_pdas_id] = @pdasid
-	) > 0
-	BEGIN
-
-		/* Variable declarations */
-
-		-- Placeholders
-		DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
-
-		-- Release month dim_date_id
-		DECLARE @pdas_release_month_date_id int
-		SET @pdas_release_month_date_id = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (DATEADD(MONTH, (DATEDIFF(MONTH, 0, (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE id = @pdasid)))), 0)))
-
-		-- Release full dim_date_id
-		DECLARE @pdas_release_full_date_id int
-		SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
-
-		/* Reset allocation */
-
-		UPDATE f
-		SET
-			[dim_factory_id_original_constrained] = [dim_factory_id_original_unconstrained],
-			[allocation_logic_constrained] = ''
-		FROM
-			[dbo].[fact_demand_total] f
-			INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-				ON f.[dim_demand_category_id] = ddc.[id]
-		WHERE
-			[dim_pdas_id] = @pdasid
-			and [dim_business_id] = @businessid
-			and ddc.[name] IN ('Forecast', 'Need to Buy')
-
-
-		-- Decision tree variables level 1 (top level decision tree)
-		DECLARE @dim_buying_program_id_01 int
-		DECLARE @dim_date_id_01 int
-		DECLARE @dim_factory_id_original_unconstrained_01 int
-		DECLARE @dim_factory_id_original_constrained_01 int
-		DECLARE @dim_factory_original_short_name_01 NVARCHAR(100)
-		DECLARE @dim_factory_original_region_01 NVARCHAR(100)
-		DECLARE @dim_factory_original_country_code_a2_01 NVARCHAR(2)
-		DECLARE @dim_customer_id_01 int
-		DECLARE @dim_demand_category_id_01 int
-		DECLARE @quantity_01 int
-		DECLARE @dim_date_year_cw_accounting_01 NVARCHAR(8)
-		DECLARE @dim_buying_program_name_01 NVARCHAR(100)
-		DECLARE @dim_demand_category_name_01 NVARCHAR(100)
-		DECLARE @dim_product_material_id_01 NVARCHAR(100)
-		DECLARE @dim_product_style_complexity_01 NVARCHAR(100)
-		DECLARE @dim_construction_type_name_01 NVARCHAR(100)
-		DECLARE @dim_customer_name_01 NVARCHAR(100)
-		DECLARE @dim_customer_sold_to_party_01 NVARCHAR(100)
-		DECLARE @dim_customer_sold_to_category_01 NVARCHAR(100)
-		DECLARE @dim_customer_country_region_01 NVARCHAR(100)
-		DECLARE @dim_customer_country_code_a2_01 NVARCHAR(100)
-		DECLARE @allocation_logic_01 NVARCHAR(1000)
-		DECLARE @helper_fty_qt_rqt_vendor_01 NVARCHAR(45)
-		DECLARE @current_fill_01 int
-		DECLARE @max_capacity_01 int
-		DECLARE @fill_status NVARCHAR(1000)
-		DECLARE @loop_01 int = 1
-		/* DECLARE @dim_product_id  */
-
-		-- Cursors
-		DECLARE @cursor_01 CURSOR
-
-		/* Temporary table setup (for algorithm performance improvement and avoiding deadlocks) */
-
-		-- Drop temporary table if exists
-		IF OBJECT_ID('tempdb..#select_cursor01') IS NOT NULL
-		BEGIN
-			DROP TABLE #select_cursor01;
-		END
-
-		-- Create table
-		CREATE TABLE #select_cursor01 (
-			[dim_buying_program_id] INT
-			,[dim_factory_id_original_unconstrained] INT
-			,[dim_factory_id_original_constrained] INT
-			,[dim_customer_id] INT
-			,[dim_demand_category_id] INT
-			,[quantity] INT
-			,[allocation_logic_constrained] NVARCHAR(1000)
-			,[dim_date_year_cw_accounting] NVARCHAR(8)
-			,[dim_buying_program_name] NVARCHAR(100)
-			,[dim_demand_category_name] NVARCHAR(100)
-			,[dim_product_material_id] NVARCHAR(100) -- Here we are at MTL level
-			,[dim_product_style_complexity] NVARCHAR(100)
-			,[dim_construction_type_name] NVARCHAR(100)
-			,[dim_factory_original_short_name]  NVARCHAR(100)
-			,[dim_factory_original_region] NVARCHAR(100)
-			,[dim_factory_original_country_code_a2] NVARCHAR(2)
-			,[dim_customer_name]  NVARCHAR(100)
-			,[dim_customer_sold_to_party] NVARCHAR(100)
-			,[dim_customer_sold_to_category] NVARCHAR(100)
-			,[dim_customer_country_region] NVARCHAR(100)
-			,[dim_customer_country_code_a2] NVARCHAR(2)
-		)
-
-		-- Create table index
-		CREATE INDEX idx_select_cursor01 ON #select_cursor01
-		(
-			[dim_buying_program_id]
-			,[dim_factory_id_original_unconstrained]
-			,[dim_customer_id]
-			,[dim_demand_category_id]
-		)
-
-		WHILE @loop_01 <= 1
-		BEGIN
-
-			-- Fill table with data model data
-			INSERT INTO #select_cursor01
-			(
-				[dim_buying_program_id]
-				,[dim_factory_id_original_unconstrained]
-				,[dim_factory_id_original_constrained]
-				,[dim_customer_id]
-				,[dim_demand_category_id]
-				,[quantity]
-				,[allocation_logic_constrained]
-				,[dim_date_year_cw_accounting]
-				,[dim_buying_program_name]
-				,[dim_demand_category_name]
-				,[dim_product_material_id] -- Here you are at MTL level
-				,[dim_product_style_complexity]
-				,[dim_construction_type_name]
-				,[dim_factory_original_short_name]
-				,[dim_factory_original_region]
-				,[dim_factory_original_country_code_a2]
-				,[dim_customer_name]
-				,[dim_customer_sold_to_party]
-				,[dim_customer_sold_to_category]
-				,[dim_customer_country_region]
-				,[dim_customer_country_code_a2]
-			)
-			SELECT
-					[dim_buying_program_id]
-					,[dim_factory_id_original_unconstrained]
-					,[dim_factory_id_original_constrained]
-					,[dim_customer_id]
-					,[dim_demand_category_id]
-					,SUM([quantity]) AS [quantity]
-					,MAX([allocation_logic_constrained])
-					,[dim_date_year_cw_accounting]
-					,[dim_buying_program_name]
-					,[dim_demand_category_name]
-					,[dim_product_material_id]
-					,[dim_product_style_complexity]
-					,[dim_construction_type_name]
-					,[dim_factory_original_short_name]
-					,[dim_factory_original_region]
-					,[dim_factory_original_country_code_a2]
-					,[dim_customer_name]
-					,[dim_customer_sold_to_party]
-					,[dim_customer_sold_to_category]
-					,[dim_customer_country_region]
-					,[dim_customer_country_code_a2]
-
-			FROM
-			(
-				SELECT
-					f.[dim_buying_program_id]
-					,f.[dim_date_id]
-					,f.[dim_factory_id_original_unconstrained]
-					,f.[dim_factory_id_original_constrained]
-					,f.[dim_customer_id]
-					,f.[dim_demand_category_id]
-					,f.[quantity]
-					,f.[allocation_logic_constrained]
-					,dd.[year_cw_accounting] AS [dim_date_year_cw_accounting]
-					,dbp.[name] AS [dim_buying_program_name]
-					,ddc.[name] AS [dim_demand_category_name]
-					,dp.[material_id] AS [dim_product_material_id]
-					,dp.[style_complexity] AS [dim_product_style_complexity]
-					,dp.[dim_construction_type_name]
-					,df.[short_name] AS [dim_factory_original_short_name]
-					,df.[region] AS [dim_factory_original_region]
-					,df.[country_code_a2] AS [dim_factory_original_country_code_a2]
-					,dc.[name] AS [dim_customer_name]
-					,dc.[sold_to_party] AS [dim_customer_sold_to_party]
-					,dc.[sold_to_category] AS [dim_customer_sold_to_category]
-					,dc.[region] AS [dim_customer_country_region]
-					,dc.[country_code_a2] AS [dim_customer_country_code_a2]
-				FROM
-					[dbo].[fact_demand_total] f
-					INNER JOIN (SELECT [id], [year_cw_accounting] FROM [dbo].[dim_date]) dd
-						ON f.[dim_date_id] = dd.[id]
-					INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_buying_program]) dbp
-						ON f.[dim_buying_program_id] = dbp.[id]
-					INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-						ON f.[dim_demand_category_id] = ddc.[id]
-					INNER JOIN
-					(
-						SELECT
-							f.[id]
-							,f.[material_id]
-							,f.[style_complexity]
-							,f.[is_placeholder]
-							,dl.[name] AS [dim_construction_type_name]
-						FROM
-							[dbo].[dim_product] f
-							INNER JOIN [dbo].[dim_construction_type] dl
-								ON dl.[id] = f.[dim_construction_type_id]
-					) dp
-						ON f.[dim_product_id] = dp.[id]
-					INNER JOIN
-					(
-						SELECT
-							f.[id]
-							,f.[short_name]
-							,f.[is_placeholder]
-							,dl.[region]
-							,dl.[country_code_a2]
-						FROM
-							[dbo].[dim_factory] f
-							INNER JOIN [dbo].[dim_location] dl
-								ON dl.[id] = f.[dim_location_id]
-					) df
-						ON f.[dim_factory_id_original_unconstrained] = df.[id]
-					INNER JOIN
-					(
-						SELECT
-							f.[id]
-							,f.[name]
-							,f.[sold_to_party]
-							,f.[sold_to_category]
-							,f.[is_placeholder]
-							,dl.[region]
-							,dl.[country_code_a2]
-						FROM
-							[dbo].[dim_customer] f
-							INNER JOIN [dbo].[dim_location] dl
-								ON dl.[id] = f.[dim_location_id]
-					) dc
-						ON f.[dim_customer_id] = dc.[id]
-				WHERE
-					[dim_pdas_id] = @pdasid
-					and [dim_business_id] = @businessid
-					and [dim_date_id] >= @pdas_release_month_date_id
-					and ddc.[name] IN ('Forecast', 'Need to Buy')
-			) x
-			GROUP BY
-				[dim_buying_program_id]
-				,[dim_factory_id_original_unconstrained]
-				,[dim_factory_id_original_constrained]
-				,[dim_customer_id]
-				,[dim_demand_category_id]
-				,[dim_date_year_cw_accounting]
-				,[dim_buying_program_name]
-				,[dim_demand_category_name]
-				,[dim_product_material_id]
-				,[dim_product_style_complexity]
-				,[dim_construction_type_name]
-				,[dim_factory_original_short_name]
-				,[dim_factory_original_region]
-				,[dim_factory_original_country_code_a2]
-				,[dim_customer_name]
-				,[dim_customer_sold_to_party]
-				,[dim_customer_sold_to_category]
-				,[dim_customer_country_region]
-				,[dim_customer_country_code_a2]
-			ORDER BY
-				[dim_date_year_cw_accounting] ASC
-				,[quantity] DESC
-
-
-			/* Decision tree algorithm */
-
-			-- Iterate through temporary table row by row
-			SET @cursor_01 = CURSOR FAST_FORWARD FOR
-			SELECT
-				[dim_buying_program_id]
-				,[dim_factory_id_original_unconstrained]
-				,[dim_factory_id_original_constrained]
-				,[dim_customer_id]
-				,[dim_demand_category_id]
-				,[quantity]
-				,[allocation_logic_constrained]
-				,[dim_date_year_cw_accounting]
-				,[dim_buying_program_name]
-				,[dim_demand_category_name]
-				,[dim_product_material_id]
-				,[dim_product_style_complexity]
-				,[dim_construction_type_name]
-				,[dim_factory_original_short_name]
-				,[dim_factory_original_region]
-				,[dim_factory_original_country_code_a2]
-				,[dim_customer_name]
-				,[dim_customer_sold_to_party]
-				,[dim_customer_sold_to_category]
-				,[dim_customer_country_region]
-				,[dim_customer_country_code_a2]
-			FROM #select_cursor01
-			OPEN @cursor_01
-			FETCH NEXT FROM @cursor_01
-			INTO
-				@dim_buying_program_id_01
-				,@dim_factory_id_original_unconstrained_01
-				,@dim_factory_id_original_constrained_01
-				,@dim_customer_id_01
-				,@dim_demand_category_id_01
-				,@quantity_01
-				,@allocation_logic_01
-				,@dim_date_year_cw_accounting_01
-				,@dim_buying_program_name_01
-				,@dim_demand_category_name_01
-				,@dim_product_material_id_01
-				,@dim_product_style_complexity_01
-				,@dim_construction_type_name_01
-				,@dim_factory_original_short_name_01
-				,@dim_factory_original_region_01
-				,@dim_factory_original_country_code_a2_01
-				,@dim_customer_name_01
-				,@dim_customer_sold_to_party_01
-				,@dim_customer_sold_to_category_01
-				,@dim_customer_country_region_01
-				,@dim_customer_country_code_a2_01
-			WHILE @@FETCH_STATUS = 0
-			BEGIN
-				-- Reset allocation logic
-				SET @fill_status = ''
-
-				SET @current_fill_01 =
-				(
-					SELECT SUM([quantity])
-					FROM
-						[dbo].[fact_demand_total] f
-						INNER JOIN (SELECT [id], [year_cw_accounting] FROM [dbo].[dim_date]) dd
-							ON f.[dim_date_id] = dd.[id]
-						INNER JOIN
-						(
-							SELECT
-								f.[id]
-								,f.[material_id]
-								,f.[style_complexity]
-								,f.[is_placeholder]
-								,dl.[name] AS [dim_construction_type_name]
-							FROM
-								[dbo].[dim_product] f
-								INNER JOIN [dbo].[dim_construction_type] dl
-									ON dl.[id] = f.[dim_construction_type_id]
-						) dp
-							ON f.[dim_product_id] = dp.[id]
-						INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-							ON f.[dim_demand_category_id] = ddc.[id]
-					WHERE
-						[dim_pdas_id] = @pdasid
-						and [dim_business_id] = @businessid
-						and [dim_date_id] >= @pdas_release_month_date_id
-						and ddc.[name] IN ('Forecast', 'Need to Buy')
-					GROUP BY [dim_factory_id_original_unconstrained], [year_cw_accounting], [dim_construction_type_name]
-					HAVING [dim_factory_id_original_unconstrained] IN (
-							SELECT [id]
-						    FROM [dbo].[dim_factory]
-						    WHERE [allocation_group] = (SELECT [allocation_group] FROM [dbo].[dim_factory] WHERE [id] = @dim_factory_id_original_unconstrained_01)
-						)
-						AND [year_cw_accounting] = @dim_date_year_cw_accounting_01
-						AND [dim_construction_type_name] = @dim_construction_type_name_01
-						-- TO DO there should be two additional conditions
-				)
-
-				SET @max_capacity_01 =
-				(
-					SELECT SUM([Available Capacity by Week])
-				  	FROM [VCDWH].[dbo].[xl_view_pdas_footwear_vans_factory_capacity]
-				 	GROUP BY [dim_factory_id], [Accounting CW], [Construction Type]
-					HAVING [dim_factory_id] = @dim_factory_id_original_unconstrained_01
-						AND [Accounting CW] = @dim_date_year_cw_accounting_01
-						AND [Construction Type] = @dim_construction_type_name_01
-				)
-
-				IF @current_fill_01 IS NULL
-				BEGIN
-					SET @fill_status = @dim_factory_original_short_name_01
-					+ ' quantity not found for '
-					+ @dim_date_year_cw_accounting_01
-					+ ' construction type '
-					+ @dim_construction_type_name_01
-				END
-				ELSE IF @max_capacity_01 IS NULL
-				BEGIN
-					SET @fill_status = @dim_factory_original_short_name_01
-					+ ' capacity not found for '
-					+ @dim_date_year_cw_accounting_01
-					+ ' construction type '
-					+ @dim_construction_type_name_01
-				END
-				ELSE IF @max_capacity_01 = 0
-				BEGIN
-					SET @fill_status = @dim_factory_original_short_name_01
-					+ ' Weekly fill rate: '
-					+ CONVERT(NVARCHAR(10), @current_fill_01) + '/'
-					+ CONVERT(NVARCHAR(10), @max_capacity_01)
-				END
-				ELSE
-				BEGIN
-					SET @fill_status = @dim_factory_original_short_name_01
-					+ ' Weekly fill rate: '
-					+ CONVERT(NVARCHAR(10), @current_fill_01) + '/'
-					+ CONVERT(NVARCHAR(10), @max_capacity_01) + ' ('
-					+ FORMAT(CONVERT(FLOAT, @current_fill_01)/CONVERT(FLOAT, @max_capacity_01),'P') + ')'
-				END
-
-				IF @current_fill_01 > @max_capacity_01
-				BEGIN
-					IF @loop_01 = 1
-					BEGIN
-						SET @allocation_logic_01 = @allocation_logic_01 + '[OVERLOAD] ' + @fill_status
-					END
-					IF @dim_factory_original_short_name_01 = 'CLK'
-					BEGIN
-						IF @loop_01 = 1
-						BEGIN
-							SET @allocation_logic_01 = @allocation_logic_01 + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
-						END
-						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_clk_b]
-							@pdasid = @pdasid,
-							@businessid = @businessid,
-							@pdas_release_month_date_id = @pdas_release_month_date_id,
-							@dim_buying_program_id = @dim_buying_program_id_01,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-							@dim_factory_id_original_constrained = @dim_factory_id_original_constrained_01,
-							@dim_product_material_id = @dim_product_material_id_01,
-							@dim_product_style_complexity = @dim_product_style_complexity_01,
-							@dim_construction_type_name = @dim_construction_type_name_01,
-							@dim_factory_original_region = @dim_factory_original_region_01,
-							@quantity = @quantity_01,
-							@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-							@dim_customer_id = @dim_customer_id_01,
-							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-							@dim_demand_category_id = @dim_demand_category_id_01,
-							@allocation_logic = @allocation_logic_01,
-							@loop = @loop_01
-					END
-					ELSE IF @dim_factory_original_short_name_01 = 'DTC'
-					BEGIN
-						IF @loop_01 = 1
-						BEGIN
-							SET @allocation_logic_01 = @allocation_logic_01 + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
-						END
-						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_dtc_b]
-							@pdasid = @pdasid,
-							@businessid = @businessid,
-							@pdas_release_month_date_id = @pdas_release_month_date_id,
-							@dim_buying_program_id = @dim_buying_program_id_01,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-							@dim_factory_id_original_constrained = @dim_factory_id_original_constrained_01,
-							@dim_product_material_id = @dim_product_material_id_01,
-							@dim_product_style_complexity = @dim_product_style_complexity_01,
-							@dim_construction_type_name = @dim_construction_type_name_01,
-							@dim_factory_original_region = @dim_factory_original_region_01,
-							@quantity = @quantity_01,
-							@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-							@dim_customer_id = @dim_customer_id_01,
-							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-							@dim_demand_category_id = @dim_demand_category_id_01,
-							@allocation_logic = @allocation_logic_01,
-							@loop = @loop_01
-					END
-					ELSE IF @dim_factory_original_short_name_01 = 'DTP'
-					BEGIN
-						IF @loop_01 = 1
-						BEGIN
-							SET @allocation_logic_01 = @allocation_logic_01 + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
-						END
-						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_dtp_b]
-							@pdasid = @pdasid,
-							@businessid = @businessid,
-							@pdas_release_month_date_id = @pdas_release_month_date_id,
-							@dim_buying_program_id = @dim_buying_program_id_01,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-							@dim_factory_id_original_constrained = @dim_factory_id_original_constrained_01,
-							@dim_product_material_id = @dim_product_material_id_01,
-							@dim_product_style_complexity = @dim_product_style_complexity_01,
-							@dim_construction_type_name = @dim_construction_type_name_01,
-							@dim_factory_original_region = @dim_factory_original_region_01,
-							@quantity = @quantity_01,
-							@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-							@dim_customer_id = @dim_customer_id_01,
-							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-							@dim_demand_category_id = @dim_demand_category_id_01,
-							@allocation_logic = @allocation_logic_01,
-							@loop = @loop_01
-					END
-					ELSE IF @dim_factory_original_short_name_01 = 'FSC'
-					BEGIN
-						IF @loop_01 = 1
-						BEGIN
-							SET @allocation_logic_01 = @allocation_logic_01 + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
-						END
-						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_fsc_b]
-							@pdasid = @pdasid,
-							@businessid = @businessid,
-							@pdas_release_month_date_id = @pdas_release_month_date_id,
-							@dim_buying_program_id = @dim_buying_program_id_01,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-							@dim_factory_id_original_constrained = @dim_factory_id_original_constrained_01,
-							@dim_product_material_id = @dim_product_material_id_01,
-							@dim_product_style_complexity = @dim_product_style_complexity_01,
-							@dim_construction_type_name = @dim_construction_type_name_01,
-							@dim_factory_original_region = @dim_factory_original_region_01,
-							@quantity = @quantity_01,
-							@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-							@dim_customer_id = @dim_customer_id_01,
-							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-							@dim_demand_category_id = @dim_demand_category_id_01,
-							@allocation_logic = @allocation_logic_01,
-							@loop = @loop_01
-					END
-					ELSE IF @dim_factory_original_short_name_01 = 'HSC'
-					BEGIN
-						IF @loop_01 = 1
-						BEGIN
-							SET @allocation_logic_01 = @allocation_logic_01 + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
-						END
-						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_hsc_b]
-							@pdasid = @pdasid,
-							@businessid = @businessid,
-							@pdas_release_month_date_id = @pdas_release_month_date_id,
-							@dim_buying_program_id = @dim_buying_program_id_01,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-							@dim_factory_id_original_constrained = @dim_factory_id_original_constrained_01,
-							@dim_product_material_id = @dim_product_material_id_01,
-							@dim_product_style_complexity = @dim_product_style_complexity_01,
-							@dim_construction_type_name = @dim_construction_type_name_01,
-							@dim_factory_original_region = @dim_factory_original_region_01,
-							@quantity = @quantity_01,
-							@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-							@dim_customer_id = @dim_customer_id_01,
-							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-							@dim_demand_category_id = @dim_demand_category_id_01,
-							@allocation_logic = @allocation_logic_01,
-							@loop = @loop_01
-					END
-					ELSE IF @dim_factory_original_short_name_01 = 'ICC'
-					BEGIN
-						IF @loop_01 = 1
-						BEGIN
-							SET @allocation_logic_01 = @allocation_logic_01 + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
-						END
-						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_icc_b]
-							@pdasid = @pdasid,
-							@businessid = @businessid,
-							@pdas_release_month_date_id = @pdas_release_month_date_id,
-							@dim_buying_program_id = @dim_buying_program_id_01,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-							@dim_factory_id_original_constrained = @dim_factory_id_original_constrained_01,
-							@dim_product_material_id = @dim_product_material_id_01,
-							@dim_product_style_complexity = @dim_product_style_complexity_01,
-							@dim_construction_type_name = @dim_construction_type_name_01,
-							@dim_factory_original_region = @dim_factory_original_region_01,
-							@quantity = @quantity_01,
-							@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-							@dim_customer_id = @dim_customer_id_01,
-							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-							@dim_demand_category_id = @dim_demand_category_id_01,
-							@allocation_logic = @allocation_logic_01,
-							@loop = @loop_01
-					END
-					ELSE IF @dim_factory_original_short_name_01 = 'SJD'
-					BEGIN
-						IF @loop_01 = 1
-						BEGIN
-							SET @allocation_logic_01 = @allocation_logic_01 + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
-						END
-						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_sjd_b]
-							@pdasid = @pdasid,
-							@businessid = @businessid,
-							@pdas_release_month_date_id = @pdas_release_month_date_id,
-							@dim_buying_program_id = @dim_buying_program_id_01,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-							@dim_factory_id_original_constrained = @dim_factory_id_original_constrained_01,
-							@dim_product_material_id = @dim_product_material_id_01,
-							@dim_product_style_complexity = @dim_product_style_complexity_01,
-							@dim_construction_type_name = @dim_construction_type_name_01,
-							@dim_factory_original_region = @dim_factory_original_region_01,
-							@quantity = @quantity_01,
-							@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-							@dim_customer_id = @dim_customer_id_01,
-							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-							@dim_demand_category_id = @dim_demand_category_id_01,
-							@allocation_logic = @allocation_logic_01,
-							@loop = @loop_01
-					END
-					ELSE IF @dim_factory_original_short_name_01 = 'SJV'
-					BEGIN
-						IF @loop_01 = 1
-						BEGIN
-							SET @allocation_logic_01 = @allocation_logic_01 + ' => ' + @dim_factory_original_short_name_01 + ' scenario B'
-						END
-						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_sub_sjv_b]
-							@pdasid = @pdasid,
-							@businessid = @businessid,
-							@pdas_release_month_date_id = @pdas_release_month_date_id,
-							@dim_buying_program_id = @dim_buying_program_id_01,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-							@dim_factory_id_original_constrained = @dim_factory_id_original_constrained_01,
-							@dim_product_material_id = @dim_product_material_id_01,
-							@dim_product_style_complexity = @dim_product_style_complexity_01,
-							@dim_construction_type_name = @dim_construction_type_name_01,
-							@dim_factory_original_region = @dim_factory_original_region_01,
-							@quantity = @quantity_01,
-							@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-							@dim_customer_id = @dim_customer_id_01,
-							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-							@dim_demand_category_id = @dim_demand_category_id_01,
-							@allocation_logic = @allocation_logic_01,
-							@loop = @loop_01
-					END
-					ELSE
-					BEGIN
-						IF @loop_01 = 1
-						BEGIN
-							SET @allocation_logic_01 = @allocation_logic_01 + ' => ' + 'No allocation logic found for ' + @dim_factory_original_short_name_01
-						END
-						EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_updater]
-							@pdasid = @pdasid,
-							@businessid = @businessid,
-							@pdas_release_month_date_id = @pdas_release_month_date_id,
-							@dim_buying_program_id = @dim_buying_program_id_01,
-							@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-							@dim_product_material_id = @dim_product_material_id_01,
-							@dim_product_style_complexity = @dim_product_style_complexity_01,
-							@dim_construction_type_name = @dim_construction_type_name_01,
-							@dim_factory_original_region = @dim_factory_original_region_01,
-							@quantity = @quantity_01,
-							@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-							@dim_customer_id = @dim_customer_id_01,
-							@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-							@dim_demand_category_id = @dim_demand_category_id_01,
-							@allocation_logic = @allocation_logic_01,
-							@dim_factory_id_original_constrained = @dim_factory_id_original_unconstrained_01
-					END
-				END
-
-				ELSE
-				BEGIN
-					IF @loop_01 = 1
-					BEGIN
-						SET @allocation_logic_01 = @allocation_logic_01 + '[AVAILABLE] ' + @fill_status
-					END
-					EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_constrained_updater]
-						@pdasid = @pdasid,
-						@businessid = @businessid,
-						@pdas_release_month_date_id = @pdas_release_month_date_id,
-						@dim_buying_program_id = @dim_buying_program_id_01,
-						@dim_factory_id_original_unconstrained = @dim_factory_id_original_unconstrained_01,
-						@dim_product_material_id = @dim_product_material_id_01,
-						@dim_product_style_complexity = @dim_product_style_complexity_01,
-						@dim_construction_type_name = @dim_construction_type_name_01,
-						@dim_factory_original_region = @dim_factory_original_region_01,
-						@quantity = @quantity_01,
-						@dim_date_year_cw_accounting = @dim_date_year_cw_accounting_01,
-						@dim_customer_id = @dim_customer_id_01,
-						@dim_customer_sold_to_party = @dim_customer_sold_to_party_01,
-						@dim_demand_category_id = @dim_demand_category_id_01,
-						@allocation_logic = @allocation_logic_01,
-						@dim_factory_id_original_constrained = @dim_factory_id_original_unconstrained_01
-				END
-
-				FETCH NEXT FROM @cursor_01
-				INTO
-					@dim_buying_program_id_01
-					,@dim_factory_id_original_unconstrained_01
-					,@dim_factory_id_original_constrained_01
-					,@dim_customer_id_01
-					,@dim_demand_category_id_01
-					,@quantity_01
-					,@allocation_logic_01
-					,@dim_date_year_cw_accounting_01
-					,@dim_buying_program_name_01
-					,@dim_demand_category_name_01
-					,@dim_product_material_id_01
-					,@dim_product_style_complexity_01
-					,@dim_construction_type_name_01
-					,@dim_factory_original_short_name_01
-					,@dim_factory_original_region_01
-					,@dim_factory_original_country_code_a2_01
-					,@dim_customer_name_01
-					,@dim_customer_sold_to_party_01
-					,@dim_customer_sold_to_category_01
-					,@dim_customer_country_region_01
-					,@dim_customer_country_code_a2_01
-			END
-			CLOSE @cursor_01
-			DEALLOCATE @cursor_01
-
-		    SET @loop_01 = @loop_01 + 1
-		END
-    END
+	DROP TABLE #temp_ngc;
 END
+
+-- Create temp table
+CREATE TABLE #temp_ngc (
+    [Row #] [nvarchar](500) NULL,
+	[dim_factory_vendor_code] [nvarchar](500) NULL,
+	[dim_factory_factory_code] [nvarchar](500) NULL,
+	[po_code_cut] [nvarchar](500) NULL,
+	[dim_product_sbu] [nvarchar](500) NULL,
+	[dim_product_size] [nvarchar](500) NULL,
+	[dim_product_color_description] [nvarchar](500) NULL,
+	[dimension] [nvarchar](500) NULL,
+	[po_issue_dt] [datetime] NULL,
+	[shipment_status] [nvarchar](500) NULL,
+	[source] [nvarchar](500) NULL,
+	[order_qty] [int] NULL,
+	[shipped_qty] [int] NULL,
+	[dim_product_style_id] [nvarchar](500) NULL,
+	[ship_to_address] [nvarchar](500) NULL,
+	[ship_to_address_bis] [nvarchar](500) NULL,
+	[po_code] [nvarchar](500) NULL,
+	[po_type] [nvarchar](500) NULL,
+	[vf_sla] [nvarchar](500) NULL,
+	[dim_customer_dc_code_brio] [nvarchar](500) NULL,
+	[actual_crd_dt] [datetime] NULL,
+	[revised_crd_dt] [datetime] NULL,
+	[shipped_dt] [datetime] NULL,
+	[delay_reason] [nvarchar](500) NULL,
+	[shipment_id] [nvarchar](500) NULL,
+	[lum_order_qty] [int] NULL,
+	[lum_shipped_qty] [int] NULL,
+	[source_system] [nvarchar](500) NULL,
+	[shipment_closed_on_dt] [datetime] NULL,
+	[is_po_completed] [nvarchar](500) NULL,
+	[dc_name] [nvarchar](500) NULL,
+	[sales_order] [nvarchar](500) NULL
+)
+
+-- Create table index
+CREATE INDEX idx_temp_ngc01 ON #temp_ngc
+(
+    [po_code_cut]
+)
+
+-- Dump data into temp table
+INSERT INTO #temp_ngc
+(
+    [Row #]
+    ,[dim_factory_vendor_code]
+    ,[dim_factory_factory_code]
+    ,[po_code_cut]
+    ,[dim_product_sbu]
+    ,[dim_product_size]
+    ,[dim_product_color_description]
+    ,[dimension]
+    ,[po_issue_dt]
+    ,[shipment_status]
+    ,[source]
+    ,[order_qty]
+    ,[shipped_qty]
+    ,[dim_product_style_id]
+    ,[ship_to_address]
+    ,[ship_to_address_bis]
+    ,[po_code]
+    ,[po_type]
+    ,[vf_sla]
+    ,[dim_customer_dc_code_brio]
+    ,[actual_crd_dt]
+    ,[revised_crd_dt]
+    ,[shipped_dt]
+    ,[delay_reason]
+    ,[shipment_id]
+    ,[lum_order_qty]
+    ,[lum_shipped_qty]
+    ,[source_system]
+    ,[shipment_closed_on_dt]
+    ,[is_po_completed]
+    ,[dc_name]
+    ,[sales_order]
+)
+
+SELECT
+	NULL as [Row #],
+    LTRIM(RTRIM(Prbunhea.rdacode)) AS [dim_factory_vendor_code],
+    LTRIM(RTRIM(Prbunhea.rfactory)) AS [dim_factory_factory_code],
+    LTRIM(RTRIM(Prbunhea.lot)) AS [po_code_cut],
+    LTRIM(RTRIM(Prbunhea.misc1)) AS [dim_product_sbu],
+    LTRIM(RTRIM(Nbbundet.size)) AS [dim_product_size],
+    LTRIM(RTRIM(Nbbundet.color)) AS [dim_product_color_description],
+    LTRIM(RTRIM(Nbbundet.dimension)) AS [dimension],
+    LTRIM(RTRIM(Prbunhea.plan_date)) AS [po_issue_dt],
+    LTRIM(RTRIM(Shipment.closed)) AS [shipment_status],
+    LTRIM(RTRIM(Prbunhea.misc6)) AS [source],
+    LTRIM(RTRIM(Nbbundet.qty)) AS [order_qty],
+    LTRIM(RTRIM(Shipped.unitship)) AS [shipped_qty],
+    LTRIM(RTRIM(Prbunhea.style)) AS [dim_product_style_id],
+    LTRIM(RTRIM(Shshipto.ship_to_1)) AS [ship_to_address],
+    LTRIM(RTRIM(Shshipto_2.ship_to_1)) AS [ship_to_address_bis],
+    LTRIM(RTRIM(Prbunhea.ship_no)) AS [po_code],
+    LTRIM(RTRIM(Prbunhea.misc25)) AS [po_type],
+    LTRIM(RTRIM(Prbunhea.misc41)) AS [vf_sla],
+    LTRIM(RTRIM(Prbunhea.store_no)) AS [dim_customer_dc_code_brio],
+    LTRIM(RTRIM(Shipped.Actual_CRD)) AS [actual_crd_dt],
+    LTRIM(RTRIM(Prbunhea.revdd)) AS [revised_crd_dt],
+    LTRIM(RTRIM(Shipped.shipdate)) AS [shipped_dt],
+    LTRIM(RTRIM(Prbunhea.misc18)) AS [delay_reason],
+    LTRIM(RTRIM(Shipped.shipment)) AS [shipment_ID],
+    CASE
+            WHEN ISNULL(prscale.desce, 0) = 0 THEN Nbbundet.qty
+            ELSE LTRIM(RTRIM(Nbbundet.qty*prscale.desce))
+    END AS [lum_order_qty],
+    CASE
+            WHEN ISNULL(prscale.desce, 0) = 0 THEN shipped.unitship
+            ELSE LTRIM(RTRIM(shipped.unitship*prscale.desce))
+    END AS [lum_shipped_qty],
+    LTRIM(RTRIM( Prbunhea.misc21)) AS [source_system],
+    LTRIM(RTRIM(Shipment.firstclosedon)) AS [shipment_closed_on_dt],
+    LTRIM(RTRIM(Prbunhea.done)) AS [is_po_completed],
+    LTRIM(RTRIM(Shipmast.shipname)) AS [dc_name],
+    LTRIM(RTRIM(Prbunhea.misc27)) AS [sales_order]
+FROM
+
+	[ITGC2W000187].[ESPSODV14RPT].[dbo].Prbunhea
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Nbbundet WITH (nolock)
+        ON (Prbunhea.Id_Cut=Nbbundet.Id_Cut)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shshipto WITH (nolock)
+        ON (Prbunhea.Rdacode=Shshipto.Factory)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].shshipto as Shshipto_2 WITH (nolock)
+        ON (Prbunhea.Rfactory=Shshipto_2.Factory)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipped WITH (nolock)
+        ON
+        (
+            Prbunhea.Season=Shipped.Season AND
+            Prbunhea.Style=Shipped.Style AND
+            Prbunhea.Lot=Shipped.Cut AND
+            Nbbundet.Color=Shipped.Color AND
+            Nbbundet.Size=Shipped.Size AND
+            Nbbundet.Dimension=Shipped.Dimension
+        )
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipment WITH (nolock)
+        ON (Shipped.Shipment=Shipment.Shipment)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipmast WITH (nolock)
+        ON (Shipmast.shipno=Prbunhea.Store_No)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].prscale WITH (nolock)
+        ON (nbbundet.size=prscale.scale)
+
+WHERE
+    Prbunhea.Modifiedon >= @starting_dt_last_modified
+    AND Prbunhea.revdd >= @starting_dt_rev
+    AND Prbunhea.Misc6 NOT IN ('DIRECT BRAZIL')
+    AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
+    AND NOT (Prbunhea.Qtyship=0 AND Prbunhea.Done=1)
+    AND Prbunhea.POLocation NOT IN('CANCELED')
+    AND NOT (Nbbundet.qty=0)
+
+
+-- Insert new rows
+INSERT INTO [dbo].[staging_pdas_footwear_vans_ngc_po]
+SELECT temp.*
+FROM
+    #temp_ngc temp
+    LEFT OUTER JOIN
+    (
+        SELECT
+            [po_code_cut]
+            ,[dim_product_style_id]
+            ,[dim_product_size]
+        FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
+    ) as staging
+        ON
+            staging.[po_code_cut] = temp.[po_code_cut]
+            and staging.[dim_product_style_id] = temp.[dim_product_style_id]
+            and staging.[dim_product_size] = temp.[dim_product_size]
+WHERE
+    staging.[po_code_cut] IS NULL
+
+-- Update existing rows
+UPDATE staging
+SET
+    staging.[dim_factory_vendor_code] 	= temp.[dim_factory_vendor_code]
+    ,staging.[dim_factory_factory_code]	= temp.[dim_factory_factory_code]
+    ,staging.[dim_product_sbu]	= temp.[dim_product_sbu]
+    ,staging.[dim_product_color_description]	= temp.[dim_product_color_description]
+    ,staging.[dimension]	= temp.[dimension]
+    ,staging.[po_issue_dt]	= temp.[po_issue_dt]
+    ,staging.[shipment_status]	= temp.[shipment_status]
+    ,staging.[source]	= temp.[source]
+    ,staging.[order_qty]	= temp.[order_qty]
+    ,staging.[shipped_qty]	= temp.[shipped_qty]
+    ,staging.[ship_to_address]	= temp.[ship_to_address]
+    ,staging.[ship_to_address_bis]	= temp.[ship_to_address_bis]
+    ,staging.[po_code]	= temp.[po_code]
+    ,staging.[po_type]	= temp.[po_type]
+    ,staging.[vf_sla]	= temp.[vf_sla]
+    ,staging.[dim_customer_dc_code_brio]	= temp.[dim_customer_dc_code_brio]
+    ,staging.[actual_crd_dt]	= temp.[actual_crd_dt]
+    ,staging.[revised_crd_dt]	= temp.[revised_crd_dt]
+    ,staging.[shipped_dt]	= temp.[shipped_dt]
+    ,staging.[delay_reason]	= temp.[delay_reason]
+    ,staging.[shipment_id]	= temp.[shipment_id]
+    ,staging.[lum_order_qty]	= temp.[lum_order_qty]
+    ,staging.[lum_shipped_qty]	= temp.[lum_shipped_qty]
+    ,staging.[source_system]	= temp.[source_system]
+    ,staging.[shipment_closed_on_dt]	= temp.[shipment_closed_on_dt]
+    ,staging.[is_po_completed]	= temp.[is_po_completed]
+    ,staging.[dc_name]	= temp.[dc_name]
+    ,staging.[sales_order]	= temp.[sales_order]
+FROM
+    [dbo].[staging_pdas_footwear_vans_ngc_po] as staging
+    INNER JOIN #temp_ngc temp
+        ON
+            staging.[po_code_cut] = temp.[po_code_cut]
+            and staging.[dim_product_style_id] = temp.[dim_product_style_id]
+            and staging.[dim_product_size] = temp.[dim_product_size]
+
+
+
+-- Update timestamp of NGC load in metadata table
+UPDATE [dbo].[pdas_metadata]
+SET
+	[state] = 'OK',
+	[timestamp_file] = @current_dt
+WHERE
+	[table_name] = 'staging_pdas_footwear_vans_ngc_po'

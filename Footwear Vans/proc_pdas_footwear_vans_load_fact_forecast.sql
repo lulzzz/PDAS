@@ -40,7 +40,10 @@ BEGIN
 			ELSE @dim_product_id_placeholder
 		END as dim_product_id,
 		dd.id as dim_date_id,
-		@dim_customer_id_placeholder_apac as dim_customer_id,
+		CASE
+			WHEN dc.id IS NOT NULL THEN dc.id
+			ELSE @dim_customer_id_placeholder_apac
+		END as dim_customer_id,
 		@dim_factory_id_placeholder as dim_factory_id,
 		sum(quantity) as quantity
 	FROM
@@ -76,6 +79,14 @@ BEGIN
 					WHEN 'Nov' THEN 'Jan'
 					WHEN 'Dec' THEN 'Feb'
 				END
+
+		LEFT OUTER JOIN
+		(
+			SELECT id, name
+			FROM [dbo].[dim_customer]
+		) dc
+			ON nf.[dim_customer_dc_sr_code] = dc.name
+
 	WHERE
 		quantity IS NOT NULL
 	GROUP BY
@@ -83,7 +94,11 @@ BEGIN
 			WHEN dp.id IS NOT NULL THEN dp.id
 			ELSE @dim_product_id_placeholder
 		END,
-		dd.id
+		dd.id,
+		CASE
+			WHEN dc.id IS NOT NULL THEN dc.id
+			ELSE @dim_customer_id_placeholder_apac
+		END
 
 
 	-- EMEA
@@ -98,7 +113,10 @@ BEGIN
 			ELSE @dim_product_id_placeholder
 		END as dim_product_id,
 		dd.id as dim_date_id,
-		@dim_customer_id_placeholder_emea as dim_customer_id,
+		CASE
+			WHEN dc.id IS NOT NULL THEN dc.id
+			ELSE @dim_customer_id_placeholder_emea
+		END as dim_customer_id,
 		@dim_factory_id_placeholder as dim_factory_id,
 		sum(quantity) as quantity
 	FROM
@@ -112,6 +130,14 @@ BEGIN
 				dp.placeholder_level = 'material_id'
 		) dp
 			ON nf.dim_product_material_id = dp.material_id
+
+		LEFT OUTER JOIN
+		(
+			SELECT id, name
+			FROM [dbo].[dim_customer]
+		) dc
+			ON nf.customer_type = dc.name
+
 		INNER JOIN
 		(
 			SELECT [season_year_short_buy], [month_name_short_accounting], MIN([id]) as [id]
@@ -124,18 +150,18 @@ BEGIN
 					WHEN 'XDC' THEN nf.plan_month
 					ELSE
 						CASE nf.plan_month
-							WHEN 'Jan' THEN 'Dec'
-							WHEN 'Feb' THEN 'Jan'
-							WHEN 'Mar' THEN 'Feb'
-							WHEN 'Apr' THEN 'Mar'
-							WHEN 'May' THEN 'Apr'
-							WHEN 'Jun' THEN 'May'
-							WHEN 'Jul' THEN 'Jun'
-							WHEN 'Aug' THEN 'Jul'
-							WHEN 'Sep' THEN 'Aug'
-							WHEN 'Oct' THEN 'Sep'
-							WHEN 'Nov' THEN 'Oct'
-							WHEN 'Dec' THEN 'Nov'
+							WHEN 'Jan' THEN 'Mar'
+							WHEN 'Feb' THEN 'Apr'
+							WHEN 'Mar' THEN 'May'
+							WHEN 'Apr' THEN 'Jun'
+							WHEN 'May' THEN 'Jul'
+							WHEN 'Jun' THEN 'Aug'
+							WHEN 'Jul' THEN 'Sep'
+							WHEN 'Aug' THEN 'Oct'
+							WHEN 'Sep' THEN 'Nov'
+							WHEN 'Oct' THEN 'Dec'
+							WHEN 'Nov' THEN 'Jan'
+							WHEN 'Dec' THEN 'Feb'
 						END
 				END
 		WHERE
@@ -145,7 +171,11 @@ BEGIN
 				WHEN dp.id IS NOT NULL THEN dp.id
 				ELSE @dim_product_id_placeholder
 			END,
-			dd.id
+			dd.id,
+			CASE
+				WHEN dc.id IS NOT NULL THEN dc.id
+				ELSE @dim_customer_id_placeholder_emea
+			END
 
 	-- NORA (we pull intro month 2 months forward to reach CRD)
 	UNION
@@ -181,25 +211,25 @@ BEGIN
 			ON nf.dim_product_material_id = dp.material_id
 		INNER JOIN
 		(
-			SELECT [season_year_crd], [month_name_short_accounting], MIN([id]) as [id]
+			SELECT [season_year_buy], [month_name_short_accounting], MIN([id]) as [id]
 			FROM [dbo].[dim_date]
-			GROUP BY [season_year_crd], [month_name_short_accounting]
+			GROUP BY [season_year_buy], [month_name_short_accounting]
 		) dd
-			ON dd.[season_year_crd] = nf.season
+			ON dd.[season_year_buy] = nf.season
 			AND dd.month_name_short_accounting =
 				CASE nf.plan_month
-					WHEN 'Jan' THEN 'Nov'
-					WHEN 'Feb' THEN 'Dec'
-					WHEN 'Mar' THEN 'Jan'
-					WHEN 'Apr' THEN 'Feb'
-					WHEN 'May' THEN 'Mar'
-					WHEN 'Jun' THEN 'Apr'
-					WHEN 'Jul' THEN 'May'
-					WHEN 'Aug' THEN 'Jun'
-					WHEN 'Sep' THEN 'Jul'
-					WHEN 'Oct' THEN 'Aug'
-					WHEN 'Nov' THEN 'Sep'
-					WHEN 'Dec' THEN 'Oct'
+					WHEN 'Jan' THEN 'Mar'
+					WHEN 'Feb' THEN 'Apr'
+					WHEN 'Mar' THEN 'May'
+					WHEN 'Apr' THEN 'Jun'
+					WHEN 'May' THEN 'Jul'
+					WHEN 'Jun' THEN 'Aug'
+					WHEN 'Jul' THEN 'Sep'
+					WHEN 'Aug' THEN 'Oct'
+					WHEN 'Sep' THEN 'Nov'
+					WHEN 'Oct' THEN 'Dec'
+					WHEN 'Nov' THEN 'Jan'
+					WHEN 'Dec' THEN 'Feb'
 				END
 	WHERE
 		quantity IS NOT NULL

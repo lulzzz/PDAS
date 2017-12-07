@@ -196,7 +196,7 @@ BEGIN
 		(
 			SELECT
 				SUBSTRING([so_code], 2, 255) as sales_order
-				,MAX(dim_customer_id) as dim_customer_id
+				,dim_customer_id as dim_customer_id
 			FROM
 				[dbo].[fact_order] f
 				INNER JOIN
@@ -216,16 +216,14 @@ BEGIN
 					@dim_demand_category_id_open_order,
 					@dim_demand_category_id_shipped_order
 				)
-				and [source_system] = 'S65'
-				and ISNULL([so_code], '') <> ''
-			GROUP BY 
-				f.[so_code]
+				and [source_system] = 'S65' and
+				[so_code] IS NOT NULL
 		) target
 		INNER JOIN -- NORA NTB
 		(
 			SELECT
 				f.[so_code] as sales_order
-				,MAX(f.dim_customer_id) as dim_customer_id
+				,f.dim_customer_id as dim_customer_id
 			FROM
 				[dbo].[fact_order] f
 				INNER JOIN
@@ -242,11 +240,11 @@ BEGIN
 				[dim_pdas_id] = @pdasid and
 				[dim_business_id] = @businessid and
 				[dim_demand_category_id] = @demand_category_id_ntb and
-				ISNULL([so_code], '') <> ''
-			GROUP BY
-				f.[so_code]
+				[so_code] IS NOT NULL
 		) source
 			ON target.sales_order = source.sales_order
+
+
 
 	-- Update dim_customer_id for source system 'REVA'
 	-- 	If (source_system =='REVA')  // APAC POs
@@ -258,7 +256,7 @@ BEGIN
 		(
 			SELECT
 				[so_code] as sales_order
-				,MAX(dim_customer_id) as dim_customer_id
+				,dim_customer_id as dim_customer_id
 			FROM
 				[dbo].[fact_order] f
 				INNER JOIN
@@ -279,15 +277,12 @@ BEGIN
 					@dim_demand_category_id_shipped_order
 				)
 				and [source_system] = 'REVA'
-				and ISNULL([so_code], '') <> ''
-			GROUP BY
-				f.[so_code]
 		) target
 		INNER JOIN -- APAC NTB
 		(
 			SELECT
 				f.[po_code_customer] as sales_order
-				,MAX(f.dim_customer_id) as dim_customer_id
+				,f.dim_customer_id as dim_customer_id
 			FROM
 				[dbo].[fact_order] f
 				INNER JOIN
@@ -304,9 +299,6 @@ BEGIN
 				[dim_pdas_id] = @pdasid and
 				[dim_business_id] = @businessid and
 				[dim_demand_category_id] = @demand_category_id_ntb
-				and ISNULL([po_code_customer], '') <> ''
-			GROUP BY
-				f.[po_code_customer]
 		) source
 			ON target.sales_order = source.sales_order
 

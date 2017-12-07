@@ -10,11 +10,18 @@ GO
 
 -- Declare variables
 DECLARE	@current_dt datetime = GETDATE()
-DECLARE	@starting_dt_last_modified datetime = DATEADD(day, -2, GETDATE())
+DECLARE	@starting_dt_last_modified datetime = DATEADD(day, -3, GETDATE())
 DECLARE	@starting_dt_rev datetime = DATEADD(day, -30, GETDATE())
 
+
+-- Drop temporary table if exists
+IF OBJECT_ID('tempdb..#temp_ngc') IS NOT NULL
+BEGIN
+	DROP TABLE #temp_ngc;
+END
+
 -- Create temp table
-CREATE TABLE #select_cursor01 (
+CREATE TABLE #temp_ngc (
     [Row #] [nvarchar](500) NULL,
 	[dim_factory_vendor_code] [nvarchar](500) NULL,
 	[dim_factory_factory_code] [nvarchar](500) NULL,
@@ -52,9 +59,7 @@ CREATE TABLE #select_cursor01 (
 -- Create table index
 CREATE INDEX idx_temp_ngc01 ON #temp_ngc
 (
-    [po_code_cut],
-    [dim_product_style_id],
-    [dim_product_size]
+    [po_code_cut]
 )
 
 -- Dump data into temp table
@@ -93,79 +98,80 @@ INSERT INTO #temp_ngc
     ,[dc_name]
     ,[sales_order]
 )
-SELECT
 
 SELECT
-    LTRIM(RTRIM(Prbunhea_view.rdacode)) AS [dim_factory_vendor_code],
-    LTRIM(RTRIM(Prbunhea_view.rfactory)) AS [dim_factory_factory_code],
-    LTRIM(RTRIM(Prbunhea_view.lot)) AS [po_code_cut],
-    LTRIM(RTRIM(Prbunhea_view.misc1)) AS [dim_product_sbu],
-    LTRIM(RTRIM(Nbbundet_view.size)) AS [dim_product_size],
-    LTRIM(RTRIM(Nbbundet_view.color)) AS [dim_product_color_description],
-    LTRIM(RTRIM(Nbbundet_view.dimension)) AS [dimension],
-    LTRIM(RTRIM(Prbunhea_view.plan_date)) AS [po_issue_dt],
-    LTRIM(RTRIM(Shipment_view.closed)) AS [shipment_status],
-    LTRIM(RTRIM(Prbunhea_view.misc6)) AS [source],
-    LTRIM(RTRIM(Nbbundet_view.qty)) AS [order_qty],
-    LTRIM(RTRIM(Shipped_view.unitship)) AS [shipped_qty],
-    LTRIM(RTRIM(Prbunhea_view.style)) AS [dim_product_style_id],
+	NULL as [Row #],
+    LTRIM(RTRIM(Prbunhea.rdacode)) AS [dim_factory_vendor_code],
+    LTRIM(RTRIM(Prbunhea.rfactory)) AS [dim_factory_factory_code],
+    LTRIM(RTRIM(Prbunhea.lot)) AS [po_code_cut],
+    LTRIM(RTRIM(Prbunhea.misc1)) AS [dim_product_sbu],
+    LTRIM(RTRIM(Nbbundet.size)) AS [dim_product_size],
+    LTRIM(RTRIM(Nbbundet.color)) AS [dim_product_color_description],
+    LTRIM(RTRIM(Nbbundet.dimension)) AS [dimension],
+    LTRIM(RTRIM(Prbunhea.plan_date)) AS [po_issue_dt],
+    LTRIM(RTRIM(Shipment.closed)) AS [shipment_status],
+    LTRIM(RTRIM(Prbunhea.misc6)) AS [source],
+    LTRIM(RTRIM(Nbbundet.qty)) AS [order_qty],
+    LTRIM(RTRIM(Shipped.unitship)) AS [shipped_qty],
+    LTRIM(RTRIM(Prbunhea.style)) AS [dim_product_style_id],
     LTRIM(RTRIM(Shshipto.ship_to_1)) AS [ship_to_address],
     LTRIM(RTRIM(Shshipto_2.ship_to_1)) AS [ship_to_address_bis],
-    LTRIM(RTRIM(Prbunhea_view.ship_no)) AS [po_code],
-    LTRIM(RTRIM(Prbunhea_view.misc25)) AS [po_type],
-    LTRIM(RTRIM(Prbunhea_view.misc41)) AS [vf_sla],
-    LTRIM(RTRIM(Prbunhea_view.store_no)) AS [dim_customer_dc_code_brio],
-    LTRIM(RTRIM(Shipped_view.Actual_CRD)) AS [actual_crd_dt],
-    LTRIM(RTRIM(Prbunhea_view.revdd)) AS [revised_crd_dt],
-    LTRIM(RTRIM(Shipped_view.shipdate)) AS [shipped_dt],
-    LTRIM(RTRIM(Prbunhea_view.misc18)) AS [delay_reason],
-    LTRIM(RTRIM(Shipped_view.shipment)) AS [shipment_ID],
+    LTRIM(RTRIM(Prbunhea.ship_no)) AS [po_code],
+    LTRIM(RTRIM(Prbunhea.misc25)) AS [po_type],
+    LTRIM(RTRIM(Prbunhea.misc41)) AS [vf_sla],
+    LTRIM(RTRIM(Prbunhea.store_no)) AS [dim_customer_dc_code_brio],
+    LTRIM(RTRIM(Shipped.Actual_CRD)) AS [actual_crd_dt],
+    LTRIM(RTRIM(Prbunhea.revdd)) AS [revised_crd_dt],
+    LTRIM(RTRIM(Shipped.shipdate)) AS [shipped_dt],
+    LTRIM(RTRIM(Prbunhea.misc18)) AS [delay_reason],
+    LTRIM(RTRIM(Shipped.shipment)) AS [shipment_ID],
     CASE
-            WHEN ISNULL(prscale.desce, 0) = 0 THEN Nbbundet_view.qty
-            ELSE LTRIM(RTRIM(Nbbundet_view.qty*prscale.desce))
+            WHEN ISNULL(prscale.desce, 0) = 0 THEN Nbbundet.qty
+            ELSE LTRIM(RTRIM(Nbbundet.qty*prscale.desce))
     END AS [lum_order_qty],
     CASE
-            WHEN ISNULL(prscale.desce, 0) = 0 THEN shipped_view.unitship
-            ELSE LTRIM(RTRIM(shipped_view.unitship*prscale.desce))
+            WHEN ISNULL(prscale.desce, 0) = 0 THEN shipped.unitship
+            ELSE LTRIM(RTRIM(shipped.unitship*prscale.desce))
     END AS [lum_shipped_qty],
-    LTRIM(RTRIM( Prbunhea_view.misc21)) AS [source_system],
-    LTRIM(RTRIM(Shipment_view.firstclosedon)) AS [shipment_closed_on_dt],
-    LTRIM(RTRIM(Prbunhea_view.done)) AS [is_po_completed],
+    LTRIM(RTRIM( Prbunhea.misc21)) AS [source_system],
+    LTRIM(RTRIM(Shipment.firstclosedon)) AS [shipment_closed_on_dt],
+    LTRIM(RTRIM(Prbunhea.done)) AS [is_po_completed],
     LTRIM(RTRIM(Shipmast.shipname)) AS [dc_name],
-    LTRIM(RTRIM(Prbunhea_view.misc27)) AS [sales_order]
+    LTRIM(RTRIM(Prbunhea.misc27)) AS [sales_order]
 FROM
-    Prbunhea_view with(nolock)
-    LEFT OUTER JOIN Nbbundet_view
-        ON (Prbunhea_view.Id_Cut=Nbbundet_view.Id_Cut)
-    LEFT OUTER JOIN Shshipto
-        ON (Prbunhea_view.Rdacode=Shshipto.Factory)
-    LEFT OUTER JOIN Shshipto AS Shshipto_2
-        ON (Prbunhea_view.Rfactory=Shshipto_2.Factory)
-    LEFT OUTER JOIN Shipped_view
+
+	[ITGC2W000187].[ESPSODV14RPT].[dbo].Prbunhea
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Nbbundet WITH (nolock)
+        ON (Prbunhea.Id_Cut=Nbbundet.Id_Cut)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shshipto WITH (nolock)
+        ON (Prbunhea.Rdacode=Shshipto.Factory)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].shshipto as Shshipto_2 WITH (nolock)
+        ON (Prbunhea.Rfactory=Shshipto_2.Factory)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipped WITH (nolock)
         ON
         (
-        Prbunhea_view.Season=Shipped_view.Season AND
-        Prbunhea_view.Style=Shipped_view.Style AND
-        Prbunhea_view.Lot=Shipped_view.Cut AND
-        Nbbundet_view.Color=Shipped_view.Color AND
-        Nbbundet_view.Size=Shipped_view.Size AND
-        Nbbundet_view.Dimension=Shipped_view.Dimension
+            Prbunhea.Season=Shipped.Season AND
+            Prbunhea.Style=Shipped.Style AND
+            Prbunhea.Lot=Shipped.Cut AND
+            Nbbundet.Color=Shipped.Color AND
+            Nbbundet.Size=Shipped.Size AND
+            Nbbundet.Dimension=Shipped.Dimension
         )
-    LEFT OUTER JOIN Shipment_view
-        ON (Shipped_view.Shipment=Shipment_view.Shipment)
-    LEFT OUTER JOIN Shipmast
-        ON (Shipmast.shipno=Prbunhea_view.Store_No)
-    LEFT OUTER JOIN prscale
-        ON (Nbbundet_view.size=prscale.scale)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipment WITH (nolock)
+        ON (Shipped.Shipment=Shipment.Shipment)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipmast WITH (nolock)
+        ON (Shipmast.shipno=Prbunhea.Store_No)
+    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].prscale WITH (nolock)
+        ON (nbbundet.size=prscale.scale)
 
 WHERE
     Prbunhea.Modifiedon >= @starting_dt_last_modified
-    AND Prbunhea_view.revdd >= @starting_dt_rev
-    AND Prbunhea_view.Misc6 NOT IN ('DIRECT BRAZIL')
-    AND Prbunhea_view.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
-    AND NOT (Prbunhea_view.Qtyship=0 AND Prbunhea_view.Done=1)
-    AND Prbunhea_view.POLocation NOT IN('CANCELED')
-    AND NOT (Nbbundet_view.qty=0)
+    AND Prbunhea.revdd >= @starting_dt_rev
+    AND Prbunhea.Misc6 NOT IN ('DIRECT BRAZIL')
+    AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
+    AND NOT (Prbunhea.Qtyship=0 AND Prbunhea.Done=1)
+    AND Prbunhea.POLocation NOT IN('CANCELED')
+    AND NOT (Nbbundet.qty=0)
 
 
 -- Insert new rows

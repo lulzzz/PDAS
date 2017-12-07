@@ -177,4 +177,49 @@ BEGIN
 		[dim_pdas_id] = @pdasid
 		AND [dim_business_id] = @businessid
 
+
+	-- Update the dim_date_id_buy_month
+	UPDATE f
+	SET
+		f.[dim_date_id_buy_month] = dim_date.[id]
+	FROM
+		(
+			SELECT *
+			FROM [dbo].[fact_demand_total]
+			WHERE
+				[dim_pdas_id] = @pdasid
+				AND [dim_business_id] = @businessid
+		) f
+		INNER JOIN
+		(
+			SELECT [id], [buy_month]
+			FROM [dbo].[dim_pdas]
+			WHERE
+				[id] = @pdasid
+		) dim_pdas
+			ON f.[dim_pdas_id] = dim_pdas.[id]
+		INNER JOIN
+		(
+			SELECT
+				MIN([id]) as [id]
+				,[year_month_accounting]
+			FROM [dbo].[dim_date]
+			GROUP BY [year_month_accounting]
+		) dim_date
+			ON dim_pdas.[buy_month] = dim_date.[year_month_accounting]
+
+
+	-- Update the dim_date_id_forecast_vs_actual
+	UPDATE [dbo].[fact_demand_total]
+	SET
+		[dim_date_id_forecast_vs_actual] =
+			CASE dim_demand_category_id
+				WHEN @dim_demand_category_id_ntb THEN [dim_date_id_buy_month]
+				ELSE [dim_date_id]
+			END
+	WHERE
+		[dim_pdas_id] = @pdasid
+		AND [dim_business_id] = @businessid
+
+
 END

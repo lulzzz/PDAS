@@ -41,6 +41,14 @@ BEGIN
 				([variable] = 'Release Locker' AND [value] NOT IN ('ON', 'OFF'))
 				OR
 				([variable] = 'Buying Program Name' AND [value] NOT IN (SELECT DISTINCT [name] FROM [dbo].[dim_buying_program]))
+				OR
+				(
+					[variable] = 'Buy Month' AND [value] NOT IN
+					(
+						SELECT DISTINCT [year_month_accounting]
+						FROM [dbo].[dim_date]
+					)
+				)
 		)
 
 		IF @test IS NULL

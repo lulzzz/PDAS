@@ -49,6 +49,9 @@ BEGIN
 		-- Do manual overwrite
 		EXEC [dbo].[proc_pdas_footwear_vans_do_overwrite] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
+		-- Adjust EMEA NTB based on cutoff days
+		EXEC [dbo].[proc_pdas_footwear_vans_do_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+
 		-- Prepare report tables for Excel frontend
 		EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 

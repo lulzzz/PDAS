@@ -7,6 +7,8 @@ SELECT
 	, f_1.[dim_product_id]
 	, dim_product.dim_construction_type_id as dim_construction_type_id
 	, f_1.[dim_date_id]
+	, f_1.[dim_date_id_buy_month]
+	, f_1.[dim_date_id_forecast_vs_actual]
 	, f_1.[dim_factory_id_original_unconstrained]
 	, f_1.[dim_factory_id_original_constrained]
 	,CASE
@@ -94,9 +96,15 @@ SELECT
 
 	-- dim_pdas
 	,dim_pdas.[name] AS [dim_pdas_name]
-	,dim_pdas.[buy_month] AS [dim_pdas_buy_month]
+
 	,dim_pdas.[full_date] AS [dim_pdas_full_date]
 	,dim_pdas.[comment] AS [dim_pdas_comment]
+
+	-- dim_date_buy_month
+	,dim_date_buy_month.[year_month_accounting] AS [dim_pdas_buy_month]
+
+	-- dim_date_forecast_vs_actual
+	,dim_date_forecast_vs_actual.[year_month_accounting] AS [dim_date_forecast_vs_actual]
 
 	-- dim_business
 	,dim_business.[brand] AS [dim_business_brand]
@@ -254,6 +262,20 @@ FROM
 				ON dim_pdas.dim_date_id = dd.[id]
 	) dim_pdas
 		ON f_1.dim_pdas_id = dim_pdas.id
+
+	INNER JOIN
+	(
+		SELECT *
+		FROM [dbo].[dim_date]
+	) dim_date_buy_month
+		ON f_1.dim_date_id_buy_month = dim_date_buy_month.id
+
+	INNER JOIN
+	(
+		SELECT *
+		FROM [dbo].[dim_date]
+	) dim_date_forecast_vs_actual
+		ON f_1.dim_date_id_forecast_vs_actual = dim_date_forecast_vs_actual.id
 
 	INNER JOIN dim_business
 		ON f_1.dim_business_id = dim_business.id
