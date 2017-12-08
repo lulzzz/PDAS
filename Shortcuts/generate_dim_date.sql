@@ -3,7 +3,7 @@ exec [dbo].[proc_pdas_footwear_vans_load_dim_date]
 	@FiscalCalendarStart = '2010-01-03',
 	@FiscalCalendarEnd = '2050-01-01',
 	@FiscalStartingMonth = 1,
-	@MonthExtraWeekAdded = 12
+	@MonthExtraWeekAdded = 12 -- 10 for 4-4-5
 
 
 

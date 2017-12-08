@@ -91,6 +91,23 @@ BEGIN
 	WHERE
 		dim.[short_name] IS NULL
 
+	-- Buy month
+    SET @type = 'Buy Month not in master data';
+  	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+  	SELECT DISTINCT @system, @source, @type, ISNULL(SUBSTRING(staging.month_label, 1, 4), '') + '/' + ISNULL(SUBSTRING(staging.month_label, 6, 3), '') as [value]
+  	FROM
+  		(SELECT DISTINCT [month_label] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast]) staging
+      	LEFT OUTER JOIN
+		(
+			SELECT [season_year_short_buy], [month_name_short_accounting], MIN([id]) as [id]
+			FROM [dbo].[dim_date]
+			GROUP BY [season_year_short_buy], [month_name_short_accounting]
+		) dd
+			ON dd.[season_year_short_buy] = SUBSTRING(staging.month_label, 1, 4)
+			AND dd.month_name_short_accounting = SUBSTRING(staging.month_label, 6, 3)
+  	WHERE
+  		dd.[season_year_short_buy] IS NULL
+
 
     /* NORA */
 
@@ -129,23 +146,22 @@ BEGIN
 	WHERE
 		dim.[material_id] IS NULL
 
-    -- Buy month
-    SET @type = 'Buy month not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
-	SELECT DISTINCT @system, @source, @type, ISNULL(staging.[season], '') + '/' + ISNULL(staging.[plan_month], '') as [value]
-	FROM
-		(SELECT DISTINCT [season], [plan_month] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast]) staging
-        LEFT OUTER JOIN
-        (
-            SELECT DISTINCT
-                [season_year_buy]
-                ,[month_name_short_accounting]
-            FROM [dbo].[dim_date]
-        ) dim
-			ON   staging.[season] = dim.[season_year_buy]
-                AND staging.[plan_month] = dim.[month_name_short_accounting]
+	-- Buy month
+    SET @type = 'Buy Month not in master data';
+  	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+  	SELECT DISTINCT @system, @source, @type, ISNULL(staging.[season], '') + '/' + ISNULL(staging.[plan_month], '') as [value]
+  	FROM
+  		(SELECT DISTINCT [season], [plan_month] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast]) staging
+      	LEFT OUTER JOIN
+		(
+			SELECT [season_year_buy], [month_name_short_accounting], MIN([id]) as [id]
+			FROM [dbo].[dim_date]
+			GROUP BY [season_year_buy], [month_name_short_accounting]
+		) dd
+			ON dd.[season_year_buy] = staging.season
+			AND dd.month_name_short_accounting = staging.plan_month
 	WHERE
-		dim.[season_year_buy] IS NULL
+		dd.[season_year_buy] IS NULL
 
 
     /* EMEA */
@@ -169,23 +185,22 @@ BEGIN
 	WHERE
 		dim.[material_id] IS NULL
 
-    -- CRD month
-    SET @type = 'CRD Month not in master data';
+    -- Buy month
+    SET @type = 'Buy Month not in master data';
   	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
   	SELECT DISTINCT @system, @source, @type, ISNULL(staging.[season], '') + '/' + ISNULL(staging.[plan_month], '') as [value]
   	FROM
-  		(SELECT DISTINCT [season], [plan_month] FROM [dbo].[staging_pdas_footwear_vans_emea_forecast]) staging
-          LEFT OUTER JOIN
-          (
-              SELECT DISTINCT
-                  [season_year_short_buy]
-                  ,[month_name_short_accounting]
-              FROM [dbo].[dim_date]
-          ) dim
-  			ON   staging.[season] = dim.[season_year_short_buy]
-                  AND staging.[plan_month] = dim.[month_name_short_accounting]
+  		(SELECT DISTINCT [season], [plan_month], [customer_type] FROM [dbo].[staging_pdas_footwear_vans_emea_forecast]) staging
+      	LEFT OUTER JOIN
+		(
+			SELECT [season_year_short_buy], [month_name_short_accounting], MIN([id]) as [id]
+			FROM [dbo].[dim_date]
+			GROUP BY [season_year_short_buy], [month_name_short_accounting]
+		) dd
+			ON dd.[season_year_short_buy] = staging.season
+			AND dd.month_name_short_accounting = staging.plan_month
   	WHERE
-  		dim.[season_year_short_buy] IS NULL
+  		dd.[season_year_short_buy] IS NULL
 
 
 END

@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_dim_date]
 	@FiscalCalendarEnd datetime ,
 	@FiscalStartingMonth int ,
 	@MonthExtraWeekAdded int
-   /*   This script is meant for a 5-4-4 calendar, Sun-Sat week.  Every leap year introduces an
+   /*   This script is meant for a 4-4-5 calendar, Sun-Sat week.  Every leap year introduces an
             extra week, which we add in June.
 
     *  User Variables =
@@ -50,8 +50,8 @@ BEGIN
 		is_weekend_day INT
 	)
 
-		-- Iteration variables used for internal procedure
 
+	-- Iteration variables used for internal procedure
 	DECLARE
 		@WorkPeriodSeed INT = 1 ,
 		@WorkSeasonSeedBuy NVARCHAR(2),
@@ -92,7 +92,8 @@ BEGIN
 			 This FiscalYearSeed initialization depends of the company fiscal calendar
 			*/
 	SELECT @FiscalYearSeed = YEAR(@CurrentDate),
-			-- Set the counter for the remaining days, 2 if year is leap year, 1 else
+
+		-- Set the counter for the remaining days, 2 if year is leap year, 1 else
 		@CountMissingDays = CASE
 								WHEN (@FiscalYearSeed % 4 = 0 AND @FiscalYearSeed % 100 <> 0) OR @FiscalYearSeed % 400 = 0 THEN 2
 								ELSE 1
@@ -167,12 +168,12 @@ BEGIN
 				--Every Sunday (start of new fiscal week), increment fiscal counters
 			IF DATEPART(DW,@CurrentDate) = 1
 				BEGIN
-					  --These months have 5 weeks in the 5-4-4 calendar
-					IF @WorkPeriodSeed % 3 = 1
+					  --These months have 5 weeks in the 4-4-5 calendar (IF @WorkPeriodSeed % 3 = 1)
+					IF @WorkPeriodSeed IN (3, 6, 9, 12)
 						BEGIN
 
-								  --Iterate the RunningWeek and WeekOfMonth (roll WeekOfMonth if necessary)
-							 SELECT
+							--Iterate the RunningWeek and WeekOfMonth (roll WeekOfMonth if necessary)
+							SELECT
 								@WeekOfMonth = CASE @WeekOfMonth
 														WHEN 5 THEN 1
 														ELSE @WeekOfMonth + 1
@@ -180,8 +181,8 @@ BEGIN
 								@WorkWeekSeed = @WorkWeekSeed + 1
 
 
-								  --First week of the month we need to update the WorkPeriod and FiscalStartingMonth
-							 IF @WeekOfMonth = 1
+							--First week of the month we need to update the WorkPeriod and FiscalStartingMonth
+							IF @WeekOfMonth = 1
 								   SELECT
 										@WorkPeriodSeed = @WorkPeriodSeed + 1,
 										@FiscalStartingMonth = CASE @FiscalStartingMonth
@@ -194,7 +195,7 @@ BEGIN
 						BEGIN
 
 					   /*
-							December in leap years get 5 weeks also, so 4th quarter is 5-4-5
+							October in leap years get 5 weeks also, so 4th quarter is 5-4-5
 							Change @WorkPeriodSeed to the month you want to add the extra week into
 					  */
 							IF @CountMissingDays > 6 AND @WorkPeriodSeed = @MonthExtraWeekAdded
@@ -221,8 +222,7 @@ BEGIN
 							ELSE
 								BEGIN
 
-								 -- Iterate the RunningWeek and WeekOfMonth (roll WeekOfMonth if necessary)
-
+								 	-- Iterate the RunningWeek and WeekOfMonth (roll WeekOfMonth if necessary)
 									SELECT
 										@WeekOfMonth = CASE @WeekOfMonth
 															WHEN 4 THEN 1
@@ -231,8 +231,7 @@ BEGIN
 										@WorkWeekSeed = @WorkWeekSeed + 1
 
 
-								 --  First week of the month we need to update the WorkPeriod and FiscalStartingMonth
-
+								 	--  First week of the month we need to update the WorkPeriod and FiscalStartingMonth
 									IF @WeekOfMonth = 1
 										 SELECT
 											@WorkPeriodSeed = @WorkPeriodSeed + 1,
@@ -244,10 +243,10 @@ BEGIN
 
 					   END
 
-				 /*
-					 Detect if we have a year change
-					 Then we reset or increment some iteration variables
-				*/
+					 /*
+						 Detect if we have a year change
+						 Then we reset or increment some iteration variables
+					*/
 
 
 					   IF @WorkPeriodSeed = 13 AND @WeekOfMonth = 1

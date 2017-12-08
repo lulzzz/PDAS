@@ -30,6 +30,7 @@ BEGIN
         ,[dim_construction_type_id] INT
         ,[dim_date_id] INT
         ,[capacity_raw_daily] INT
+        ,[capacity_raw_daily_overwritten] INT
         ,[capacity_available_weekly] INT
         ,[percentage_region] INT
         ,[percentage_from_original] INT
@@ -87,6 +88,7 @@ BEGIN
         ,[dim_construction_type_id]
         ,[dim_date_id]
         ,[capacity_raw_daily]
+        ,[capacity_raw_daily_overwritten]
         ,[capacity_available_weekly]
         ,[percentage_region]
         ,[percentage_from_original]
@@ -105,6 +107,7 @@ BEGIN
         END as dim_construction_type_id,
         dd.[id] as dim_date_id,
         sum(ISNULL(cap.[quantity], 0)) * max(ISNULL(cap_region.[percentage], 0.25)) * max(ISNULL(cap_adj.[Percentage], 1)) as capacity_raw_daily,
+        sum(ISNULL(cap.[quantity_adjusted], 0)) * max(ISNULL(cap_region.[percentage], 0.25)) * max(ISNULL(cap_adj.[Percentage], 1)) as capacity_raw_daily_overwritten,
         0 AS [capacity_available_weekly],
         max(ISNULL(cap_region.[percentage], 1)) AS [percentage_region],
         max(ISNULL(cap_adj.[Percentage], 1)) as percentage_from_original
@@ -158,7 +161,8 @@ BEGIN
     -- Update capacity_raw_weekly field with daily raw capacity aggregated by accounting week
     UPDATE f
     SET
-        f.[capacity_raw_weekly] = f_aggr.[capacity_raw_weekly]
+        f.[capacity_raw_weekly] = f_aggr.[capacity_raw_weekly],
+        f.[capacity_raw_weekly_overwritten] = f_aggr.[capacity_raw_weekly_overwritten]
     FROM
         (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
         INNER JOIN
@@ -169,6 +173,7 @@ BEGIN
                 ,[dim_construction_type_id]
                 ,dd2.[id] as [dim_date_id]
                 ,sum([capacity_raw_daily]) as [capacity_raw_weekly]
+                ,sum([capacity_raw_daily_overwritten]) as [capacity_raw_weekly_overwritten]
             FROM
                 [dbo].[fact_factory_capacity] cap
                 INNER JOIN
@@ -410,6 +415,7 @@ BEGIN
         ,[dim_construction_type_id]
         ,[dim_date_id]
         ,[capacity_raw_daily]
+		,[capacity_raw_daily_overwritten]
         ,[capacity_available_weekly]
         ,[percentage_region]
         ,[percentage_from_original]
@@ -422,6 +428,7 @@ BEGIN
         temp.[dim_construction_type_id],
         temp.[dim_date_id],
         0 as [capacity_raw_daily],
+		0 as [capacity_raw_daily_overwritten],
         MAX(temp.[capacity_available_weekly]),
         MAX(temp.[percentage_region]),
         MAX(temp.[percentage_from_original])
@@ -443,6 +450,7 @@ BEGIN
         ,[dim_construction_type_id]
         ,[dim_date_id]
         ,[capacity_raw_daily]
+        ,[capacity_raw_daily_overwritten]
         ,[capacity_available_weekly]
         ,[percentage_region]
         ,[percentage_from_original]

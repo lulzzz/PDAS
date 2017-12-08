@@ -64,21 +64,7 @@ BEGIN
 			GROUP BY [season_year_short_buy], [month_name_short_accounting]
 		) dd
 			ON dd.[season_year_short_buy] = SUBSTRING(nf.month_label, 1, 4)
-			AND dd.month_name_short_accounting =
-				CASE SUBSTRING(nf.month_label, 6, 3)
-					WHEN 'Jan' THEN 'Mar'
-					WHEN 'Feb' THEN 'Apr'
-					WHEN 'Mar' THEN 'May'
-					WHEN 'Apr' THEN 'Jun'
-					WHEN 'May' THEN 'Jul'
-					WHEN 'Jun' THEN 'Aug'
-					WHEN 'Jul' THEN 'Sep'
-					WHEN 'Aug' THEN 'Oct'
-					WHEN 'Sep' THEN 'Nov'
-					WHEN 'Oct' THEN 'Dec'
-					WHEN 'Nov' THEN 'Jan'
-					WHEN 'Dec' THEN 'Feb'
-				END
+			AND dd.month_name_short_accounting = SUBSTRING(nf.month_label, 6, 3)
 
 		LEFT OUTER JOIN
 		(
@@ -145,25 +131,7 @@ BEGIN
 			GROUP BY [season_year_short_buy], [month_name_short_accounting]
 		) dd
 			ON dd.[season_year_short_buy] = nf.season
-			AND dd.month_name_short_accounting =
-				CASE nf.customer_type
-					WHEN 'XDC' THEN nf.plan_month
-					ELSE
-						CASE nf.plan_month
-							WHEN 'Jan' THEN 'Mar'
-							WHEN 'Feb' THEN 'Apr'
-							WHEN 'Mar' THEN 'May'
-							WHEN 'Apr' THEN 'Jun'
-							WHEN 'May' THEN 'Jul'
-							WHEN 'Jun' THEN 'Aug'
-							WHEN 'Jul' THEN 'Sep'
-							WHEN 'Aug' THEN 'Oct'
-							WHEN 'Sep' THEN 'Nov'
-							WHEN 'Oct' THEN 'Dec'
-							WHEN 'Nov' THEN 'Jan'
-							WHEN 'Dec' THEN 'Feb'
-						END
-				END
+			AND dd.month_name_short_accounting = nf.plan_month
 		WHERE
 			quantity IS NOT NULL
 		GROUP BY
@@ -216,21 +184,7 @@ BEGIN
 			GROUP BY [season_year_buy], [month_name_short_accounting]
 		) dd
 			ON dd.[season_year_buy] = nf.season
-			AND dd.month_name_short_accounting =
-				CASE nf.plan_month
-					WHEN 'Jan' THEN 'Mar'
-					WHEN 'Feb' THEN 'Apr'
-					WHEN 'Mar' THEN 'May'
-					WHEN 'Apr' THEN 'Jun'
-					WHEN 'May' THEN 'Jul'
-					WHEN 'Jun' THEN 'Aug'
-					WHEN 'Jul' THEN 'Sep'
-					WHEN 'Aug' THEN 'Oct'
-					WHEN 'Sep' THEN 'Nov'
-					WHEN 'Oct' THEN 'Dec'
-					WHEN 'Nov' THEN 'Jan'
-					WHEN 'Dec' THEN 'Feb'
-				END
+			AND dd.month_name_short_accounting = nf.plan_month
 	WHERE
 		quantity IS NOT NULL
 	GROUP BY

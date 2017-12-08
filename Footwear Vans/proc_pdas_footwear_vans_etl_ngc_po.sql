@@ -10,7 +10,7 @@ GO
 
 -- Declare variables
 DECLARE	@current_dt datetime = GETDATE()
-DECLARE	@starting_dt_last_modified datetime = DATEADD(day, -3, GETDATE())
+DECLARE	@starting_dt_last_modified datetime = DATEADD(day, -2, GETDATE())
 DECLARE	@starting_dt_rev datetime = DATEADD(day, -30, GETDATE())
 
 
