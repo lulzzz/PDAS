@@ -865,10 +865,10 @@ def set_pandas_dtypes_with_db_table_types(df, dict_db_types):
         if 'varchar' in str(values).lower():
             df[key] = df[key].astype('object')
         if 'datetime' in str(values).lower():
-            df[key] = df[key].astype('datetime64[ns]')
-        if 'float' in str(values).lower():
+            df[key] = pd.to_datetime(df[key], errors='coerce') #df[key].astype('datetime64[ns]')
+        if 'float' in str(values).lower() or 'real' in str(values).lower():
             df[key] = df[key].fillna(np.nan)
-            df[key] = df[key].astype('float64')
+            df[key] = pd.to_numeric(df[key], errors='coerce') #df[key].astype('float64')
         if 'int' in str(values).lower():
             df[key] = df[key].fillna(np.nan)
             df[key] = df[key].apply(pd.to_numeric, errors='coerce')
