@@ -24,21 +24,21 @@ BEGIN
 
 	IF (
 		@run_date_id > @pdas_d
-		AND
-		(SELECT [value] FROM [dbo].[helper_pdas_footwear_vans_configuration] WHERE [type] = 'System' AND [variable] = 'Release Locker') = 'OFF'
+		-- AND
+		-- (SELECT [value] FROM [dbo].[helper_pdas_footwear_vans_configuration] WHERE [type] = 'System' AND [variable] = 'Release Locker') = 'OFF'
 	)
 	BEGIN
 
 		-- Update configuration table
-		UPDATE [dbo].[helper_pdas_footwear_vans_configuration]
-		SET [value] =
-			CASE [variable]
-				WHEN 'Release Locker' THEN 'ON'
-				WHEN 'Release Note' THEN ''
-			END
-		WHERE
-			[type] = 'System' and 
-			[variable] IN ('Release Locker', 'Release Note')
+		-- UPDATE [dbo].[helper_pdas_footwear_vans_configuration]
+		-- SET [value] =
+		-- 	CASE [variable]
+		-- 		WHEN 'Release Locker' THEN 'ON'
+		-- 		WHEN 'Release Note' THEN ''
+		-- 	END
+		-- WHERE
+		-- 	[type] = 'System' and
+		-- 	[variable] IN ('Release Locker', 'Release Note')
 
 		INSERT INTO [dbo].[dim_pdas]
 		(

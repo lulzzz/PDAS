@@ -429,7 +429,7 @@ BEGIN
                 [dbo].[helper_pdas_footwear_vans_mapping] mapping
                 INNER JOIN [dbo].[dim_construction_type] dct
                     ON dct.[name] = mapping.[parent]
-            WHERE [type] = 'Construction Type Master'
+            WHERE [category] = 'Construction Type Master'
         ) dct_mapping
 			ON prio.[dim_construction_type_name] = dct_mapping.[child]
 	WHERE

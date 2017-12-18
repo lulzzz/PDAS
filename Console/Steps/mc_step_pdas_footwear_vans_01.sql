@@ -42,6 +42,8 @@ BEGIN
         /* START */
         -- Step 01 - Start new PDAS release
         EXEC [proc_pdas_footwear_vans_create_system_key] @mc_user_name = @mc_user_name
+		-- Copy previous release as current release
+		EXEC [proc_pdas_footwear_vans_create_copy_previous_release]
         /* END */
 
         -- Update Console procedure table

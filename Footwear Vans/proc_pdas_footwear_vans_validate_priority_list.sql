@@ -32,7 +32,7 @@ BEGIN
 	SET @source = 'PDAS_FTW_VANS_PRIORITY_LIST.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
 
-    
+
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
 	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
@@ -68,7 +68,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Factory Master'
+            WHERE [category] = 'Factory Master'
         ) mapping
 			ON staging.[alloc_1] = mapping.[child]
 	WHERE
@@ -93,7 +93,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Factory Master'
+            WHERE [category] = 'Factory Master'
         ) mapping
 			ON staging.[alloc_2] = mapping.[child]
 	WHERE
@@ -119,7 +119,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Construction Type Master'
+            WHERE [category] = 'Construction Type Master'
         ) mapping
 			ON staging.[dim_construction_type_name] = mapping.[child]
 	WHERE
