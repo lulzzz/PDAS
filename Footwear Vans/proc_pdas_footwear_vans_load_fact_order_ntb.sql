@@ -35,9 +35,9 @@ BEGIN
 	DECLARE @pdas_release_full_d date = (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = @pdas_release_full_date_id)
 
 	-- Check if the session has already been loaded
-	IF EXISTS (SELECT 1 FROM [dbo].[fact_order] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id AND dim_demand_category_id = @dim_demand_category_id_ntb AND is_from_previous_release = 0)
+	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id AND dim_demand_category_id = @dim_demand_category_id_ntb AND is_from_previous_release = 0)
 	BEGIN
-		DELETE FROM [dbo].[fact_order]
+		DELETE FROM [dbo].[fact_demand_total]
 		WHERE
 			dim_pdas_id = @pdasid
 			AND dim_business_id = @businessid

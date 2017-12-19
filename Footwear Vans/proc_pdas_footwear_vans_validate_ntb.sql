@@ -36,7 +36,7 @@ BEGIN
 
     -- Check market from dim_customer (and mapping)
 	SET @type = 'Customer not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]) staging
@@ -53,7 +53,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Customer Master'
+            WHERE [category] = 'Customer Master'
         ) mapping
 			ON staging.[dim_customer_name] = mapping.[child]
 	WHERE
@@ -61,7 +61,7 @@ BEGIN
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]) staging
@@ -78,7 +78,7 @@ BEGIN
 
 	-- Check material_id from [fact_priority_list]
     SET @type = 'Material ID not in priority list';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]) staging
@@ -97,14 +97,14 @@ BEGIN
 
 	-- Check short_name from dim_factory
     SET @type = 'XFD is not a valid date';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL(staging.xfac_dt, '') as [value]
 	FROM [dbo].[staging_pdas_footwear_vans_apac_ntb] staging
 	WHERE ISDATE(CONVERT(NVARCHAR(23), staging.xfac_dt)) = 0
 
     -- Check short_name from dim_factory
     SET @type = 'Factory short name not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_reva_vendor], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_factory_reva_vendor] FROM [dbo].[staging_pdas_footwear_vans_apac_ntb]) staging
@@ -121,7 +121,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Factory Master'
+            WHERE [category] = 'Factory Master'
         ) mapping
 			ON staging.[dim_factory_reva_vendor] = mapping.[child]
 	WHERE
@@ -135,7 +135,7 @@ BEGIN
 
     -- Check market from dim_customer (and mapping)
 	SET @type = 'Customer not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]) staging
@@ -152,7 +152,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Customer Master'
+            WHERE [category] = 'Customer Master'
         ) mapping
 			ON staging.[dim_customer_name] = mapping.[child]
 	WHERE
@@ -160,7 +160,7 @@ BEGIN
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]) staging
@@ -177,7 +177,7 @@ BEGIN
 
 	-- Check material_id from [fact_priority_list]
     SET @type = 'Material ID not in priority list';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]) staging
@@ -196,7 +196,7 @@ BEGIN
 
     -- Check short_name from dim_factory
     SET @type = 'Factory short name not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_acadia_vendor_code], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_factory_acadia_vendor_code] FROM [dbo].[staging_pdas_footwear_vans_nora_ntb]) staging
@@ -213,7 +213,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Factory Master'
+            WHERE [category] = 'Factory Master'
         ) mapping
 			ON staging.[dim_factory_acadia_vendor_code] = mapping.[child]
 	WHERE
@@ -221,7 +221,7 @@ BEGIN
 
 	-- Check short_name from dim_factory
     SET @type = 'XFD is not a valid date';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL(staging.xfac_dt, '') as [value]
 	FROM [dbo].[staging_pdas_footwear_vans_nora_ntb] staging
 	WHERE ISDATE(CONVERT(NVARCHAR(23), staging.xfac_dt)) = 0
@@ -234,7 +234,7 @@ BEGIN
 
     -- Check market from dim_customer (and mapping)
 	SET @type = 'Customer not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb]) staging
@@ -251,7 +251,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Customer Master'
+            WHERE [category] = 'Customer Master'
         ) mapping
 			ON staging.[dim_customer_name] = mapping.[child]
 	WHERE
@@ -259,14 +259,14 @@ BEGIN
 
 	-- Check short_name from dim_factory
     SET @type = 'XFD is not a valid date';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL(staging.xfac_dt, '') as [value]
 	FROM [dbo].[staging_pdas_footwear_vans_casa_ntb] staging
 	WHERE ISDATE(CONVERT(NVARCHAR(23), staging.xfac_dt)) = 0
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb]) staging
@@ -283,7 +283,7 @@ BEGIN
 
 	-- Check material_id from [fact_priority_list]
     SET @type = 'Material ID not in priority list';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb]) staging
@@ -302,7 +302,7 @@ BEGIN
 
     -- Check short_name from dim_factory
     SET @type = 'Factory short name not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([confirmed_vendor_code], '') as [value]
 	FROM
 		(SELECT DISTINCT [confirmed_vendor_code] FROM [dbo].[staging_pdas_footwear_vans_casa_ntb]) staging
@@ -319,7 +319,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Factory Master'
+            WHERE [category] = 'Factory Master'
         ) mapping
 			ON staging.[confirmed_vendor_code] = mapping.[child]
 	WHERE
@@ -333,7 +333,7 @@ BEGIN
 
     -- Check market from dim_customer (and mapping)
 	SET @type = 'Customer not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_customer_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_customer_name] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]) staging
@@ -350,7 +350,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Customer Master'
+            WHERE [category] = 'Customer Master'
         ) mapping
 			ON staging.[dim_customer_name] = mapping.[child]
 	WHERE
@@ -358,7 +358,7 @@ BEGIN
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id], [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]) staging
@@ -375,7 +375,7 @@ BEGIN
 
 	-- Check material_id from [fact_priority_list]
     SET @type = 'Material ID not in priority list';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT CONVERT(NVARCHAR(11), [dim_product_material_id]) AS [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]) staging
@@ -394,7 +394,7 @@ BEGIN
 
     -- Check short_name from dim_factory
     SET @type = 'Factory short name not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([vendor_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [vendor_name] FROM [dbo].[staging_pdas_footwear_vans_emea_ntb]) staging
@@ -411,7 +411,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Factory Master'
+            WHERE [category] = 'Factory Master'
         ) mapping
 			ON staging.[vendor_name] = mapping.[child]
 	WHERE

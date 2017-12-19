@@ -27,13 +27,6 @@ BEGIN
 	SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 	DECLARE @pdas_release_full_d date = (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = @pdas_release_full_date_id)
 
-	-- Check if the session has already been loaded
-	DELETE FROM [dbo].[fact_order]
-    WHERE
-        dim_pdas_id = @pdasid
-        AND dim_demand_category_id IN (@dim_demand_category_id_open_order, @dim_demand_category_id_shipped_order)
-        AND dim_buying_program_id = @buying_program_id
-
 	-- NGC
 
 	-- Drop temporary table if exists
