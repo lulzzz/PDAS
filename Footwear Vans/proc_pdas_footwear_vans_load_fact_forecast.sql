@@ -18,17 +18,23 @@ BEGIN
 	DECLARE @dim_customer_id_placeholder_emea int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'EMEA')
 	DECLARE @dim_customer_id_placeholder_apac int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'APAC')
 	DECLARE @dim_product_id_placeholder int = (SELECT [id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'FUAC/SMU' and [material_id] = 'FUAC/SMU' and [size] = 'FUAC/SMU')
+	DECLARE @dim_demand_category_id_forecast int = (SELECT [id] FROM [dbo].[dim_demand_category] WHERE [name] = 'Forecast')
 
 
 	-- Check if the session has already been loaded
-	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id)
+	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id AND dim_demand_category_id = @dim_demand_category_id_forecast AND is_from_previous_release = 0)
 	BEGIN
-		DELETE FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id;
+		DELETE FROM [dbo].[fact_demand_total]
+		WHERE dim_pdas_id = @pdasid
+		AND dim_business_id = @businessid
+		AND dim_buying_program_id = @buying_program_id
+		AND dim_demand_category_id = @dim_demand_category_id_forecast
+		AND is_from_previous_release = 0
 	END
 
-	-- Insert from staging
+	-- Forecast
 	INSERT INTO [dbo].[fact_demand_total]
-	(
+    (
 		[dim_pdas_id]
 		,[dim_business_id]
 		,[dim_buying_program_id]
@@ -46,8 +52,8 @@ BEGIN
 		,[quantity_non_lum]
 		,[quantity_unconsumed]
 		,[quantity]
-	)
-
+		,[is_from_previous_release]
+    )
 	-- APAC
 	-- Providing their forecast based on BUY months
 	SELECT
@@ -73,7 +79,8 @@ BEGIN
 		sum(quantity) AS [quantity_lum],
 		sum(quantity) AS [quantity_non_lum],
 		sum(quantity) AS [quantity_unconsumed],
-		sum(quantity)
+		sum(quantity) AS [quantity],
+		0 AS [is_from_previous_release]
 	FROM
 		[dbo].[staging_pdas_footwear_vans_apac_forecast] nf
 		LEFT OUTER JOIN
@@ -133,7 +140,7 @@ BEGIN
 		@dim_factory_id_placeholder AS [dim_factory_id],
 		CASE
 			WHEN dc.id IS NOT NULL THEN dc.id
-			ELSE @dim_customer_id_placeholder_apac
+			ELSE @dim_customer_id_placeholder_emea
 		END as dim_customer_id,
 		@dim_demand_category_id_forecast AS [dim_demand_category_id],
 		'UNDEFINED' AS [order_number],
@@ -141,7 +148,8 @@ BEGIN
 		sum(quantity) AS [quantity_lum],
 		sum(quantity) AS [quantity_non_lum],
 		sum(quantity) AS [quantity_unconsumed],
-		sum(quantity)
+		sum(quantity) AS [quantity],
+		0 AS [is_from_previous_release]
 	FROM
 		[dbo].[staging_pdas_footwear_vans_emea_forecast] nf
 		LEFT OUTER JOIN
@@ -204,7 +212,8 @@ BEGIN
 		sum(quantity) AS [quantity_lum],
 		sum(quantity) AS [quantity_non_lum],
 		sum(quantity) AS [quantity_unconsumed],
-		sum(quantity)
+		sum(quantity) AS [quantity],
+		0 AS [is_from_previous_release]
 	FROM
 		[dbo].[staging_pdas_footwear_vans_nora_forecast] nf
 		INNER JOIN

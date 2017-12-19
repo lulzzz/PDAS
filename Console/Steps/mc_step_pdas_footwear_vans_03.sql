@@ -52,22 +52,22 @@ BEGIN
 		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 		-- NTB
-		-- EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
-		-- 	@pdasid = @pdasid,
-		-- 	@businessid = @dim_business_id_footwear_vans,
-		-- 	@buying_program_id = @buying_program_id
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
+			@pdasid = @pdasid,
+			@businessid = @dim_business_id_footwear_vans,
+			@buying_program_id = @buying_program_id
 
 		-- Forecast
-		-- EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
-		-- 	@pdasid = @pdasid,
-		-- 	@businessid = @dim_business_id_footwear_vans,
-		-- 	@buying_program_id = @buying_program_forecast_id
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
+			@pdasid = @pdasid,
+			@businessid = @dim_business_id_footwear_vans,
+			@buying_program_id = @buying_program_forecast_id
 
 		-- NGC
-		--EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 		-- Combine demand
-		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+		-- EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 
 		-- Prepare report tables for Excel frontend

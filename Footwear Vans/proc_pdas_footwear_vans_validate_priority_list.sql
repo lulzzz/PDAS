@@ -35,7 +35,7 @@ BEGIN
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_priority_list]) staging
@@ -51,7 +51,7 @@ BEGIN
 
     -- Check short_name from dim_factory for alloc_1
     SET @type = 'Factory short name not in master data (1st Priority)';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([alloc_1], '') as [value]
 	FROM
 		(SELECT DISTINCT [alloc_1] FROM [dbo].[staging_pdas_footwear_vans_priority_list]) staging
@@ -76,7 +76,7 @@ BEGIN
 
 	-- Check short_name from dim_factory for alloc_2
     SET @type = 'Factory short name not in master data (2nd Priority)';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([alloc_2], '') as [value]
 	FROM
 		(SELECT DISTINCT [alloc_2] FROM [dbo].[staging_pdas_footwear_vans_priority_list]) staging
@@ -102,7 +102,7 @@ BEGIN
 
 	-- Check name from dim_construction_type
     SET @type = 'Construction type not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_construction_type_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_construction_type_name] FROM [dbo].[staging_pdas_footwear_vans_priority_list]) staging
@@ -128,7 +128,7 @@ BEGIN
 
 	-- Check dim_product_style_complexity from hard coded valid list
     SET @type = 'Style complexity not valid';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_construction_type_name], '') as [value]
 	FROM
 		[dbo].[staging_pdas_footwear_vans_priority_list]
