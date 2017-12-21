@@ -17,7 +17,7 @@ BEGIN
 	WAITFOR DELAY '00:00:05'
 
 	-- Start new PDAS release
-	-- EXEC [proc_pdas_footwear_vans_create_system_key] @mc_user_name = @mc_user_name
+	-- EXEC [proc_pdas_footwear_vans_create_system_key]
 
 	-- Copy previous release as current release
 	-- EXEC [proc_pdas_footwear_vans_create_copy_previous_release]

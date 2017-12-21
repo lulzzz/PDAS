@@ -10,86 +10,37 @@ GO
 -- Description:	Console procedure to run the PDAS Footwear Vans step 03.
 -- =============================================
 ALTER PROCEDURE [dbo].[mc_step_pdas_footwear_vans_03]
-	@mc_user_name nvarchar(100) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @mc_system_name nvarchar(100) = 'pdas_ftw_vans'
-	DECLARE @mc_proc_name nvarchar(100) = 'mc_step_pdas_footwear_vans_03'
+	DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
+	DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
+	DECLARE @buying_program_id int = (SELECT [dim_buying_program_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
+	DECLARE @buying_program_forecast_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
 
-	IF (@mc_user_name IN (SELECT [name] FROM [dbo].[mc_user]))
-	BEGIN
+	-- Step 03 - Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
+	-- Capacity
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-		-- Initialize Console procedure table
-		UPDATE [dbo].[mc_proc]
-		SET
-			[status_start] = 0
-			,[status_end] = 0
-		WHERE
-			[mc_system_name] = @mc_system_name
-			AND CONVERT(int, RIGHT([name], 2)) >= CONVERT(int, RIGHT(@mc_proc_name, 2))
+	-- NTB
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
+		@pdasid = @pdasid,
+		@businessid = @dim_business_id_footwear_vans,
+		@buying_program_id = @buying_program_id
 
-		-- Update Console procedure table
-		UPDATE [dbo].[mc_proc]
-		SET
-			[update_dt] = GETDATE()
-			,[status_start] = 1
-		WHERE
-			[mc_system_name] = @mc_system_name
-			AND [name] = @mc_proc_name
+	-- Forecast
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
+		@pdasid = @pdasid,
+		@businessid = @dim_business_id_footwear_vans,
+		@buying_program_id = @buying_program_forecast_id
 
-		-- Stored procedure(s) to run
-		/* START */
-
-		DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
-		DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
-		DECLARE @buying_program_id int = (SELECT [dim_buying_program_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
-		DECLARE @buying_program_forecast_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
-
-		-- Step 03 - Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
-		-- Capacity
-		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
-
-		-- NTB
-		-- EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
-		-- 	@pdasid = @pdasid,
-		-- 	@businessid = @dim_business_id_footwear_vans,
-		-- 	@buying_program_id = @buying_program_id
-
-		-- Forecast
-		-- EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
-		-- 	@pdasid = @pdasid,
-		-- 	@businessid = @dim_business_id_footwear_vans,
-		-- 	@buying_program_id = @buying_program_forecast_id
-
-		-- NGC
-		--EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
-
-		-- Combine demand
-		EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	-- NGC
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 
-		-- Prepare report tables for Excel frontend
-		EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	-- Prepare report tables for Excel frontend
+	EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-		/* END */
-
-		-- Update Console procedure table
-		UPDATE [dbo].[mc_proc]
-		SET
-			[update_dt] = GETDATE()
-			,[status_end] = 1
-		WHERE
-			[mc_system_name] = @mc_system_name
-			AND [name] = @mc_proc_name
-
-	END
-	ELSE
-	BEGIN
-
-		RETURN -500
-
-	END
 
 END

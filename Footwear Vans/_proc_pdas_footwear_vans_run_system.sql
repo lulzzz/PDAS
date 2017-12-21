@@ -25,7 +25,7 @@ EXEC [dbo].[proc_pdas_footwear_vans_validate_ngc_orders] @mc_user_name = NULL
 EXEC [dbo].[proc_pdas_footwear_vans_validate_ntb] @mc_user_name = NULL
 EXEC [dbo].[proc_pdas_footwear_vans_validate_raw_capacity] @mc_user_name = NULL
 
-SELECT * FROM [dbo].[system_log_file] WHERE [system] = 'pdas_ftw_vans' ORDER BY [source], [type]
+SELECT * FROM [dbo].[system_log_file] WHERE [system] = 'pdas_ftw_vans' ORDER BY [source], [category]
 
 
 -- Transfer raw factory capacity (weekly and monthly), NGC Orders, Need to Buys and Forecasts
@@ -47,8 +47,6 @@ EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
 -- NGC
 EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
--- Combine demand
-EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 -- Consume high level demand signal with low level demand signal
 --EXEC [dbo].[proc_pdas_footwear_vans_do_demand_signal_netting]

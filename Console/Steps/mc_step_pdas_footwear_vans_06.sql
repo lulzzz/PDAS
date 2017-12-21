@@ -10,71 +10,24 @@ GO
 -- Description:	Console procedure to run the PDAS Footwear Vans step 06.
 -- =============================================
 ALTER PROCEDURE [dbo].[mc_step_pdas_footwear_vans_06]
-	@mc_user_name nvarchar(100) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @mc_system_name nvarchar(100) = 'pdas_ftw_vans'
-	DECLARE @mc_proc_name nvarchar(100) = 'mc_step_pdas_footwear_vans_06'
-
-	IF (@mc_user_name IN (SELECT [name] FROM [dbo].[mc_user]))
-	BEGIN
-
-		-- Initialize Console procedure table
-		UPDATE [dbo].[mc_proc]
-		SET
-			[status_start] = 0
-			,[status_end] = 0
-		WHERE
-			[mc_system_name] = @mc_system_name
-			AND CONVERT(int, RIGHT([name], 2)) >= CONVERT(int, RIGHT(@mc_proc_name, 2))
-
-		-- Update Console procedure table
-		UPDATE [dbo].[mc_proc]
-		SET
-			[update_dt] = GETDATE()
-			,[status_start] = 1
-		WHERE
-			[mc_system_name] = @mc_system_name
-			AND [name] = @mc_proc_name
-
-		-- Stored procedure(s) to run
-		/* START */
-
-		DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
-		DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
+	DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
+	DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 
 
-		-- Do manual overwrite
-		EXEC [dbo].[proc_pdas_footwear_vans_do_overwrite] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	-- Do manual overwrite
+	EXEC [dbo].[proc_pdas_footwear_vans_do_overwrite] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-		-- Adjust EMEA NTB based on cutoff days
-		EXEC [dbo].[proc_pdas_footwear_vans_do_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	-- Adjust EMEA NTB based on cutoff days
+	EXEC [dbo].[proc_pdas_footwear_vans_do_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-		-- Prepare report tables for Excel frontend
-		EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	-- Prepare report tables for Excel frontend
+	EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-		-- Validate source data (need to check the Vans Footwear Validation Report afterwards)
-		EXEC [dbo].[proc_pdas_footwear_vans_validate_allocation_decision] @mc_user_name = @mc_user_name
-
-		/* END */
-
-		-- Update Console procedure table
-		UPDATE [dbo].[mc_proc]
-		SET
-			[update_dt] = GETDATE()
-			,[status_end] = 1
-		WHERE
-			[mc_system_name] = @mc_system_name
-			AND [name] = @mc_proc_name
-
-	END
-	ELSE
-	BEGIN
-
-		RETURN -500
-
-	END
+	-- Validate source data (need to check the Vans Footwear Validation Report afterwards)
+	EXEC [dbo].[proc_pdas_footwear_vans_validate_allocation_decision]
 
 END
