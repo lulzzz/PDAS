@@ -36,7 +36,7 @@ BEGIN
 
     -- Check market from dim_customer (and mapping)
 	SET @type = 'Customer not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_market_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_market_name] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast]) staging
@@ -53,7 +53,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Customer Master'
+            WHERE [category] = 'Customer Master'
         ) mapping
 			ON staging.[dim_market_name] = mapping.[child]
 	WHERE
@@ -61,7 +61,7 @@ BEGIN
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast]) staging
@@ -77,7 +77,7 @@ BEGIN
 
     -- Check short_name from dim_factory
     SET @type = 'Factory short name not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_short_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_factory_short_name] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast]) staging
@@ -93,7 +93,7 @@ BEGIN
 
 	-- Buy month
     SET @type = 'Buy Month not in master data';
-  	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+  	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
   	SELECT DISTINCT @system, @source, @type, ISNULL(SUBSTRING(staging.month_label, 1, 4), '') + '/' + ISNULL(SUBSTRING(staging.month_label, 6, 3), '') as [value]
   	FROM
   		(SELECT DISTINCT [month_label] FROM [dbo].[staging_pdas_footwear_vans_apac_forecast]) staging
@@ -116,7 +116,7 @@ BEGIN
 
     -- Check market from dim_customer (and mapping)
 	SET @type = 'Market not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_region_region], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_region_region] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast]) staging
@@ -132,7 +132,7 @@ BEGIN
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast]) staging
@@ -148,7 +148,7 @@ BEGIN
 
 	-- Buy month
     SET @type = 'Buy Month not in master data';
-  	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+  	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
   	SELECT DISTINCT @system, @source, @type, ISNULL(staging.[season], '') + '/' + ISNULL(staging.[plan_month], '') as [value]
   	FROM
   		(SELECT DISTINCT [season], [plan_month] FROM [dbo].[staging_pdas_footwear_vans_nora_forecast]) staging
@@ -171,7 +171,7 @@ BEGIN
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_material_id], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_product_material_id] FROM [dbo].[staging_pdas_footwear_vans_emea_forecast]) staging
@@ -187,7 +187,7 @@ BEGIN
 
     -- Buy month
     SET @type = 'Buy Month not in master data';
-  	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+  	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
   	SELECT DISTINCT @system, @source, @type, ISNULL(staging.[season], '') + '/' + ISNULL(staging.[plan_month], '') as [value]
   	FROM
   		(SELECT DISTINCT [season], [plan_month], [customer_type] FROM [dbo].[staging_pdas_footwear_vans_emea_forecast]) staging

@@ -34,7 +34,7 @@ BEGIN
 
     -- Check short_name from dim_factory
     SET @type = 'Factory short name not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_short_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_factory_short_name] FROM [dbo].[staging_pdas_footwear_vans_raw_capacity]) staging
@@ -51,7 +51,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Factory Master'
+            WHERE [category] = 'Factory Master'
         ) mapping
 			ON staging.[dim_factory_short_name] = mapping.[child]
 	WHERE
@@ -60,7 +60,7 @@ BEGIN
 
 	-- Check name from dim_construction_type
     SET @type = 'Construction type not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_construction_type_name], '') as [value]
 	FROM
 		(SELECT DISTINCT [dim_construction_type_name] FROM [dbo].[staging_pdas_footwear_vans_raw_capacity]) staging
@@ -77,7 +77,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Construction Type Master'
+            WHERE [category] = 'Construction Type Master'
         ) mapping
 			ON staging.[dim_construction_type_name] = mapping.[child]
 	WHERE

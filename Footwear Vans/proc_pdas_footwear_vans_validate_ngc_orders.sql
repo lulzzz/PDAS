@@ -34,7 +34,7 @@ BEGIN
 
     -- Check material_id from dim_product
     SET @type = 'Material ID not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_style_id], '') + '/' + ISNULL([dim_product_size], '') as [value]
 	FROM
 		(SELECT DISTINCT REPLACE([dim_product_style_id], ' ', '') as [dim_product_style_id], LTRIM(RTRIM([dim_product_size])) as [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_ngc_po]) staging
@@ -51,7 +51,7 @@ BEGIN
 
     -- Check short_name from dim_factory
     SET @type = 'Factory short name not in master data';
-	INSERT INTO [dbo].[system_log_file] (system, source, type, value)
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_factory_code], '') as [value]
 	FROM
 		(SELECT DISTINCT REPLACE([dim_factory_factory_code], ' ', '') as [dim_factory_factory_code] FROM [dbo].[staging_pdas_footwear_vans_ngc_po]) staging
@@ -68,7 +68,7 @@ BEGIN
                 [parent]
                 ,[child]
             FROM [dbo].[helper_pdas_footwear_vans_mapping]
-            WHERE [type] = 'Factory Master'
+            WHERE [category] = 'Factory Master'
         ) mapping
 			ON staging.[dim_factory_factory_code] = mapping.[child]
 	WHERE
