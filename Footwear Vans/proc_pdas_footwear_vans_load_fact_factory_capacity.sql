@@ -56,7 +56,7 @@ BEGIN
             ,MAX([NORA]) as [NORA]
         FROM
             [dbo].[helper_pdas_footwear_vans_factory_capacity_by_region] helper
-            INNER JOIN [dbo].[dim_factory] df ON helper.[Factory] = df.short_name
+            INNER JOIN [dbo].[dim_factory] df ON helper.[factory_short_name] = df.short_name
         GROUP BY
             df.[id]
     ) c
@@ -123,7 +123,7 @@ BEGIN
                 [dbo].[helper_pdas_footwear_vans_mapping] m
                 INNER JOIN (SELECT id, name FROM [dbo].[dim_construction_type]) cons
                     ON m.parent = cons.name
-            WHERE type = 'Construction Type Master'
+            WHERE category = 'Construction Type Master'
         ) mapping_cons ON cap.dim_construction_type_name = mapping_cons.child
 
         LEFT OUTER JOIN [dbo].[dim_factory] df ON cap.dim_factory_short_name = df.short_name
@@ -134,11 +134,11 @@ BEGIN
                 [dbo].[helper_pdas_footwear_vans_mapping] m
                 INNER JOIN (SELECT id, short_name FROM [dbo].[dim_factory]) df
                     ON m.parent = df.short_name
-            WHERE type = 'Factory Master'
+            WHERE category = 'Factory Master'
         ) mapping_f ON cap.dim_factory_short_name = mapping_f.child
 
         LEFT OUTER JOIN [dbo].[helper_pdas_footwear_vans_factory_capacity_adjustment] cap_adj
-            ON cap_adj.[Factory] = df.short_name
+            ON cap_adj.[factory_short_name] = df.short_name
 
         LEFT OUTER JOIN @temp_percentage_region cap_region
             ON cap_region.[dim_factory_id] = df.[id]
@@ -298,7 +298,7 @@ BEGIN
                     [dbo].[helper_pdas_footwear_vans_mapping] m
                     INNER JOIN (SELECT id, short_name FROM [dbo].[dim_factory]) df
                         ON m.parent = df.short_name
-                WHERE type = 'Factory Master'
+                WHERE category = 'Factory Master'
             ) mapping_f ON cap.dim_factory_short_name = mapping_f.child
 
             LEFT OUTER JOIN [dbo].[dim_construction_type] cons ON cap.dim_construction_type_name = cons.name
@@ -309,11 +309,11 @@ BEGIN
                     [dbo].[helper_pdas_footwear_vans_mapping] m
                     INNER JOIN (SELECT id, name FROM [dbo].[dim_construction_type]) cons
                         ON m.parent = cons.name
-                WHERE type = 'Construction Type Master'
+                WHERE category = 'Construction Type Master'
             ) mapping_cons ON cap.dim_construction_type_name = mapping_cons.child
 
             LEFT OUTER JOIN [dbo].[helper_pdas_footwear_vans_factory_capacity_adjustment] cap_adj
-                ON cap_adj.[Factory] = df.short_name
+                ON cap_adj.[factory_short_name] = df.short_name
 
             LEFT OUTER JOIN @temp_percentage_region cap_region
                 ON cap_region.[dim_factory_id] = df.[id]
@@ -495,13 +495,13 @@ BEGIN
     -- Update adjusted capacity (80% second capacity line)
     UPDATE f
     SET
-        f.[capacity_available_weekly_adjusted] = f.[capacity_available_weekly] * h.[Percentage Adjustment]
+        f.[capacity_available_weekly_adjusted] = f.[capacity_available_weekly] * h.[percentage_adjustment]
     FROM
         (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
         INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
             ON f.[dim_factory_id] = df.[id]
         INNER JOIN [dbo].[helper_pdas_footwear_vans_factory_capacity_adjustment] h
-            ON df.[short_name] = h.[Factory]
+            ON df.[short_name] = h.[factory_short_name]
 
     -- Update negative capacity to 0
     UPDATE [dbo].[fact_factory_capacity]
