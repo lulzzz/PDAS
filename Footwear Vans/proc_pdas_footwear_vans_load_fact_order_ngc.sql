@@ -224,7 +224,7 @@ BEGIN
 	WHERE
 		[dim_pdas_id] = @pdasid
 		AND [dim_business_id] = @businessid
-		--AND DATEDIFF(month, dd.full_date, @pdas_release_full_d) <= 2
+		AND DATEDIFF(month, dd.full_date, @pdas_release_full_d) <= 2
 
 	-- Update fact demand total with NGC
 	UPDATE target WITH (serializable)
