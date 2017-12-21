@@ -62,15 +62,15 @@ BEGIN
 		INNER JOIN
 		(
 			SELECT
-				[id],
+				df.[id],
 				[short_name],
 				[port],
-				cut.[Cutoff Day EU DC] as [cutoff_day_eu_dc],
-				cut.[Cutoff Day EU Crossdock] as [cutoff_day_eu_crossdock]
+				cut.[cutoff_day_eu_dc] as [cutoff_day_eu_dc],
+				cut.[cutoff_day_eu_crossdock] as [cutoff_day_eu_crossdock]
 			FROM
 				[dbo].[dim_factory] df
 				LEFT OUTER JOIN [dbo].[helper_pdas_footwear_vans_cutoff] cut
-					ON 	df.port = cut.[Port Name]
+					ON 	df.port = cut.[port_name]
 			WHERE is_placeholder = 0
 		) df
 			ON target.[dim_factory_id] = df.[id]

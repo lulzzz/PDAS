@@ -276,16 +276,16 @@ BEGIN
 		f.[customer_moq] = CASE
 			WHEN f.[region_below_moq] = 1
 			THEN (
-				SELECT MAX([From by Customer])
+				SELECT MAX([from_by_customer])
 				FROM [dbo].[helper_pdas_footwear_vans_moq_policy]
-				WHERE [From by Region] <> f.[region_moq]
-					AND [Product Type] = dp.[product_type]
+				WHERE [from_by_region] <> f.[region_moq]
+					AND [product_type] = dp.[product_type]
 			)
 			ELSE (
-				SELECT MAX([From by Customer])
+				SELECT MAX([from_by_customer])
 				FROM [dbo].[helper_pdas_footwear_vans_moq_policy]
-				WHERE [From by Region] = f.[region_moq]
-					AND [Product Type] = dp.[product_type]
+				WHERE [from_by_region] = f.[region_moq]
+					AND [product_type] = dp.[product_type]
 			)
 		END
 	FROM
@@ -329,16 +329,16 @@ BEGIN
 		INNER JOIN (SELECT [id], [product_type] FROM [dbo].[dim_product]) dp
 			ON f.[dim_product_id] = dp.[id]
 		INNER JOIN [dbo].[helper_pdas_footwear_vans_moq_policy] h
-			ON dp.[product_type] = h.[Product Type]
-			AND f.[customer_moq] = h.[From by Customer]
+			ON dp.[product_type] = h.[product_type]
+			AND f.[customer_moq] = h.[from_by_customer]
 		INNER JOIN
 		(
-			SELECT [Product Type]
-			      ,[From by Region]
+			SELECT [product_type]
+			      ,[from_by_region]
 			      ,MAX([Upcharge]) AS [Upcharge]
 			  FROM [VCDWH].[dbo].[helper_pdas_footwear_vans_moq_policy]
-			  group by [product type], [from by region]
+			  group by [product_type], [from_by_region]
 	    ) h2
-			ON h.[From by Region] = h2.[From by Region]
+			ON h.[from_by_region] = h2.[from_by_region]
 
 END

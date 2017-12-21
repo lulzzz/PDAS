@@ -37,11 +37,11 @@ BEGIN
 	/* Variable assignments */
 	SET @helper_retail_qt_rqt_vendor_02 =
 	(
-		SELECT MAX([Factory])
+		SELECT MAX([factory_short_name])
 		FROM [dbo].[helper_pdas_footwear_vans_retail_qt]
-		WHERE [MTL] = @dim_product_material_id
-			AND [Region] = @dim_customer_country_region
-			AND [Sold to Party] = @dim_customer_sold_to_party
+		WHERE [material_id] = @dim_product_material_id
+			AND [region] = @dim_customer_country_region
+			AND [sold_to_party] = @dim_customer_sold_to_party
 	)
 
 	/* Sub decision tree logic */

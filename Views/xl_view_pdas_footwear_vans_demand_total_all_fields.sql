@@ -375,13 +375,13 @@ FROM
 	LEFT OUTER JOIN
 	(
 		SELECT
-			[MTL] as dim_product_material_id
-			,MAX([QT Leadtime]) as qt_leadtime
-			,MAX([Factory]) as dim_factory_short_name
+			[material_id] as dim_product_material_id
+			,MAX([qt_leadtime]) as qt_leadtime
+			,MAX([factory_short_name]) as dim_factory_short_name
 		FROM
 			[helper_pdas_footwear_vans_fty_qt]
 		GROUP BY
-			[MTL]
+			[material_id]
 	) helper_pdas_footwear_vans_fty_qt
 		ON helper_pdas_footwear_vans_fty_qt.dim_product_material_id = dim_product.material_id
 
@@ -389,18 +389,18 @@ FROM
 	LEFT OUTER JOIN
 	(
 		SELECT
-			[MTL] as dim_product_material_id
-      		,[Buying Program] as dim_buying_program_name
-      		,[Region] as dim_customer_region
-      		,[Sold to Party] as dim_customer_sold_to_party
-			,MAX([Factory]) as dim_factory_short_name
+			[material_id] as dim_product_material_id
+      		,[buying_program_name] as dim_buying_program_name
+      		,[region] as dim_customer_region
+      		,[sold_to_party] as dim_customer_sold_to_party
+			,MAX([factory_short_name]) as dim_factory_short_name
 		FROM
 			[helper_pdas_footwear_vans_retail_qt]
 		GROUP BY
-			[MTL]
-			,[Buying Program]
-			,[Region]
-			,[Sold to Party]
+			[material_id]
+			,[buying_program_name]
+			,[region]
+			,[sold_to_party]
 	) helper_pdas_footwear_vans_retail_qt
 		ON
 			helper_pdas_footwear_vans_retail_qt.dim_product_material_id = dim_product.material_id
