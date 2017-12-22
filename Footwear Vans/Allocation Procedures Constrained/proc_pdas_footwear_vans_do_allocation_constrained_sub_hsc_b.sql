@@ -72,9 +72,9 @@ BEGIN
 
 	SET @helper_retail_qt_rqt_vendor_02 =
 	(
-		SELECT MAX([Factory])
+		SELECT MAX([factory_short_name])
 		FROM [dbo].[helper_pdas_footwear_vans_retail_qt]
-		WHERE [MTL] = @dim_product_material_id
+		WHERE [material_id] = @dim_product_material_id
 	)
 
 	SET @dim_factory_name_priority_list_primary_02 =
@@ -182,7 +182,7 @@ BEGIN
 		BEGIN
 			SET @allocation_logic = @allocation_logic +' => ' + 'Duty Beneficial: ' + @dim_customer_sold_to_party
 			-- RQT MTL?
-			IF @dim_product_material_id IN (SELECT [MTL] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
+			IF @dim_product_material_id IN (SELECT [material_id] FROM [dbo].[helper_pdas_footwear_vans_retail_qt])
 			BEGIN
 				SET @allocation_logic = @allocation_logic +' => ' + 'RQT MTL'
 
