@@ -72,7 +72,7 @@ BEGIN
 	ELSE
 	BEGIN
 		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)
-		SET @allocation_logic = @allocation_logic +' => ' + 'not RQT MTL' +' => ' + 'First priority'
+		SET @allocation_logic = @allocation_logic +' => ' + 'First priority'
 		IF @dim_factory_name_priority_list_primary_02 IS NOT NULL
 		BEGIN
 			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_primary_02
