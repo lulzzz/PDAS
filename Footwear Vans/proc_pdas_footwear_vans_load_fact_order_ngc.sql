@@ -226,10 +226,77 @@ BEGIN
 		AND [dim_business_id] = @businessid
 		AND DATEDIFF(month, dd.full_date, @pdas_release_full_d) <= 2
 
+
 	-- Update fact demand total with NGC
+	-- Insert new rows
+    INSERT INTO [dbo].[fact_demand_total]
+	(
+		[dim_pdas_id]
+		,[dim_business_id]
+		,[dim_buying_program_id]
+		,[dim_product_id]
+		,[dim_date_id]
+		,[dim_factory_id_original_unconstrained]
+		,[dim_factory_id_original_constrained]
+		,[dim_factory_id_final]
+		,[dim_factory_id]
+		,[dim_customer_id]
+		,[dim_demand_category_id]
+		,[order_number]
+		,[so_code]
+		,[is_asap]
+		,[quantity_lum]
+		,[quantity_non_lum]
+		,[quantity_unconsumed]
+		,[quantity]
+		,[production_lt_actual_buy]
+		,[is_from_previous_release]
+		,[source_system]
+	)
+    SELECT
+		#source_temp.[dim_pdas_id]
+		,#source_temp.[dim_business_id]
+		,#source_temp.[dim_buying_program_id]
+		,#source_temp.[dim_product_id]
+		,#source_temp.[dim_date_id]
+		,#source_temp.[dim_factory_id_original_unconstrained]
+		,#source_temp.[dim_factory_id_original_constrained]
+		,#source_temp.[dim_factory_id_final]
+		,#source_temp.[dim_factory_id]
+		,#source_temp.[dim_customer_id]
+		,#source_temp.[dim_demand_category_id]
+		,#source_temp.[order_number]
+		,#source_temp.[so_code]
+		,#source_temp.[is_asap]
+		,#source_temp.[quantity_lum]
+		,#source_temp.[quantity_non_lum]
+		,#source_temp.[quantity_unconsumed]
+		,#source_temp.[quantity]
+		,#source_temp.[production_lt_actual_buy]
+		,#source_temp.[is_from_previous_release]
+		,#source_temp.[source_system]
+    FROM
+    	#source_temp
+		LEFT OUTER JOIN
+		(
+		   SELECT *
+		   FROM [dbo].[fact_demand_total]
+		   WHERE
+			   [dim_pdas_id] = @pdasid and
+			   [dim_business_id] = @businessid and
+			   [dim_demand_category_id] IN (
+				   @dim_demand_category_id_open_order,
+				   @dim_demand_category_id_shipped_order
+			   )
+	   ) target
+           ON target.[order_number] = #source_temp.[order_number]
+    WHERE target.[order_number] IS NULL
+
+
+	-- Update existing rows
 	UPDATE target WITH (serializable)
 	SET
-	   target.[dim_pdas_id] = #source_temp.[dim_pdas_id]
+	    target.[dim_pdas_id] = #source_temp.[dim_pdas_id]
 	   ,target.[dim_business_id] = #source_temp.[dim_business_id]
 	   ,target.[dim_buying_program_id] = #source_temp.[dim_buying_program_id]
 	   ,target.[dim_product_id] = #source_temp.[dim_product_id]
@@ -260,41 +327,13 @@ BEGIN
 			   [dim_demand_category_id] IN (
 				   @dim_demand_category_id_open_order,
 				   @dim_demand_category_id_shipped_order
-			   )
+			   ) AND
+			   is_from_previous_release = 1
 	     ) target
 		INNER JOIN
 		#source_temp
 			ON target.[order_number] = #source_temp.[order_number]
 
-	IF @@rowcount = 0
-	BEGIN
-	  INSERT INTO [dbo].[fact_demand_total]
-	  (
-			[dim_pdas_id]
-			,[dim_business_id]
-			,[dim_buying_program_id]
-			,[dim_product_id]
-			,[dim_date_id]
-			,[dim_factory_id_original_unconstrained]
-			,[dim_factory_id_original_constrained]
-			,[dim_factory_id_final]
-			,[dim_factory_id]
-			,[dim_customer_id]
-			,[dim_demand_category_id]
-			,[order_number]
-			,[so_code]
-			,[is_asap]
-			,[quantity_lum]
-			,[quantity_non_lum]
-			,[quantity_unconsumed]
-			,[quantity]
-			,[production_lt_actual_buy]
-			,[is_from_previous_release]
-			,[source_system]
-	  )
-	  SELECT *
-	  FROM #source_temp
-	END
 
 	-- Update dim_customer_id from initial customer mapping via PO/cut#
 	UPDATE target
@@ -437,7 +476,6 @@ BEGIN
 				[dim_demand_category_id] = @dim_demand_category_id_ntb
 		) source
 			ON target.sales_order = source.sales_order
-
 
 
 	-- Update the dim_date_id_buy_month

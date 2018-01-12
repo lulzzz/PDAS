@@ -151,9 +151,9 @@ BEGIN
 	-- Update moq
 	UPDATE f
 	SET
-		f.[region_moq] = moq.[From by Region]
+		f.[region_moq] = moq.[from_by_region]
 		,f.[region_below_moq] = CASE
-			WHEN f.[quantity_region_mtl_lvl] < moq.[From by Region] THEN 1
+			WHEN f.[quantity_region_mtl_lvl] < moq.[from_by_region] THEN 1
 			ELSE 0
 		END
 	FROM
@@ -166,12 +166,12 @@ BEGIN
 		INNER JOIN
 		(
 			SELECT
-				[Product Type]
-				,MAX([From by Region]) as [From by Region]
-			FROM [dbo].[mc_temp_pdas_footwear_vans_moq_policy]
-			GROUP BY [Product Type]
+				[product_type]
+				,MAX([from_by_region]) as [from_by_region]
+			FROM [dbo].[helper_pdas_footwear_vans_moq_policy]
+			GROUP BY [product_type]
 		) moq
-			ON dp.[product_type] = moq.[Product Type]
+			ON dp.[product_type] = moq.[product_type]
 
     WHERE
 		[dim_pdas_id] = @pdasid and
