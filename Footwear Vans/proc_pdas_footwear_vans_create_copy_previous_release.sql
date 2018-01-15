@@ -19,7 +19,7 @@ BEGIN
 
 		INSERT INTO [dbo].[fact_demand_total]
 		(
-			[dim_pdas_id]
+			  [dim_pdas_id]
 	      ,[dim_business_id]
 	      ,[dim_buying_program_id]
 	      ,[dim_product_id]
@@ -89,7 +89,7 @@ BEGIN
 	      ,[is_from_previous_release]
 	      ,[source_system]
 		)
-		SELECT [dim_pdas_id]
+		SELECT @pdasid
 		  ,[dim_business_id]
 		  ,[dim_buying_program_id]
 		  ,[dim_product_id]
