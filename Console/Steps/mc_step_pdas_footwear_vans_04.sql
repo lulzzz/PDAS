@@ -22,6 +22,8 @@ BEGIN
 	-- Unconstrained allocation
 	EXEC [dbo].[proc_pdas_footwear_vans_do_allocation_unconstrained] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
+	-- Do MOQ check
+	EXEC [dbo].[proc_pdas_footwear_vans_do_moq_upcharge_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- Prepare report tables for Excel frontend
 	EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans

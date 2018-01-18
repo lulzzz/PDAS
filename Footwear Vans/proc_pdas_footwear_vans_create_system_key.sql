@@ -7,7 +7,6 @@ GO
 -- Description:	Create PDAS system key.
 -- =============================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_create_system_key]
-	@mc_user_name nvarchar(100) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -29,17 +28,6 @@ BEGIN
 	)
 	BEGIN
 
-		-- Update configuration table
-		-- UPDATE [dbo].[helper_pdas_footwear_vans_configuration]
-		-- SET [value] =
-		-- 	CASE [variable]
-		-- 		WHEN 'Release Locker' THEN 'ON'
-		-- 		WHEN 'Release Note' THEN ''
-		-- 	END
-		-- WHERE
-		-- 	[type] = 'System' and
-		-- 	[variable] IN ('Release Locker', 'Release Note')
-
 		INSERT INTO [dbo].[dim_pdas]
 		(
 			[name]
@@ -51,24 +39,11 @@ BEGIN
 			,@run_date_id
 		)
 
-		IF (@mc_user_name IS NOT NULL)
-		BEGIN
-			INSERT INTO [dbo].[mc_user_log]	(	[mc_user_name],	[message])
-			VALUES							(	@mc_user_name,	'New PDAS system release key "' + @release_name + '" inserted successfully')
-		END
-
 	END
 	ELSE
 	BEGIN
 
-		DECLARE @feedback_message NVARCHAR(500) = 'Vans Footwear Configuration parameter "Release Locker" is ON.
-		To create a new release key, please change the value to OFF.
-		Only 1 release allowed per day.'
-		IF (@mc_user_name IS NOT NULL)
-		BEGIN
-			INSERT INTO [dbo].[mc_user_log]	(	[mc_user_name],	[message])
-			VALUES							(	@mc_user_name,	@feedback_message)
-		END
+		DECLARE @feedback_message NVARCHAR(500) = 'Only 1 release allowed per day.'
 
 		PRINT @feedback_message;
 		RETURN -999

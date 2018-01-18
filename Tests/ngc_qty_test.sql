@@ -37,7 +37,3 @@ group by
 year([revised_crd_dt]),
 month([revised_crd_dt])
 order by y, m
-
-
-EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = 1, @businessid = 1
-EXEC [dbo].[proc_pdas_footwear_vans_load_fact_demand_total]	@pdasid = 1, @businessid = 1

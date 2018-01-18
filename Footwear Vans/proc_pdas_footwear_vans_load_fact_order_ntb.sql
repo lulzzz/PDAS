@@ -34,6 +34,26 @@ BEGIN
 	SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 	DECLARE @pdas_release_full_d date = (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = @pdas_release_full_date_id)
 
+	DECLARE @dim_date_id_buy_month int = (
+		SELECT dim_date.[id]
+		FROM
+		(
+			SELECT [id], [buy_month]
+			FROM [dbo].[dim_pdas]
+			WHERE
+				[id] = @pdasid
+		) dim_pdas
+		INNER JOIN
+		(
+			SELECT
+				MIN([id]) as [id]
+				,[year_month_accounting]
+			FROM [dbo].[dim_date]
+			GROUP BY [year_month_accounting]
+		) dim_date
+			ON dim_pdas.[buy_month] = dim_date.[year_month_accounting]
+	)
+
 	-- Check if the session has already been loaded
 	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id AND dim_demand_category_id = @dim_demand_category_id_ntb AND is_from_previous_release = 0)
 	BEGIN
@@ -55,6 +75,7 @@ BEGIN
 		,[dim_buying_program_id]
 		,[dim_product_id]
 		,[dim_date_id]
+		,[dim_date_id_buy_month]
 		,[dim_factory_id_original_unconstrained]
 		,[dim_factory_id_original_constrained]
 		,[dim_factory_id_final]
@@ -95,6 +116,7 @@ BEGIN
 		,[dim_buying_program_id]
 		,[dim_product_id]
 		,ntb.[dim_date_id]
+		,@dim_date_id_buy_month
 		,CASE [dim_demand_category_id]
 			WHEN @dim_demand_category_id_ntb THEN @dim_factory_id_placeholder
 			ELSE [dim_factory_id]

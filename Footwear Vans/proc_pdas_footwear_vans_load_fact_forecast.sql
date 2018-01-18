@@ -20,6 +20,25 @@ BEGIN
 	DECLARE @dim_product_id_placeholder int = (SELECT [id] FROM [dbo].[dim_product] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'FUAC/SMU' and [material_id] = 'FUAC/SMU' and [size] = 'FUAC/SMU')
 	DECLARE @dim_demand_category_id_forecast int = (SELECT [id] FROM [dbo].[dim_demand_category] WHERE [name] = 'Forecast')
 
+	DECLARE @dim_date_id_buy_month int = (
+		SELECT dim_date.[id]
+		FROM
+		(
+			SELECT [id], [buy_month]
+			FROM [dbo].[dim_pdas]
+			WHERE
+				[id] = @pdasid
+		) dim_pdas
+		INNER JOIN
+		(
+			SELECT
+				MIN([id]) as [id]
+				,[year_month_accounting]
+			FROM [dbo].[dim_date]
+			GROUP BY [year_month_accounting]
+		) dim_date
+			ON dim_pdas.[buy_month] = dim_date.[year_month_accounting]
+	)
 
 	-- Check if the session has already been loaded
 	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id AND dim_demand_category_id = @dim_demand_category_id_forecast AND is_from_previous_release = 0)
@@ -40,6 +59,7 @@ BEGIN
 		,[dim_buying_program_id]
 		,[dim_product_id]
 		,[dim_date_id]
+		,[dim_date_id_buy_month]
 		,[dim_factory_id_original_unconstrained]
 		,[dim_factory_id_original_constrained]
 		,[dim_factory_id_final]
@@ -65,6 +85,7 @@ BEGIN
 			ELSE @dim_product_id_placeholder
 		END as dim_product_id,
 		dd.id as dim_date_id,
+		@dim_date_id_buy_month,
 		@dim_factory_id_placeholder AS [dim_factory_id_original_unconstrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_original_constrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_final],
@@ -134,6 +155,7 @@ BEGIN
 			ELSE @dim_product_id_placeholder
 		END as dim_product_id,
 		dd.id as dim_date_id,
+		@dim_date_id_buy_month,
 		@dim_factory_id_placeholder AS [dim_factory_id_original_unconstrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_original_constrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_final],
@@ -201,6 +223,7 @@ BEGIN
 			ELSE @dim_product_id_placeholder
 		END as dim_product_id,
 		dd.id as dim_date_id,
+		@dim_date_id_buy_month,
 		@dim_factory_id_placeholder AS [dim_factory_id_original_unconstrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_original_constrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_final],

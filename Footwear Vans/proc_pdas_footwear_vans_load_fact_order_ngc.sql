@@ -27,17 +27,38 @@ BEGIN
 	SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 	DECLARE @pdas_release_full_d date = (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = @pdas_release_full_date_id)
 
+	DECLARE @dim_date_id_buy_month int = (
+		SELECT dim_date.[id]
+		FROM
+		(
+			SELECT [id], [buy_month]
+			FROM [dbo].[dim_pdas]
+			WHERE
+				[id] = @pdasid
+		) dim_pdas
+		INNER JOIN
+		(
+			SELECT
+				MIN([id]) as [id]
+				,[year_month_accounting]
+			FROM [dbo].[dim_date]
+			GROUP BY [year_month_accounting]
+		) dim_date
+			ON dim_pdas.[buy_month] = dim_date.[year_month_accounting]
+	)
+
 	-- NGC
-  print 1
-  print CONVERT(varchar, SYSDATETIME(), 121)
+  	print 1
+  	print CONVERT(varchar, SYSDATETIME(), 121)
 	-- Drop temporary table if exists
 	IF OBJECT_ID('tempdb..#source_temp') IS NOT NULL
 	BEGIN
 		DROP TABLE #source_temp;
 	END
 
-  print 2
-  print CONVERT(varchar, SYSDATETIME(), 121)
+  	print 2
+  	print CONVERT(varchar, SYSDATETIME(), 121)
+
 	-- Create temp table
 	CREATE TABLE #source_temp (
 		[dim_pdas_id] INT
@@ -45,6 +66,7 @@ BEGIN
 		,[dim_buying_program_id] INT
 		,[dim_product_id] INT
 		,[dim_date_id] INT
+		,[dim_date_id_buy_month] INT
 		,[dim_factory_id_original_unconstrained] INT
 		,[dim_factory_id_original_constrained] INT
 		,[dim_factory_id_final] INT
@@ -71,6 +93,7 @@ BEGIN
 		,[dim_buying_program_id]
 		,[dim_product_id]
 		,[dim_date_id]
+		,[dim_date_id_buy_month]
 		,[dim_factory_id_original_unconstrained]
 		,[dim_factory_id_original_constrained]
 		,[dim_factory_id_final]
@@ -95,6 +118,7 @@ BEGIN
 		,[dim_buying_program_id]
 		,[dim_product_id]
 		,ngc.[dim_date_id]
+		,@dim_date_id_buy_month
 		,[dim_factory_id] AS [dim_factory_id_original_unconstrained]
 		,[dim_factory_id] AS [dim_factory_id_original_constrained]
 		,[dim_factory_id] AS [dim_factory_id_final]
@@ -242,6 +266,7 @@ BEGIN
 	   ,target.[dim_buying_program_id] = #source_temp.[dim_buying_program_id]
 	   ,target.[dim_product_id] = #source_temp.[dim_product_id]
 	   ,target.[dim_date_id] = #source_temp.[dim_date_id]
+	   ,target.[dim_date_id_buy_month] = @dim_date_id_buy_month
 	   ,target.[dim_factory_id_original_unconstrained] = #source_temp.[dim_factory_id_original_unconstrained]
 	   ,target.[dim_factory_id_original_constrained] = #source_temp.[dim_factory_id_original_constrained]
 	   ,target.[dim_factory_id_final] = #source_temp.[dim_factory_id_final]
@@ -291,6 +316,7 @@ BEGIN
 		,[dim_buying_program_id]
 		,[dim_product_id]
 		,[dim_date_id]
+		,[dim_date_id_buy_month]
 		,[dim_factory_id_original_unconstrained]
 		,[dim_factory_id_original_constrained]
 		,[dim_factory_id_final]
@@ -314,6 +340,7 @@ BEGIN
 		,#source_temp.[dim_buying_program_id]
 		,#source_temp.[dim_product_id]
 		,#source_temp.[dim_date_id]
+		,#source_temp.[dim_date_id_buy_month]
 		,#source_temp.[dim_factory_id_original_unconstrained]
 		,#source_temp.[dim_factory_id_original_constrained]
 		,#source_temp.[dim_factory_id_final]
@@ -520,37 +547,6 @@ BEGIN
 			ON target.sales_order = source.sales_order
 
 
-	-- Update the dim_date_id_buy_month
-	UPDATE f
-	SET
-		f.[dim_date_id_buy_month] = dim_date.[id]
-	FROM
-		(
-			SELECT *
-			FROM [dbo].[fact_demand_total]
-			WHERE
-				[dim_pdas_id] = @pdasid
-				AND [dim_business_id] = @businessid
-		) f
-		INNER JOIN
-		(
-			SELECT [id], [buy_month]
-			FROM [dbo].[dim_pdas]
-			WHERE
-				[id] = @pdasid
-		) dim_pdas
-			ON f.[dim_pdas_id] = dim_pdas.[id]
-		INNER JOIN
-		(
-			SELECT
-				MIN([id]) as [id]
-				,[year_month_accounting]
-			FROM [dbo].[dim_date]
-			GROUP BY [year_month_accounting]
-		) dim_date
-			ON dim_pdas.[buy_month] = dim_date.[year_month_accounting]
-
-
 	-- Update the dim_date_id_forecast_vs_actual
 	UPDATE [dbo].[fact_demand_total]
 	SET
@@ -569,6 +565,6 @@ BEGIN
 	-- Nothing to update
 
 	print 6
-  print CONVERT(varchar, SYSDATETIME(), 121)
+  	print CONVERT(varchar, SYSDATETIME(), 121)
 
 END
