@@ -28,13 +28,16 @@ BEGIN
 	DECLARE @pdas_release_full_d date = (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = @pdas_release_full_date_id)
 
 	-- NGC
-
+  print 1
+  print CONVERT(varchar, SYSDATETIME(), 121)
 	-- Drop temporary table if exists
 	IF OBJECT_ID('tempdb..#source_temp') IS NOT NULL
 	BEGIN
 		DROP TABLE #source_temp;
 	END
 
+  print 2
+  print CONVERT(varchar, SYSDATETIME(), 121)
 	-- Create temp table
 	CREATE TABLE #source_temp (
 		[dim_pdas_id] INT
@@ -226,72 +229,10 @@ BEGIN
 		AND [dim_business_id] = @businessid
 		AND DATEDIFF(month, dd.full_date, @pdas_release_full_d) <= 2
 
+	print 3
+  print CONVERT(varchar, SYSDATETIME(), 121)
 
 	-- Update fact demand total with NGC
-	-- Insert new rows
-    INSERT INTO [dbo].[fact_demand_total]
-	(
-		[dim_pdas_id]
-		,[dim_business_id]
-		,[dim_buying_program_id]
-		,[dim_product_id]
-		,[dim_date_id]
-		,[dim_factory_id_original_unconstrained]
-		,[dim_factory_id_original_constrained]
-		,[dim_factory_id_final]
-		,[dim_factory_id]
-		,[dim_customer_id]
-		,[dim_demand_category_id]
-		,[order_number]
-		,[so_code]
-		,[is_asap]
-		,[quantity_lum]
-		,[quantity_non_lum]
-		,[quantity_unconsumed]
-		,[quantity]
-		,[production_lt_actual_buy]
-		,[is_from_previous_release]
-		,[source_system]
-	)
-    SELECT
-		#source_temp.[dim_pdas_id]
-		,#source_temp.[dim_business_id]
-		,#source_temp.[dim_buying_program_id]
-		,#source_temp.[dim_product_id]
-		,#source_temp.[dim_date_id]
-		,#source_temp.[dim_factory_id_original_unconstrained]
-		,#source_temp.[dim_factory_id_original_constrained]
-		,#source_temp.[dim_factory_id_final]
-		,#source_temp.[dim_factory_id]
-		,#source_temp.[dim_customer_id]
-		,#source_temp.[dim_demand_category_id]
-		,#source_temp.[order_number]
-		,#source_temp.[so_code]
-		,#source_temp.[is_asap]
-		,#source_temp.[quantity_lum]
-		,#source_temp.[quantity_non_lum]
-		,#source_temp.[quantity_unconsumed]
-		,#source_temp.[quantity]
-		,#source_temp.[production_lt_actual_buy]
-		,#source_temp.[is_from_previous_release]
-		,#source_temp.[source_system]
-    FROM
-    	#source_temp
-		LEFT OUTER JOIN
-		(
-		   SELECT *
-		   FROM [dbo].[fact_demand_total]
-		   WHERE
-			   [dim_pdas_id] = @pdasid and
-			   [dim_business_id] = @businessid and
-			   [dim_demand_category_id] IN (
-				   @dim_demand_category_id_open_order,
-				   @dim_demand_category_id_shipped_order
-			   )
-	   ) target
-           ON target.[order_number] = #source_temp.[order_number]
-    WHERE target.[order_number] IS NULL
-
 
 	-- Update existing rows
 	UPDATE target WITH (serializable)
@@ -317,7 +258,6 @@ BEGIN
 	   ,target.[production_lt_actual_buy] = #source_temp.[production_lt_actual_buy]
 	   ,target.[is_from_previous_release] = #source_temp.[is_from_previous_release]
 	   ,target.[source_system] = #source_temp.[source_system]
-
 	FROM (
 		   SELECT *
 		   FROM [dbo].[fact_demand_total]
@@ -327,13 +267,115 @@ BEGIN
 			   [dim_demand_category_id] IN (
 				   @dim_demand_category_id_open_order,
 				   @dim_demand_category_id_shipped_order
-			   ) AND
-			   is_from_previous_release = 1
+			   )
 	     ) target
 		INNER JOIN
 		#source_temp
-			ON target.[order_number] = #source_temp.[order_number]
+			ON target.[dim_pdas_id] = #source_temp.[dim_pdas_id]
+			AND target.[dim_business_id] = #source_temp.[dim_business_id]
+			AND target.[dim_buying_program_id] = #source_temp.[dim_buying_program_id]
+			AND target.[dim_product_id] = #source_temp.[dim_product_id]
+			AND target.[dim_date_id] = #source_temp.[dim_date_id]
+			AND target.[dim_factory_id_original_unconstrained] = #source_temp.[dim_factory_id_original_unconstrained]
+			AND target.[dim_customer_id] = #source_temp.[dim_customer_id]
+			AND target.[dim_demand_category_id] = #source_temp.[dim_demand_category_id]
+			AND target.[order_number] = #source_temp.[order_number]
 
+	print 4
+  print CONVERT(varchar, SYSDATETIME(), 121)
+	-- Insert NGC new rows
+	INSERT INTO [dbo].[fact_demand_total]
+	(
+		[dim_pdas_id]
+		,[dim_business_id]
+		,[dim_buying_program_id]
+		,[dim_product_id]
+		,[dim_date_id]
+		,[dim_factory_id_original_unconstrained]
+		,[dim_factory_id_original_constrained]
+		,[dim_factory_id_final]
+		,[dim_factory_id]
+		,[dim_customer_id]
+		,[dim_demand_category_id]
+		,[order_number]
+		,[so_code]
+		,[is_asap]
+		,[quantity_lum]
+		,[quantity_non_lum]
+		,[quantity_unconsumed]
+		,[quantity]
+		,[production_lt_actual_buy]
+		,[is_from_previous_release]
+		,[source_system]
+	)
+	SELECT
+		#source_temp.[dim_pdas_id]
+		,#source_temp.[dim_business_id]
+		,#source_temp.[dim_buying_program_id]
+		,#source_temp.[dim_product_id]
+		,#source_temp.[dim_date_id]
+		,#source_temp.[dim_factory_id_original_unconstrained]
+		,#source_temp.[dim_factory_id_original_constrained]
+		,#source_temp.[dim_factory_id_final]
+		,#source_temp.[dim_factory_id]
+		,#source_temp.[dim_customer_id]
+		,#source_temp.[dim_demand_category_id]
+		,#source_temp.[order_number]
+		,#source_temp.[so_code]
+		,#source_temp.[is_asap]
+		,#source_temp.[quantity_lum]
+		,#source_temp.[quantity_non_lum]
+		,#source_temp.[quantity_unconsumed]
+		,#source_temp.[quantity]
+		,#source_temp.[production_lt_actual_buy]
+		,#source_temp.[is_from_previous_release]
+		,#source_temp.[source_system]
+	FROM
+		#source_temp
+		LEFT OUTER JOIN
+		(
+			 SELECT *
+			 FROM [dbo].[fact_demand_total]
+			 WHERE
+				 [dim_pdas_id] = @pdasid and
+				 [dim_business_id] = @businessid and
+				 [dim_demand_category_id] IN (
+					 @dim_demand_category_id_open_order,
+					 @dim_demand_category_id_shipped_order
+				 )
+		 ) target
+			ON target.[dim_pdas_id] = #source_temp.[dim_pdas_id]
+			AND target.[dim_business_id] = #source_temp.[dim_business_id]
+			AND target.[dim_buying_program_id] = #source_temp.[dim_buying_program_id]
+			AND target.[dim_product_id] = #source_temp.[dim_product_id]
+			AND target.[dim_date_id] = #source_temp.[dim_date_id]
+			AND target.[dim_factory_id_original_unconstrained] = #source_temp.[dim_factory_id_original_unconstrained]
+			AND target.[dim_customer_id] = #source_temp.[dim_customer_id]
+			AND target.[dim_demand_category_id] = #source_temp.[dim_demand_category_id]
+			AND target.[order_number] = #source_temp.[order_number]
+
+		WHERE target.[order_number] IS NULL
+
+
+	-- WHERE
+	-- 	NOT EXISTS (
+	-- 		SELECT *
+	-- 		FROM [dbo].[fact_demand_total] target
+	-- 		WHERE
+	-- 					target.[dim_pdas_id] = #source_temp.[dim_pdas_id]
+	-- 			AND target.[dim_business_id] = #source_temp.[dim_business_id]
+	-- 			AND target.[dim_buying_program_id] = #source_temp.[dim_buying_program_id]
+	-- 			AND target.[dim_product_id] = #source_temp.[dim_product_id]
+	-- 			AND target.[dim_date_id] = #source_temp.[dim_date_id]
+	-- 			AND target.[dim_factory_id_original_unconstrained] = #source_temp.[dim_factory_id_original_unconstrained]
+	-- 			AND target.[dim_customer_id] = #source_temp.[dim_customer_id]
+	-- 			AND target.[dim_demand_category_id] = #source_temp.[dim_demand_category_id]
+	-- 			AND target.[order_number] = #source_temp.[order_number]
+	-- 			AND target.[is_from_previous_release] = 1
+	-- 	)
+
+	print 5
+  print CONVERT(varchar, SYSDATETIME(), 121)
 
 	-- Update dim_customer_id from initial customer mapping via PO/cut#
 	UPDATE target
@@ -525,5 +567,8 @@ BEGIN
 	-- 	If (source_system LIKE '%JBA%')  // EMEA POs
 	-- { Use DC_Name in NGC PO file}
 	-- Nothing to update
+
+	print 6
+  print CONVERT(varchar, SYSDATETIME(), 121)
 
 END
