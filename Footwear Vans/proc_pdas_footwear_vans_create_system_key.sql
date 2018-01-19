@@ -11,8 +11,6 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-    -- Set default value for run_date if the parameter is missing
-
 	DECLARE @run_date DATE = GETDATE();
 	DECLARE @run_date_id INT = (SELECT MAX([id]) FROM [dbo].[dim_date] WHERE [full_date] = @run_date)
 
@@ -21,22 +19,22 @@ BEGIN
 
 	DECLARE @release_name nvarchar(45) = 'PDAS Release ' + CONVERT(nvarchar(8), @run_date_id)
 
-	IF (
-		@run_date_id > @pdas_d
-		-- AND
-		-- (SELECT [value] FROM [dbo].[helper_pdas_footwear_vans_configuration] WHERE [type] = 'System' AND [variable] = 'Release Locker') = 'OFF'
-	)
+	DECLARE @dim_buying_program_id int = (SELECT [id] FROM [dbo].[dim_buying_program] WHERE [name] = 'Bulk Buy')
+
+	IF (@run_date_id > @pdas_d)
 	BEGIN
 
 		INSERT INTO [dbo].[dim_pdas]
 		(
 			[name]
 			,[dim_date_id]
+			,[dim_buying_program_id]
 		)
 		VALUES
 		(
 			@release_name
 			,@run_date_id
+			,@dim_buying_program_id
 		)
 
 	END

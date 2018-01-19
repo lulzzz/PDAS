@@ -270,13 +270,6 @@ FROM
 	) dim_date_buy_month
 		ON f_1.dim_date_id_buy_month = dim_date_buy_month.id
 
-	INNER JOIN
-	(
-		SELECT *
-		FROM [dbo].[dim_date]
-	) dim_date_forecast_vs_actual
-		ON f_1.dim_date_id_forecast_vs_actual = dim_date_forecast_vs_actual.id
-
 	INNER JOIN dim_business
 		ON f_1.dim_business_id = dim_business.id
 
@@ -348,6 +341,13 @@ FROM
 
 	INNER JOIN dim_demand_category
 		ON f_1.dim_demand_category_id = dim_demand_category.id
+
+	LEFT OUTER JOIN
+	(
+		SELECT *
+		FROM [dbo].[dim_date]
+	) dim_date_forecast_vs_actual
+		ON f_1.dim_date_id_forecast_vs_actual = dim_date_forecast_vs_actual.id
 
 	LEFT OUTER JOIN
 	(

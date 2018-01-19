@@ -129,7 +129,7 @@ BEGIN
 	-- Check dim_product_style_complexity from hard coded valid list
     SET @type = 'Style complexity not valid';
 	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
-	SELECT DISTINCT @system, @source, @type, ISNULL([dim_construction_type_name], '') as [value]
+	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_style_complexity], '') as [value]
 	FROM
 		[dbo].[staging_pdas_footwear_vans_priority_list]
 	WHERE

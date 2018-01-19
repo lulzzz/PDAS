@@ -5,8 +5,7 @@ USE [VCDWH]
 DECLARE	@current_date date = GETDATE()
 DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
 DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
-DECLARE	@buying_program_id int
-SET @buying_program_id = (SELECT [dim_buying_program_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
+DECLARE	@buying_program_id int = (SELECT [dim_buying_program_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 
 -- Step 01 - Start new PDAS release
 -- EXEC [dbo].[proc_pdas_footwear_vans_create_system_key]
