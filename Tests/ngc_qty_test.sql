@@ -1,4 +1,18 @@
 
+SELECT
+	year([revised_crd_dt]) y,
+	month([revised_crd_dt]) m,
+	sum([lum_order_qty])
+FROM
+	[dbo].[staging_pdas_footwear_vans_ngc_po] ngc
+
+group by
+year([revised_crd_dt]),
+month([revised_crd_dt])
+order by y, m
+
+
+
 
 SELECT
 	year([revised_crd_dt]) y,
