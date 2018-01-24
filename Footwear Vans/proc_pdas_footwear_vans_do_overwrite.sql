@@ -32,7 +32,6 @@ BEGIN
 		(
 			SELECT
 				*
-				,CONVERT(NVARCHAR(100), CONVERT(NVARCHAR(10), dim_pdas_id) + '-' + CONVERT(NVARCHAR(10), dim_business_id) + '-' + CONVERT(NVARCHAR(10), dim_buying_program_id) + '-' + CONVERT(NVARCHAR(10), dim_demand_category_id) + '-' + CONVERT(NVARCHAR(10), dim_product_id) + '-' + CONVERT(NVARCHAR(10), dim_date_id) + '-' + CONVERT(NVARCHAR(10), dim_customer_id) + '-' + [order_number]) AS id
 			FROM [dbo].[fact_demand_total]
 			WHERE
 				dim_pdas_id = @pdasid and
@@ -80,7 +79,6 @@ BEGIN
 		(
 			SELECT
 				*
-				,CONVERT(NVARCHAR(100), CONVERT(NVARCHAR(10), dim_pdas_id) + '-' + CONVERT(NVARCHAR(10), dim_business_id) + '-' + CONVERT(NVARCHAR(10), dim_buying_program_id) + '-' + CONVERT(NVARCHAR(10), dim_demand_category_id) + '-' + CONVERT(NVARCHAR(10), dim_product_id) + '-' + CONVERT(NVARCHAR(10), dim_date_id) + '-' + CONVERT(NVARCHAR(10), dim_customer_id) + '-' + [order_number]) AS id
 			FROM [dbo].[fact_demand_total]
 			WHERE
 				dim_pdas_id = @pdasid and
@@ -89,7 +87,7 @@ BEGIN
 		INNER JOIN
 		(
 			SELECT
-				[id]
+				v.[id]
 				,[CY / CFS Load]
 				,[Confirmed CRD Dt (Vendor)]
 				,[Confirmed Unit Price (Price Conf Memo)]
@@ -124,7 +122,6 @@ BEGIN
 		(
 			SELECT
 				*
-				,CONVERT(NVARCHAR(100), CONVERT(NVARCHAR(10), dim_pdas_id) + '-' + CONVERT(NVARCHAR(10), dim_business_id) + '-' + CONVERT(NVARCHAR(10), dim_buying_program_id) + '-' + CONVERT(NVARCHAR(10), dim_demand_category_id) + '-' + CONVERT(NVARCHAR(10), dim_product_id) + '-' + CONVERT(NVARCHAR(10), dim_date_id) + '-' + CONVERT(NVARCHAR(10), dim_customer_id) + '-' + [order_number]) AS id
 			FROM [dbo].[fact_demand_total]
 			WHERE
 				dim_pdas_id = @pdasid and
