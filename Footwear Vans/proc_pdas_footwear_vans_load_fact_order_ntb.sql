@@ -135,7 +135,7 @@ BEGIN
 		END AS [dim_factory_id]
 		,[dim_customer_id]
 		,[dim_demand_category_id]
-		,[order_number]
+		,'UNDEFINED' as [order_number]
 		,[pr_code]
 		,[pr_cut_code]
 		,[po_code_customer]
