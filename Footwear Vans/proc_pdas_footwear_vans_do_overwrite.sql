@@ -75,6 +75,7 @@ BEGIN
 		,target.[performance_orig_req] = temp.[Performance (Orig Req Date)]
 		,target.[need_to_reallocate] = temp.[Need to reallocate]
 		,target.[order_number] = temp.[PO/CUT#]
+		,target.[dim_date_id] = temp.[dim_date_id]
 	FROM
 		(
 			SELECT
@@ -103,15 +104,17 @@ BEGIN
 				,[Performance (Orig Req Date)]
 				,[Need to reallocate]
 				,[PO/CUT#]
+				,d.[id] AS [dim_date_id]
 			FROM
-				[dbo].[staging_pdas_footwear_vans_allocation_report_vendor]
+				[dbo].[staging_pdas_footwear_vans_allocation_report_vendor] v
+				INNER JOIN [dbo].[dim_date] d
+					ON v.[Requested CRD] = d.[full_date]
+
 		) as temp
 			ON	target.[id] = temp.[id]
 
 
 	-- TODO ,target.[] = [Requested CRD] for vendor
-
-
 
 	-- Update fact_demand_total based on mc_view_pdas_footwear_vans_allocation_report_region
 	UPDATE target
