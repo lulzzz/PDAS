@@ -92,7 +92,7 @@ SELECT
 	, f_1.[coo]
 	, f_1.[remarks_region]
 	, NULL as [system_error]
-	, NULL as [need_to_reallocate]
+	, f_1.[need_to_reallocate]
 
 	-- dim_pdas
 	,dim_pdas.[name] AS [dim_pdas_name]

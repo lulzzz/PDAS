@@ -71,6 +71,7 @@ BEGIN
 		,target.[buy_comment] = temp.[Buy Comment]
 		,target.[status_orig_req] = temp.[Status (based on Orig Req)]
 		,target.[performance_orig_req] = temp.[Performance (Orig Req Date)]
+		,target.[] = [Requested CRD]
 		-- ,target.[need_to_reallocate] = temp.[Need to reallocate]
 	FROM
 		(
@@ -107,7 +108,7 @@ BEGIN
 		-- Update fact_demand_total based on mc_view_pdas_footwear_vans_allocation_report_region
 		UPDATE target
 		SET
-			target.[dim_factory_id] = temp.[dim_factory_id]
+			target.[remarks_region] = temp.[Remarks]
 		FROM
 			(
 				SELECT
@@ -121,20 +122,14 @@ BEGIN
 			INNER JOIN
 			(
 				SELECT
-					temp.[id]
-					,temp.[Allocation Comment (VFA)]
-					,df.[id] as	[dim_factory_id]
+					[id]
+					,[Remarks] as [remarks]
 				FROM
-					[dbo].[mc_view_pdas_footwear_vans_allocation_report_region] temp
-					INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
-						ON temp.[Factory Code VFA] = df.[short_name]
-				WHERE
-					[Factory Code VFA] <> [Factory Code (Constrained)]
+					[dbo].[mc_view_pdas_footwear_vans_allocation_report_region]
 			) as temp
 				ON	target.[id] = temp.[id]
 		WHERE
-			target.[dim_factory_id] <> temp.[dim_factory_id]
-			AND ISNULL(target.[comment_vfa], '') <> ISNULL(temp.[Allocation Comment (VFA)], '')
+			target.[remarks] <> temp.[remarks]
 
 
 END
