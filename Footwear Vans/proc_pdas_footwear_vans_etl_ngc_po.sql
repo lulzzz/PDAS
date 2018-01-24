@@ -189,8 +189,11 @@ FROM
     ) as staging
         ON
             staging.[po_code_cut] = temp.[po_code_cut]
-            and staging.[dim_product_style_id] = temp.[dim_product_style_id]
+			and staging.[dim_product_style_id] = temp.[dim_product_style_id]
+			and staging.[dim_product_color_description] = temp.[dim_product_color_description]
             and staging.[dim_product_size] = temp.[dim_product_size]
+			and staging.[dimension] = temp.[dimension]
+			and staging.[shipment_id] = temp.[shipment_id]
 WHERE
     staging.[po_code_cut] IS NULL
 
@@ -231,7 +234,10 @@ FROM
         ON
             staging.[po_code_cut] = temp.[po_code_cut]
             and staging.[dim_product_style_id] = temp.[dim_product_style_id]
+			and staging.[dim_product_color_description] = temp.[dim_product_color_description]
             and staging.[dim_product_size] = temp.[dim_product_size]
+			and staging.[dimension] = temp.[dimension]
+			and staging.[shipment_id] = temp.[shipment_id]
 
 
 

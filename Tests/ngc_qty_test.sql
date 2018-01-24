@@ -5,7 +5,8 @@ SELECT
 	sum([lum_order_qty])
 FROM
 	[dbo].[staging_pdas_footwear_vans_ngc_po] ngc
-
+WHERE
+	year([revised_crd_dt]) >= 2017
 group by
 year([revised_crd_dt]),
 month([revised_crd_dt])

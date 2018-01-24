@@ -1,6 +1,6 @@
 SELECT
 	-- fact_demand_total
-	CONVERT(NVARCHAR(100), CONVERT(NVARCHAR(10), f_1.dim_pdas_id) + '-' + CONVERT(NVARCHAR(10), f_1.[dim_business_id]) + '-' + CONVERT(NVARCHAR(10), f_1.dim_buying_program_id) + '-' + CONVERT(NVARCHAR(10), f_1.dim_demand_category_id) + '-' + CONVERT(NVARCHAR(10), f_1.dim_product_id) + '-' + CONVERT(NVARCHAR(10), f_1.dim_date_id) + '-' + CONVERT(NVARCHAR(10), f_1.dim_customer_id) + '-' + f_1.[order_number]) AS id
+	f_1.[id] AS id
 	, f_1.[dim_pdas_id]
 	, f_1.[dim_business_id]
 	, f_1.[dim_buying_program_id]
