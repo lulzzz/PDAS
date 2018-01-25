@@ -185,6 +185,9 @@ FROM
             [po_code_cut]
             ,[dim_product_style_id]
             ,[dim_product_size]
+			,[dim_product_color_description]
+			,[dimension]
+			,[shipment_id]
         FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
     ) as staging
         ON
