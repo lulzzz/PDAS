@@ -696,6 +696,7 @@ BEGIN
     WHERE
         ISNULL(pla.flag, 0) = 0 AND dp.is_placeholder = 0
         and dp.gender IS NOT NULL
+        and dp.gender <> 'PLACEHOLDER'
 
 
 END

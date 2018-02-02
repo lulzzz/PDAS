@@ -14,12 +14,12 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	WAITFOR DELAY '00:00:05'
+	-- WAITFOR DELAY '00:00:05'
 
 	-- Start new PDAS release
-	-- EXEC [proc_pdas_footwear_vans_create_system_key]
+	EXEC [proc_pdas_footwear_vans_create_system_key]
 
 	-- Copy previous release as current release
-	-- EXEC [proc_pdas_footwear_vans_create_copy_previous_release]
+	EXEC [proc_pdas_footwear_vans_create_copy_previous_release]
 
 END
