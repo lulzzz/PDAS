@@ -238,13 +238,27 @@ BEGIN
 	-- 2nd priority = COO Vietnam?
 	ELSE IF @dim_location_country_code_a2_secondary_02 = 'VN'
 	BEGIN
-		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
 		SET @allocation_logic = @allocation_logic +' => ' + '2nd priority = COO Vietnam' +' => ' +'Second priority'
-		IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+		-- SJV => HSC
+		IF @dim_factory_name_priority_list_secondary_02 = 'SJV'
 		BEGIN
-			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
+			IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+			BEGIN
+				SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
+			END
+		END
+		-- Others => Others
+		ELSE
+		BEGIN
+			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+			IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
+			BEGIN
+				SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
+			END
 		END
 	END
+
 
 	ELSE
 	BEGIN
