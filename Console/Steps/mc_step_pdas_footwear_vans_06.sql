@@ -25,7 +25,8 @@ BEGIN
 	EXEC [dbo].[proc_pdas_footwear_vans_do_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- Prepare report tables for Excel frontend
-	EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	-- TAKES 30 MINUTES TO RUN BECAUSE OF SERVER PERFORMANCE
+	-- EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- Validate source data (need to check the Vans Footwear Validation Report afterwards)
 	EXEC [dbo].[proc_pdas_footwear_vans_validate_allocation_decision]
