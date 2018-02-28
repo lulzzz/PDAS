@@ -158,18 +158,18 @@ BEGIN
 		SET @allocation_logic = @allocation_logic +' => ' + 'Flex'
 	END
 
-	-- DTP MTL?
-	ELSE IF @dim_product_dtp_mtl = 1
-	BEGIN
-		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTP')
-		SET @allocation_logic = @allocation_logic +' => ' + 'DTP MTL'
-	END
-
 	-- CLK MTL?
 	ELSE IF @dim_product_clk_mtl = 1
 	BEGIN
 		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'CLK')
 		SET @allocation_logic = @allocation_logic +' => ' + 'CLK MTL'
+	END
+
+	-- DTP MTL?
+	ELSE IF @dim_product_dtp_mtl = 1
+	BEGIN
+		SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'DTP')
+		SET @allocation_logic = @allocation_logic +' => ' + 'DTP MTL'
 	END
 
 	-- Single Source?

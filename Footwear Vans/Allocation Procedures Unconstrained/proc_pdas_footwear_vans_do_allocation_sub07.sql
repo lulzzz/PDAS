@@ -190,12 +190,25 @@ BEGIN
 
 	ELSE
 	BEGIN
+		-- 2nd priority <> 0
 		SET @allocation_logic = @allocation_logic +' => ' + '1st priority = not SJV' +' => ' +'2nd priority'
 		IF @dim_factory_name_priority_list_secondary_02 IS NOT NULL
 		BEGIN
-			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
-			SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
+			-- SJV => HSC
+			IF @dim_factory_name_priority_list_secondary_02 = 'SJV'
+			BEGIN
+				SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = 'HSC')
+				SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
+			END
+			-- Others => Others
+			ELSE
+			BEGIN
+				SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_secondary_02)
+				SET @allocation_logic = @allocation_logic +' => ' + @dim_factory_name_priority_list_secondary_02
+			END
 		END
+
+		-- 2nd priority = 0
 		ELSE
 		BEGIN
 			SET @dim_factory_id_original_unconstrained_02 = (SELECT [id] FROM [dbo].[dim_factory] WHERE [short_name] = @dim_factory_name_priority_list_primary_02)

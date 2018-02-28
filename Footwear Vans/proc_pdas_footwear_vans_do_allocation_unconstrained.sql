@@ -36,6 +36,10 @@ BEGIN
 		DECLARE @pdas_release_full_date_id int
 		SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
 
+		-- Dim buying program id
+		DECLARE @dim_buying_program_id INT
+		set @dim_buying_program_id = (SELECT [dim_buying_program_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
+
 		/* Reset allocation */
 
 		UPDATE f
@@ -228,6 +232,7 @@ BEGIN
 			[dim_pdas_id] = @pdasid
 			and [dim_business_id] = @businessid
 			and [dim_date_id] >= @pdas_release_month_date_id
+			and [dim_buying_program_id] = @dim_buying_program_id
 			and [edit_dt] IS NULL
 			and ddc.[name] IN ('Forecast', 'Need to Buy')
 
