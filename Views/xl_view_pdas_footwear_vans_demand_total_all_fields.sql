@@ -1,6 +1,8 @@
 SELECT
 	-- fact_demand_total
-	f_1.[id] AS id
+	f_1.[id]
+	,f_1.[id_original]
+	,f_1.[is_from_previous_release]
 	, f_1.[dim_pdas_id]
 	, f_1.[dim_business_id]
 	, f_1.[dim_buying_program_id]
@@ -19,7 +21,7 @@ SELECT
 	, f_1.[dim_factory_id]
 	, f_1.[dim_customer_id]
 	, f_1.[dim_demand_category_id]
-	, NULL as [order_number_original]
+	, f_1.[order_number_original]
 	, f_1.[order_number]
 	, LEFT(f_1.[order_number], 10) as [order_number_short]
 	, f_1.[pr_code]
@@ -36,6 +38,7 @@ SELECT
 	, f_1.[quantity]
 	, f_1.[quantity_region_mtl_lvl]
 	, f_1.[quantity_customer_mtl_lvl]
+	, f_1.[comment_vfa_allocation]
 	, f_1.[comment_vfa]
 	, f_1.[edit_dt]
 	, f_1.[allocation_logic_unconstrained]
@@ -91,7 +94,8 @@ SELECT
 	, f_1.[exp_delivery_without_constraint]
 	, f_1.[coo]
 	, f_1.[remarks_region]
-	, NULL as [system_error]
+	, f_1.[system_error]
+	, f_1.[po_release_date]
 	, f_1.[need_to_reallocate]
 
 	-- dim_pdas
