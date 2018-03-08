@@ -21,44 +21,6 @@ BEGIN
 	-- Declare variables
 	DECLARE	@current_dt datetime = GETDATE()
 
-	-- Update fact_demand_total based on staging_pdas_footwear_vans_allocation_report_vfa
-	UPDATE target
-	SET
-		target.[dim_factory_id] = temp.[dim_factory_id]
-		,target.[comment_vfa_allocation] = temp.[Allocation Comment (VFA)]
-		,target.[comment_vfa] = temp.[Comment (VFA)]
-		,target.[edit_dt] = @current_dt
-		,target.[component_factory_short_name] = temp.[COMP FTY]
-	FROM
-		(
-			SELECT
-				*
-			FROM [dbo].[fact_demand_total]
-			WHERE
-				dim_pdas_id = @pdasid and
-				dim_business_id = @businessid
-		) as target
-		INNER JOIN
-		(
-			SELECT
-				temp.[id_original]
-				,temp.[Allocation Comment (VFA)]
-				,temp.[Comment (VFA)]
-				,temp.[COMP FTY]
-				,df.[id] as	[dim_factory_id]
-			FROM
-				[dbo].[staging_pdas_footwear_vans_allocation_report_vfa] temp
-				INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
-					ON temp.[Factory Code VFA] = df.[short_name]
-		) as temp
-			ON target.[id_original] = temp.[id_original]
-	WHERE
-		(
-			target.[dim_factory_id] <> temp.[dim_factory_id]
-			AND ISNULL(target.[comment_vfa], '') <> ISNULL(temp.[Allocation Comment (VFA)], '')
-		)
-		or target.[component_factory_short_name] <> temp.[COMP FTY]
-
 	-- Update fact_demand_total based on staging_pdas_footwear_vans_allocation_report_vendor
 	UPDATE target
 	SET
@@ -76,7 +38,7 @@ BEGIN
 		,target.[performance_orig_req] = temp.[Performance (Orig Req Date)]
 		,target.[need_to_reallocate] = temp.[Need to reallocate]
 		,target.[dim_date_id] = temp.[dim_date_id]
-		,target.[dim_factory_id_final] = temp.[Final Factory Allocation]
+		,target.[dim_factory_id_final] = temp.[dim_factory_id_final]
 		,target.[comment_vfa] = temp.[Comment (VFA)]
 	FROM
 		(
@@ -105,13 +67,15 @@ BEGIN
 				,[Performance (Orig Req Date)]
 				,[Need to reallocate]
 				,[PO/CUT#]
-				,[Final Factory Allocation]
 				,[Comment (VFA)]
-				,d.[id] AS [dim_date_id]
+				,dd.[id] AS [dim_date_id]
+				,df.[id] AS [dim_factory_id_final]
 			FROM
-				[dbo].[staging_pdas_footwear_vans_allocation_report_vendor] v
-				INNER JOIN [dbo].[dim_date] d
-					ON v.[Requested CRD] = d.[full_date]
+				[dbo].[staging_pdas_footwear_vans_allocation_report_vendor] temp
+				INNER JOIN [dbo].[dim_date] dd
+					ON temp.[Requested CRD] = dd.[full_date]
+				INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
+					ON temp.[Final Factory Allocation] = df.[short_name]
 		) as temp
 			ON target.[id_original] = temp.[id_original]
 
@@ -162,8 +126,46 @@ BEGIN
 		) as temp
 			ON
 				target.[id_original] = temp.[id_original]
-	WHERE
-		target.[remarks_region] <> temp.[remarks]
+	-- WHERE
+	-- 	target.[remarks_region] <> temp.[remarks]
 
+
+	-- Update fact_demand_total based on staging_pdas_footwear_vans_allocation_report_vfa
+	UPDATE target
+	SET
+		target.[dim_factory_id] = temp.[dim_factory_id]
+		,target.[comment_vfa_allocation] = temp.[Allocation Comment (VFA)]
+		,target.[comment_vfa] = temp.[Comment (VFA)]
+		,target.[edit_dt] = @current_dt
+		,target.[component_factory_short_name] = temp.[COMP FTY]
+	FROM
+		(
+			SELECT
+				*
+			FROM [dbo].[fact_demand_total]
+			WHERE
+				dim_pdas_id = @pdasid and
+				dim_business_id = @businessid
+		) as target
+		INNER JOIN
+		(
+			SELECT
+				temp.[id_original]
+				,temp.[Allocation Comment (VFA)]
+				,temp.[Comment (VFA)]
+				,temp.[COMP FTY]
+				,df.[id] as	[dim_factory_id]
+			FROM
+				[dbo].[staging_pdas_footwear_vans_allocation_report_vfa] temp
+				INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
+					ON temp.[Factory Code VFA] = df.[short_name]
+		) as temp
+			ON target.[id_original] = temp.[id_original]
+	WHERE
+		(
+			target.[dim_factory_id] <> temp.[dim_factory_id]
+			-- AND ISNULL(target.[comment_vfa], '') <> ISNULL(temp.[Allocation Comment (VFA)], '')
+		)
+		or target.[component_factory_short_name] <> temp.[COMP FTY]
 
 END

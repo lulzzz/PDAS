@@ -273,4 +273,14 @@ BEGIN
 		dd.id,
 		dc.id
 
+
+	-- Update id_original
+	UPDATE [fact_demand_total]
+	SET [id_original] = [id]
+	WHERE
+		[dim_pdas_id] = @pdasid
+		and [dim_business_id] = @businessid
+		and [is_from_previous_release] = 0
+		and ISNULL([id_original], 0) = 0
+
 END
