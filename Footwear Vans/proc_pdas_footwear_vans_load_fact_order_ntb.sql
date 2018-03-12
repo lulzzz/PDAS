@@ -117,22 +117,10 @@ BEGIN
 		,[dim_product_id]
 		,ntb.[dim_date_id]
 		,@dim_date_id_buy_month
-		,CASE [dim_demand_category_id]
-			WHEN @dim_demand_category_id_ntb THEN @dim_factory_id_placeholder
-			ELSE [dim_factory_id]
-		END AS [dim_factory_id_original_unconstrained]
-		,CASE [dim_demand_category_id]
-			WHEN @dim_demand_category_id_ntb THEN @dim_factory_id_placeholder
-			ELSE [dim_factory_id]
-		END AS [dim_factory_id_original_constrained]
-		,CASE [dim_demand_category_id]
-			WHEN @dim_demand_category_id_ntb THEN @dim_factory_id_placeholder
-			ELSE [dim_factory_id]
-		END AS [dim_factory_id_final]
-		,CASE [dim_demand_category_id]
-			WHEN @dim_demand_category_id_ntb THEN @dim_factory_id_placeholder
-			ELSE [dim_factory_id]
-		END AS [dim_factory_id]
+		,@dim_factory_id_placeholder as [dim_factory_id_original_unconstrained]
+		,@dim_factory_id_placeholder as [dim_factory_id_original_constrained]
+		,@dim_factory_id_placeholder as [dim_factory_id_final]
+		,@dim_factory_id_placeholder as [dim_factory_id]
 		,[dim_customer_id]
 		,[dim_demand_category_id]
 		,'UNDEFINED' as [order_number]
@@ -143,14 +131,8 @@ BEGIN
 		,[is_asap]
 		,[quantity_lum]
 		,[quantity_non_lum]
-		,CASE [dim_demand_category_id]
-			WHEN @dim_demand_category_id_ntb THEN [quantity_lum]
-			ELSE [quantity_non_lum]
-		END AS [quantity_unconsumed]
-		,CASE [dim_demand_category_id]
-			WHEN @dim_demand_category_id_ntb THEN [quantity_lum]
-			ELSE [quantity_non_lum]
-		END AS [quantity]
+		,[quantity_lum] as [quantity_unconsumed]
+		,[quantity_lum] as [quantity]
 		,[material_id_sr]
 		,DATEDIFF(day, @pdas_release_full_d, dd.[full_date]) as [production_lt_actual_buy]
 		,[comment_region]
@@ -183,7 +165,6 @@ BEGIN
 						END
 					ELSE dd_xfw.id
 				END as dim_date_id,
-				@dim_factory_id_placeholder as dim_factory_id,
 				dc.id as dim_customer_id,
 				CASE
 					WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
@@ -285,11 +266,6 @@ BEGIN
 				@buying_program_id as dim_buying_program_id,
 				ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[line_item], 'UNDEFINED') as order_number,
 				dd_xfac.id as dim_date_id,
-				CASE
-					WHEN df.id IS NOT NULL THEN df.id
-					WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
-					ELSE @dim_factory_id_placeholder
-				END as dim_factory_id,
 				dc.id as dim_customer_id,
 				CASE
 					WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
@@ -340,27 +316,12 @@ BEGIN
 				LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
 					ON 	ntb.[dim_product_material_id_corrected] = dp_ms.material_id AND
 						ntb.dim_product_size = dp_ms.size
-				LEFT OUTER JOIN [dbo].[dim_factory] df ON ntb.dim_factory_reva_vendor = df.short_name
-				LEFT OUTER JOIN
-				(
-					SELECT df.id, m.child
-					FROM
-						[dbo].[helper_pdas_footwear_vans_mapping] m
-						INNER JOIN (SELECT id, short_name FROM [dbo].[dim_factory]) df
-							ON m.parent = df.short_name
-					WHERE category = 'Factory Master'
-				) mapping_f ON ntb.dim_factory_reva_vendor = mapping_f.child
 			WHERE
 				(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 				ntb.lum_qty IS NOT NULL
 			GROUP BY
 				ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[line_item], 'UNDEFINED'),
 				dd_xfac.id,
-				CASE
-					WHEN df.id IS NOT NULL THEN df.id
-					WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
-					ELSE @dim_factory_id_placeholder
-				END,
 				dc.id,
 				CASE
 					WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
@@ -375,7 +336,6 @@ BEGIN
 				@buying_program_id as dim_buying_program_id,
 				ISNULL(ntb.[pr_code], 'UNDEFINED') as order_number,
 				dd_xfac.id as dim_date_id,
-				@dim_factory_id_placeholder as dim_factory_id,
 				CASE
 					WHEN dc.id IS NOT NULL THEN dc.id
 					ELSE @dim_customer_id_placeholder_casa
@@ -459,11 +419,6 @@ BEGIN
 				ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[item], 'UNDEFINED') as order_number,
 				dd_xfac.id as dim_date_id,
 				CASE
-					WHEN df.id IS NOT NULL THEN df.id
-					WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
-					ELSE @dim_factory_id_placeholder
-				END as dim_factory_id,
-				CASE
 					WHEN dc_name.id IS NOT NULL THEN dc_name.id
 					WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
 					ELSE @dim_customer_id_placeholder_nora
@@ -530,26 +485,12 @@ BEGIN
 				LEFT OUTER JOIN (SELECT MAX([id]) as [id], MAX([sold_to_party]) as [sold_to_party], [dc_plt] FROM [dbo].[dim_customer] GROUP BY [dc_plt]) dc_plt
 					ON ntb.[plnt] = dc_plt.[dc_plt]
 
-				LEFT OUTER JOIN [dbo].[dim_factory] df ON ntb.dim_factory_short_name = df.short_name
-				LEFT OUTER JOIN
-				(
-					SELECT df.id, m.child
-					FROM
-						[dbo].[helper_pdas_footwear_vans_mapping] m
-						INNER JOIN (SELECT id, short_name FROM [dbo].[dim_factory]) df
-							ON m.parent = df.short_name
-					WHERE category = 'Factory Master'
-				) mapping_f ON ntb.dim_factory_short_name = mapping_f.child
 			WHERE
 				(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 				ntb.lum_qty IS NOT NULL
 			GROUP BY
 				ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[item], 'UNDEFINED'),
 				dd_xfac.id,
-				CASE
-					WHEN df.id IS NOT NULL THEN df.id
-					ELSE mapping_f.id
-				END,
 				CASE
 					WHEN dc_name.id IS NOT NULL THEN dc_name.id
 					WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
@@ -558,11 +499,6 @@ BEGIN
 				CASE
 					WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 					ELSE dp_m.id
-				END,
-				CASE
-					WHEN df.id IS NOT NULL THEN df.id
-					WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
-					ELSE @dim_factory_id_placeholder
 				END
 		) ntb
 		INNER JOIN [dbo].[dim_date] dd
