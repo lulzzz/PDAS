@@ -113,145 +113,140 @@ BEGIN
     )
 	-- ngc data
 	SELECT
-		[dim_pdas_id]
-		,[dim_business_id]
-		,[dim_buying_program_id]
-		,[dim_product_id]
-		,ngc.[dim_date_id]
-		,@dim_date_id_buy_month
-		,[dim_factory_id] AS [dim_factory_id_original_unconstrained]
-		,[dim_factory_id] AS [dim_factory_id_original_constrained]
-		,[dim_factory_id] AS [dim_factory_id_final]
-		,[dim_factory_id]
-		,[dim_customer_id]
-		,[dim_demand_category_id]
-		,[order_number]
-		,[so_code]
-		,[is_asap]
-		,[quantity_lum]
-		,[quantity_non_lum]
-		,[quantity_non_lum] AS [quantity_unconsumed]
-		,[quantity_non_lum] AS [quantity]
-		,DATEDIFF(day, @pdas_release_full_d, dd.[full_date]) as [production_lt_actual_buy]
-		,0 AS [is_from_previous_release]
-		,[source_system]
+		@pdasid AS dim_pdas_id,
+		@businessid AS dim_business_id,
+		@buying_program_id AS dim_buying_program_id,
+		CASE
+			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
+			ELSE dp_m.id
+		END AS dim_product_id,
+		dd_revised_crd.id AS dim_date_id,
+		@dim_date_id_buy_month AS dim_date_id_buy_month,
+		CASE
+			WHEN df.id IS NOT NULL THEN df.id
+			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
+			ELSE @dim_factory_id_placeholder
+		END AS [dim_factory_id_original_unconstrained],
+		CASE
+			WHEN df.id IS NOT NULL THEN df.id
+			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
+			ELSE @dim_factory_id_placeholder
+		END AS [dim_factory_id_original_constrained],
+		CASE
+			WHEN df.id IS NOT NULL THEN df.id
+			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
+			ELSE @dim_factory_id_placeholder
+		END AS [dim_factory_id_final],
+		CASE
+			WHEN df.id IS NOT NULL THEN df.id
+			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
+			ELSE @dim_factory_id_placeholder
+		END AS [dim_factory_id],
+		CASE
+			WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
+			ELSE @dim_customer_id_placeholder
+		END AS dim_customer_id,
+		CASE ISNULL(ngc.shipment_status, 0)
+			WHEN 1 THEN @dim_demand_category_id_shipped_order
+			ELSE @dim_demand_category_id_open_order
+		END AS dim_demand_category_id,
+		ISNULL(po_code_cut, 'UNDEFINED') AS order_number,
+		MAX(sales_order) AS [so_code],
+		0 AS is_asap,
+		CASE ISNULL(ngc.shipment_status, 0)
+			WHEN 1 THEN SUM(ngc.lum_shipped_qty)
+			ELSE SUM(ngc.lum_order_qty)
+		END AS [quantity_lum],
+		CASE ISNULL(ngc.shipment_status, 0)
+			WHEN 1 THEN SUM(ngc.shipped_qty)
+			ELSE SUM(ngc.order_qty)
+		END AS [quantity_non_lum],
+		CASE ISNULL(ngc.shipment_status, 0)
+			WHEN 1 THEN SUM(ngc.shipped_qty)
+			ELSE SUM(ngc.order_qty)
+		END AS [quantity_unconsumed],
+		CASE ISNULL(ngc.shipment_status, 0)
+			WHEN 1 THEN SUM(ngc.shipped_qty)
+			ELSE SUM(ngc.order_qty)
+		END AS [quantity],
+		DATEDIFF(day, @pdas_release_full_d, dd_revised_crd.full_date) AS [production_lt_actual_buy],
+		0 AS [is_from_previous_release],
+		MAX([source_system]) AS [source_system]
 	FROM
-	(
-		SELECT
-			@pdasid as dim_pdas_id,
-			@businessid as dim_business_id,
-			@buying_program_id as dim_buying_program_id,
-			ISNULL(po_code_cut, 'UNDEFINED') as order_number,
-			dd_revised_crd.id as dim_date_id,
-			0 as is_asap,
-			CASE
-				WHEN df.id IS NOT NULL THEN df.id
-				WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
-				ELSE @dim_factory_id_placeholder
-			END as dim_factory_id,
-			CASE
-				WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
-				ELSE @dim_customer_id_placeholder
-			END as dim_customer_id,
-			CASE
-				WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
-				ELSE dp_m.id
-			END as dim_product_id,
-			CASE ISNULL(ngc.shipment_status, 0)
-				WHEN 1 THEN @dim_demand_category_id_shipped_order
-				ELSE @dim_demand_category_id_open_order
-			END as dim_demand_category_id,
-			MAX(revised_crd_dt) as [customer_requested_xf_dt],
-			MAX(actual_crd_dt) as [original_customer_requested_dt],
-			CASE ISNULL(ngc.shipment_status, 0)
-				WHEN 1 THEN SUM(ngc.lum_shipped_qty)
-				ELSE SUM(ngc.lum_order_qty)
-			END as [quantity_lum],
-			CASE ISNULL(ngc.shipment_status, 0)
-				WHEN 1 THEN SUM(ngc.shipped_qty)
-				ELSE SUM(ngc.order_qty)
-			END as [quantity_non_lum],
-			MAX([source_system]) as [source_system],
-			MAX(sales_order) as [so_code]
+		(
+			SELECT
+				REPLACE(dim_product_style_id, ' ', '') AS dim_product_style_id
+				,LTRIM(RTRIM(dim_product_size)) AS dim_product_size
+				,REPLACE([dim_factory_factory_code], ' ', '') AS dim_factory_factory_code
+				,REPLACE(dim_customer_dc_code_brio, ' ', '') AS dim_customer_dc_code_brio
+				,revised_crd_dt
+				,actual_crd_dt
+				,po_code
+				,po_code_cut
+				,shipment_status
+				,shipped_qty
+				,lum_shipped_qty
+				,order_qty
+				,lum_order_qty
+				,source_system
+				,sales_order
+			FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
+		) ngc
 
-		FROM
-			(
-				SELECT
-					REPLACE(dim_product_style_id, ' ', '') as dim_product_style_id
-					,LTRIM(RTRIM(dim_product_size)) as dim_product_size
-					,REPLACE([dim_factory_factory_code], ' ', '') as dim_factory_factory_code
-					,REPLACE(dim_customer_dc_code_brio, ' ', '') as dim_customer_dc_code_brio
-					,revised_crd_dt
-					,actual_crd_dt
-					,po_code
-					,po_code_cut
-					,shipment_status
-					,shipped_qty
-					,lum_shipped_qty
-					,order_qty
-					,lum_order_qty
-					,source_system
-					,sales_order
-				FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
-			) ngc
+		LEFT OUTER JOIN
+		(
+			SELECT [id], [material_id]
+			FROM [dbo].[dim_product]
+			WHERE
+				[is_placeholder] = 1 AND
+				[placeholder_level] = 'material_id'
+		) AS dp_m
+			ON ngc.dim_product_style_id = dp_m.material_id
+		LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
+			ON 	ngc.dim_product_style_id = dp_ms.material_id AND
+				ngc.dim_product_size = dp_ms.size
 
-			LEFT OUTER JOIN
-			(
-				SELECT [id], [material_id]
-				FROM [dbo].[dim_product]
-				WHERE
-					[is_placeholder] = 1 AND
-					[placeholder_level] = 'material_id'
-			) AS dp_m
-				ON ngc.dim_product_style_id = dp_m.material_id
-			LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
-				ON 	ngc.dim_product_style_id = dp_ms.material_id AND
-					ngc.dim_product_size = dp_ms.size
+		LEFT OUTER JOIN [dbo].[dim_factory] df ON ngc.dim_factory_factory_code = df.short_name
+		LEFT OUTER JOIN
+		(
+			SELECT df.id, m.child
+			FROM
+				[dbo].[helper_pdas_footwear_vans_mapping] m
+				INNER JOIN (SELECT id, short_name FROM [dbo].[dim_factory]) df
+					ON m.parent = df.short_name
+			WHERE category = 'Factory Master'
+		) mapping_f ON ngc.dim_factory_factory_code = mapping_f.child
 
-			LEFT OUTER JOIN [dbo].[dim_factory] df ON ngc.dim_factory_factory_code = df.short_name
-			LEFT OUTER JOIN
-			(
-				SELECT df.id, m.child
-				FROM
-					[dbo].[helper_pdas_footwear_vans_mapping] m
-					INNER JOIN (SELECT id, short_name FROM [dbo].[dim_factory]) df
-						ON m.parent = df.short_name
-				WHERE category = 'Factory Master'
-			) mapping_f ON ngc.dim_factory_factory_code = mapping_f.child
+		LEFT OUTER JOIN (SELECT MAX([id]) AS [id], [dc_plt] FROM [dbo].[dim_customer] GROUP BY [dc_plt]) dc_plt
+			ON ngc.dim_customer_dc_code_brio = dc_plt.dc_plt
 
-			LEFT OUTER JOIN (SELECT MAX([id]) as [id], [dc_plt] FROM [dbo].[dim_customer] GROUP BY [dc_plt]) dc_plt
-				ON ngc.dim_customer_dc_code_brio = dc_plt.dc_plt
-
-			LEFT OUTER JOIN [dbo].[dim_date] dd_revised_crd ON ngc.revised_crd_dt = dd_revised_crd.full_date
-			-- LEFT OUTER JOIN [dbo].[dim_date] dd_original_crd ON ngc.actual_crd_dt = dd_original_crd.full_date
-
-		WHERE
-			(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
-			dd_revised_crd.id IS NOT NULL
-		GROUP BY
-			ISNULL(po_code_cut, 'UNDEFINED'),
-			dd_revised_crd.id,
-			CASE
-				WHEN df.id IS NOT NULL THEN df.id
-				WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
-				ELSE @dim_factory_id_placeholder
-			END,
-			CASE
-				WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
-				ELSE @dim_customer_id_placeholder
-			END,
-			CASE
-				WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
-				ELSE dp_m.id
-			END,
-			ISNULL(ngc.shipment_status, 0)
-	) ngc
-		INNER JOIN [dbo].[dim_date] dd
-			ON ngc.[dim_date_id] = dd.[id]
+		LEFT OUTER JOIN [dbo].[dim_date] dd_revised_crd ON ngc.revised_crd_dt = dd_revised_crd.full_date
+		-- LEFT OUTER JOIN [dbo].[dim_date] dd_original_crd ON ngc.actual_crd_dt = dd_original_crd.full_date
 	WHERE
-		[dim_pdas_id] = @pdasid
-		AND [dim_business_id] = @businessid
-		AND DATEDIFF(month, dd.full_date, @pdas_release_full_d) <= 2
+		-- AND DATEDIFF(month, dd.full_date, @pdas_release_full_d) <= 2
+		YEAR(actual_crd_dt) = 2018
+		AND MONTH(actual_crd_dt) >= 2
+		AND MONTH(actual_crd_dt) <= 4
+		AND (dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL)
+		AND dd_revised_crd.id IS NOT NULL
+	GROUP BY
+		ISNULL(po_code_cut, 'UNDEFINED'),
+		dd_revised_crd.id,
+		dd_revised_crd.full_date,
+		CASE
+			WHEN df.id IS NOT NULL THEN df.id
+			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
+			ELSE @dim_factory_id_placeholder
+		END,
+		CASE
+			WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
+			ELSE @dim_customer_id_placeholder
+		END,
+		CASE
+			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
+			ELSE dp_m.id
+		END,
+		ISNULL(ngc.shipment_status, 0)
 
 	print 3
   print CONVERT(varchar, SYSDATETIME(), 121)
