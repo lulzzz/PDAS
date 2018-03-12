@@ -21,6 +21,56 @@ BEGIN
 	-- Declare variables
 	DECLARE	@current_dt datetime = GETDATE()
 
+	-- Update fact_demand_total based on mc_view_pdas_footwear_vans_allocation_report_region
+	UPDATE target
+	SET
+		target.[remarks_region] = temp.[Remarks]
+		,target.[comment_vfa] = temp.[Comment (VFA)]
+		,target.[comment_region] = temp.[Comment (US/EU/APAC)]
+		,target.[order_number_original] = temp.[Orig PO#]
+		,target.[order_number] = temp.[PO#]
+		,target.[pr_cut_code] = temp.[PO/CUT#]
+		,target.[po_release_date] = temp.[PO release Date]
+		,target.[system_error] = temp.[System Error]
+		,target.[region_moq] = temp.[Regional MOQ]  
+		,target.[customer_moq] = temp.[Order MOQ]        
+		,target.[region_below_moq] = temp.[Below Regional Min]
+	FROM
+		(
+			SELECT
+				*
+			FROM [dbo].[fact_demand_total]
+			WHERE
+				dim_pdas_id = @pdasid and
+				dim_business_id = @businessid
+		) as target
+		INNER JOIN
+		(
+			SELECT
+				[id_original]
+				,[Remarks]
+				,[Comment (VFA)]
+				,[Comment (US/EU/APAC)]
+				,[Orig PO#]
+				,[PO#]
+				,[PO/CUT#]
+				,[PO release Date]
+				,[System Error]
+				,[Regional MOQ]  
+				,[Order MOQ]  
+				,CASE [Below Regional Min]
+				   WHEN 'Y' THEN 1
+				   ELSE 0
+				END as [Below Regional Min]
+			FROM
+				[dbo].[mc_view_pdas_footwear_vans_allocation_report_region]
+		) as temp
+			ON
+				target.[id_original] = temp.[id_original]
+	-- WHERE
+	-- 	target.[remarks_region] <> temp.[remarks]
+
+
 	-- Update fact_demand_total based on staging_pdas_footwear_vans_allocation_report_vendor
 	UPDATE target
 	SET
@@ -78,56 +128,6 @@ BEGIN
 					ON temp.[Final Factory Allocation] = df.[short_name]
 		) as temp
 			ON target.[id_original] = temp.[id_original]
-
-
-	-- Update fact_demand_total based on mc_view_pdas_footwear_vans_allocation_report_region
-	UPDATE target
-	SET
-		target.[remarks_region] = temp.[Remarks]
-		,target.[comment_vfa] = temp.[Comment (VFA)]
-		,target.[comment_region] = temp.[Comment (US/EU/APAC)]
-		,target.[order_number_original] = temp.[Orig PO#]
-		,target.[order_number] = temp.[PO#]
-		,target.[pr_cut_code] = temp.[PO/CUT#]
-		,target.[po_release_date] = temp.[PO release Date]
-		,target.[system_error] = temp.[System Error]
-		,target.[region_moq] = temp.[Regional MOQ]  
-		,target.[customer_moq] = temp.[Order MOQ]        
-		,target.[region_below_moq] = temp.[Below Regional Min]
-	FROM
-		(
-			SELECT
-				*
-			FROM [dbo].[fact_demand_total]
-			WHERE
-				dim_pdas_id = @pdasid and
-				dim_business_id = @businessid
-		) as target
-		INNER JOIN
-		(
-			SELECT
-				[id_original]
-				,[Remarks]
-				,[Comment (VFA)]
-				,[Comment (US/EU/APAC)]
-				,[Orig PO#]
-				,[PO#]
-				,[PO/CUT#]
-				,[PO release Date]
-				,[System Error]
-				,[Regional MOQ]  
-				,[Order MOQ]  
-				,CASE [Below Regional Min]
-				   WHEN 'Y' THEN 1
-				   ELSE 0
-				END as [Below Regional Min]
-			FROM
-				[dbo].[mc_view_pdas_footwear_vans_allocation_report_region]
-		) as temp
-			ON
-				target.[id_original] = temp.[id_original]
-	-- WHERE
-	-- 	target.[remarks_region] <> temp.[remarks]
 
 
 	-- Update fact_demand_total based on staging_pdas_footwear_vans_allocation_report_vfa
