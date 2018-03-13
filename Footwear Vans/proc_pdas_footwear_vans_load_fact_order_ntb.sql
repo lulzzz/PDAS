@@ -439,7 +439,7 @@ BEGIN
 				MAX(ISNULL(ntb.[us_planning_notes], '')) as comment_region,
 				MAX(ntb.xfac_dt) as customer_requested_xf_dt,
 				MAX(ntb.req_dt) as original_customer_requested_dt,
-				MAX(ISNULL(ntb.[sold_to_pt], '')) as [sold_to_customer_name],
+				MAX(ISNULL(ntb.[sold_to_customer_name], '')) as [sold_to_customer_name],
 				CASE LEN(MAX(ntb.[dim_product_material_id]))
 					WHEN 11 THEN 1
 					ELSE RIGHT(MAX(ntb.dim_product_size), 2)

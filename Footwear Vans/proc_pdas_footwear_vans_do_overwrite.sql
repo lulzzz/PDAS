@@ -21,7 +21,7 @@ BEGIN
 	-- Declare variables
 	DECLARE	@current_dt datetime = GETDATE()
 
-	-- Update fact_demand_total based on mc_view_pdas_footwear_vans_allocation_report_region
+	-- Update fact_demand_total based on staging_pdas_footwear_vans_allocation_report_region
 	UPDATE target
 	SET
 		target.[remarks_region] = temp.[Remarks]
@@ -29,7 +29,7 @@ BEGIN
 		,target.[comment_region] = temp.[Comment (US/EU/APAC)]
 		,target.[order_number_original] = temp.[Orig PO#]
 		,target.[order_number] = temp.[PO#]
-		,target.[pr_cut_code] = temp.[PO/CUT#]
+		,target.[pr_cut_code] = temp.[PR/CUT#]
 		,target.[po_release_date] = temp.[PO release Date]
 		,target.[system_error] = temp.[System Error]
 		,target.[region_moq] = temp.[Regional MOQ]  
@@ -53,7 +53,7 @@ BEGIN
 				,[Comment (US/EU/APAC)]
 				,[Orig PO#]
 				,[PO#]
-				,[PO/CUT#]
+				,[PR/CUT#]
 				,[PO release Date]
 				,[System Error]
 				,[Regional MOQ]  
@@ -63,7 +63,7 @@ BEGIN
 				   ELSE 0
 				END as [Below Regional Min]
 			FROM
-				[dbo].[mc_view_pdas_footwear_vans_allocation_report_region]
+				[dbo].[staging_pdas_footwear_vans_allocation_report_region]
 		) as temp
 			ON
 				target.[id_original] = temp.[id_original]
