@@ -265,7 +265,7 @@ BEGIN
 			ON
 				f.[dim_buying_program_id] = f_agg.[dim_buying_program_id] AND
 				f.[dim_demand_category_id] = f_agg.[dim_demand_category_id] AND
-				f.[dim_date_id] = f_agg.[dim_date_id] AND
+				-- f.[dim_date_id] = f_agg.[dim_date_id] AND
 				f.[dim_factory_id] = f_agg.[dim_factory_id] AND
 				f.[dim_customer_id] = f_agg.[dim_customer_id] AND
 				f.[material_id] = f_agg.[material_id]
