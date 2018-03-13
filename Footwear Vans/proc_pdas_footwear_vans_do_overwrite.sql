@@ -25,7 +25,7 @@ BEGIN
 	UPDATE target
 	SET
 		target.[remarks_region] = temp.[Remarks]
-		,target.[comment_vfa] = temp.[Comment (VFA)]
+		,target.[comment_vfa_region] = temp.[Comment (VFA Region)]
 		,target.[comment_region] = temp.[Comment (US/EU/APAC)]
 		,target.[order_number_original] = temp.[Orig PO#]
 		,target.[order_number] = temp.[PO#]
@@ -49,7 +49,7 @@ BEGIN
 			SELECT
 				[id_original]
 				,[Remarks]
-				,[Comment (VFA)]
+				,[Comment (VFA Region)]
 				,[Comment (US/EU/APAC)]
 				,[Orig PO#]
 				,[PO#]
@@ -89,7 +89,7 @@ BEGIN
 		,target.[need_to_reallocate] = temp.[Need to reallocate]
 		,target.[dim_date_id] = temp.[dim_date_id]
 		,target.[dim_factory_id_final] = temp.[dim_factory_id_final]
-		,target.[comment_vfa] = temp.[Comment (VFA)]
+		,target.[comment_vfa_vendor] = temp.[Comment (VFA Vendor)]
 	FROM
 		(
 			SELECT
@@ -117,7 +117,7 @@ BEGIN
 				,[Performance (Orig Req Date)]
 				,[Need to reallocate]
 				,[PO/CUT#]
-				,[Comment (VFA)]
+				,[Comment (VFA Vendor)]
 				,dd.[id] AS [dim_date_id]
 				,df.[id] AS [dim_factory_id_final]
 			FROM

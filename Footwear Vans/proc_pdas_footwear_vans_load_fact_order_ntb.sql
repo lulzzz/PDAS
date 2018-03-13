@@ -436,7 +436,7 @@ BEGIN
 				MAX(ISNULL([item], '')) as pr_cut_code,
 				MAX(ISNULL(ntb.[sales_doc], '')) as so_code,
 				MAX(ISNULL(ntb.[customer_po_code], '')) as po_code_customer,
-				NULL as comment_region,
+				MAX(ISNULL(ntb.[us_planning_notes], '')) as comment_region,
 				MAX(ntb.xfac_dt) as customer_requested_xf_dt,
 				MAX(ntb.req_dt) as original_customer_requested_dt,
 				MAX(ISNULL(ntb.[sold_to_pt], '')) as [sold_to_customer_name],

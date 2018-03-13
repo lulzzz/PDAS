@@ -97,6 +97,8 @@ SELECT
 	, f_1.[system_error]
 	, f_1.[po_release_date]
 	, f_1.[need_to_reallocate]
+	, f_1.[comment_vfa_region]
+	, f_1.[comment_vfa_vendor]
 
 	-- dim_pdas
 	,dim_pdas.[name] AS [dim_pdas_name]
