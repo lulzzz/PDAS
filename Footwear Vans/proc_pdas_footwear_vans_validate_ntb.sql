@@ -418,4 +418,26 @@ BEGIN
 		(dim.[short_name] IS NULL AND mapping.[parent] IS NULL)
 
 
+	/* Retail Quick Turn Master Table*/
+
+	SET @source = 'Retail Quick Turn Master Table';
+	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
+
+    -- Check absence of entries: (MTL#, sold-to-party) tuple
+	SET @type = 'MTL# sold-to-party missing';
+	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
+	SELECT DISTINCT @system, @source, @type, ISNULL(CONCAT(reference.[material_id], ' ', reference.[sold_to_party]), '') as [value]
+	FROM (
+		SELECT mtl.[material_id], stp.[sold_to_party]
+		FROM (SELECT DISTINCT [material_id] FROM [VCDWH].[dbo].[helper_pdas_footwear_vans_retail_qt]) mtl
+		CROSS JOIN (SELECT DISTINCT [sold_to_party] FROM [VCDWH].[dbo].[helper_pdas_footwear_vans_retail_qt]) stp
+		) reference
+
+	WHERE NOT EXISTS(
+		SELECT *
+		FROM [VCDWH].[dbo].[helper_pdas_footwear_vans_retail_qt] actual
+		WHERE actual.[material_id] = reference.[material_id]
+		AND actual.[sold_to_party] = reference.[sold_to_party])
+
+
 END
