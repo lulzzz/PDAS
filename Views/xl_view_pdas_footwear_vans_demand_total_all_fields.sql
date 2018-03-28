@@ -70,6 +70,7 @@ SELECT
 	, f_1.[confirmed_price_in_solid_size]
 	, f_1.[fabriq_moq]
 	, f_1.[confirmed_crd_dt]
+	, dim_date_confirmed_crd.[year_cw_accounting] as [confirmed_crd_cw]
 	, f_1.[confirmed_unit_price_memo]
 	, f_1.[confirmed_unit_price_po]
 	, f_1.[cy_csf_load]
@@ -391,7 +392,6 @@ FROM
 	) helper_pdas_footwear_vans_fty_qt
 		ON helper_pdas_footwear_vans_fty_qt.dim_product_material_id = dim_product.material_id
 
-
 	LEFT OUTER JOIN
 	(
 		SELECT
@@ -413,3 +413,6 @@ FROM
 			and helper_pdas_footwear_vans_retail_qt.dim_buying_program_name = dim_buying_program.name
 			and helper_pdas_footwear_vans_retail_qt.dim_customer_region = dim_customer.region
 			and helper_pdas_footwear_vans_retail_qt.dim_customer_sold_to_party = dim_customer.sold_to_party
+
+	LEFT OUTER JOIN dim_date AS dim_date_confirmed_crd
+		ON f_1.[confirmed_crd_dt] = dim_date_confirmed_crd.full_date

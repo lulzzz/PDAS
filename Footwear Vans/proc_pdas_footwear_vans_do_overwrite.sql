@@ -84,8 +84,8 @@ BEGIN
 		,target.[confirmed_comp_eta_hk] = temp.[Confirm Comp. ETA HK]
 		,target.[comment_comp_factory] = temp.[Comment (Comp. Fty)]
 		,target.[buy_comment] = temp.[Buy Comment]
-		,target.[status_orig_req] = temp.[Status (based on Orig Req)]
-		,target.[performance_orig_req] = temp.[Performance (Orig Req Date)]
+		,target.[status_orig_req] = temp.[status_orig_req]
+		,target.[performance_orig_req] = perf.[delivery_performance]
 		,target.[need_to_reallocate] = temp.[Need to reallocate]
 		,target.[dim_date_id] = temp.[dim_date_id]
 		,target.[dim_factory_id_final] = temp.[dim_factory_id_final]
@@ -118,6 +118,8 @@ BEGIN
 				,[Need to reallocate]
 				,[PO/CUT#]
 				,[Comment (VFA Vendor)]
+				,[Requested CRD]
+				,DATEDIFF(DAY, [Requested CRD], [Confirmed CRD Dt (Vendor)]) as [status_orig_req]
 				,dd.[id] AS [dim_date_id]
 				,df.[id] AS [dim_factory_id_final]
 			FROM
@@ -128,6 +130,9 @@ BEGIN
 					ON temp.[Final Factory Allocation] = df.[short_name]
 		) as temp
 			ON target.[id_original] = temp.[id_original]
+
+		LEFT OUTER JOIN [dbo].[helper_pdas_footwear_vans_performance] perf
+			ON temp.[status_orig_req] = perf.[days_delay]
 
 
 	-- Update fact_demand_total based on staging_pdas_footwear_vans_allocation_report_vfa
@@ -161,11 +166,11 @@ BEGIN
 					ON temp.[Factory Code VFA] = df.[short_name]
 		) as temp
 			ON target.[id_original] = temp.[id_original]
-	WHERE
-		(
-			target.[dim_factory_id] <> temp.[dim_factory_id]
-			-- AND ISNULL(target.[comment_vfa], '') <> ISNULL(temp.[Allocation Comment (VFA)], '')
-		)
-		or target.[component_factory_short_name] <> temp.[COMP FTY]
+	-- WHERE
+	-- 	(
+	-- 		target.[dim_factory_id] <> temp.[dim_factory_id]
+	-- 		-- AND ISNULL(target.[comment_vfa], '') <> ISNULL(temp.[Allocation Comment (VFA)], '')
+	-- 	)
+	-- 	or target.[component_factory_short_name] <> temp.[COMP FTY]
 
 END

@@ -19,6 +19,10 @@ BEGIN
 	DECLARE @dim_customer_id_placeholder int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [name] = 'PLACEHOLDER' AND [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
     DECLARE	@dim_demand_category_id_open_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Open Order')
 	DECLARE	@dim_demand_category_id_shipped_order int = (SELECT id FROM [dbo].[dim_demand_category] WHERE name = 'Shipped Order')
+	DECLARE @dim_customer_id_placeholder_casa int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'CASA')
+	DECLARE @dim_customer_id_placeholder_nora int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'NORA')
+	DECLARE @dim_customer_id_placeholder_emea int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'EMEA')
+	DECLARE @dim_customer_id_placeholder_apac int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'APAC')
 	DECLARE	@current_date date = GETDATE()
 	DECLARE @dim_demand_category_id_ntb int = (SELECT [id] FROM [dbo].[dim_demand_category] WHERE [name] = 'Need to Buy')
 
@@ -143,7 +147,10 @@ BEGIN
 			ELSE @dim_factory_id_placeholder
 		END AS [dim_factory_id],
 		CASE
-			WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
+			WHEN [source_system] = 'S65' THEN @dim_customer_id_placeholder_nora
+			WHEN [source_system] = 'CONDOR' THEN @dim_customer_id_placeholder_casa
+			WHEN ([source_system] = 'REVA') OR ([source_system] = 'e-SPS' AND [dim_customer_dc_code_brio] = 'OABCJ') THEN @dim_customer_id_placeholder_nora
+			WHEN ([source_system] IN ('JBA-VF', 'JBA-VC') OR ([source_system] = 'e-SPS' AND [dim_customer_dc_code_brio] IN ('OCSDS', 'ORTLA')) THEN @dim_customer_id_placeholder_nora
 			ELSE @dim_customer_id_placeholder
 		END AS dim_customer_id,
 		CASE ISNULL(ngc.shipment_status, 0)
@@ -171,7 +178,7 @@ BEGIN
 		END AS [quantity],
 		DATEDIFF(day, @pdas_release_full_d, dd_revised_crd.full_date) AS [production_lt_actual_buy],
 		0 AS [is_from_previous_release],
-		MAX([source_system]) AS [source_system]
+		[source_system]
 	FROM
 		(
 			SELECT
@@ -238,10 +245,7 @@ BEGIN
 			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
 			ELSE @dim_factory_id_placeholder
 		END,
-		CASE
-			WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
-			ELSE @dim_customer_id_placeholder
-		END,
+		source_system
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id
@@ -396,150 +400,150 @@ BEGIN
 	-- 			AND target.[is_from_previous_release] = 1
 	-- 	)
 
-	print 5
-  print CONVERT(varchar, SYSDATETIME(), 121)
-
-	-- Update dim_customer_id from initial customer mapping via PO/cut#
-	UPDATE target
-	SET
-		target.[dim_customer_id] = source.[dim_customer_id]
-	FROM
-		(
-			SELECT *
-			FROM [dbo].[fact_demand_total]
-			WHERE
-				[dim_pdas_id] = @pdasid and
-				[dim_business_id] = @businessid and
-				[dim_demand_category_id] IN (
-					@dim_demand_category_id_open_order,
-					@dim_demand_category_id_shipped_order
-				)
-		) target
-		INNER JOIN
-		(
-			SELECT
-				source.[PO/cut#] as po_code_cut
-				,dc.id as dim_customer_id
-			FROM
-				[dbo].[staging_pdas_footwear_vans_ngc_initial_load_customer_mapping] source
-				INNER JOIN dim_customer dc
-					ON dc.name = source.[Customer]
-		) source
-			ON target.[order_number] = source.po_code_cut
-
-	-- Update dim_customer_id for source system 'S65'
-	-- If (source_system =='S65')  // NORA POs
-	-- { Map sales_order (trim the leading zero) against Sales Doc (column BA) in NORA NTB file}
-	UPDATE target
-	SET
-		target.[dim_customer_id] = source.[dim_customer_id]
-	FROM
-		(
-			SELECT
-				SUBSTRING([so_code], 2, 255) as sales_order
-				,dim_customer_id as dim_customer_id
-			FROM
-				[dbo].[fact_demand_total] f
-				INNER JOIN
-				(
-					SELECT dc.id
-					FROM
-						dim_customer dc
-						INNER JOIN dim_location dl
-							ON dc.dim_location_id = dl.[id]
-					WHERE dl.[region] = 'NORA'
-				) dim_customer
-					ON f.dim_customer_id = dim_customer.id
-			WHERE
-				[dim_pdas_id] = @pdasid and
-				[dim_business_id] = @businessid and
-				[dim_demand_category_id] IN (
-					@dim_demand_category_id_open_order,
-					@dim_demand_category_id_shipped_order
-				)
-				and [source_system] = 'S65' and
-				[so_code] IS NOT NULL
-		) target
-		INNER JOIN -- NORA NTB
-		(
-			SELECT
-				f.[so_code] as sales_order
-				,f.dim_customer_id as dim_customer_id
-			FROM
-				[dbo].[fact_demand_total] f
-				INNER JOIN
-				(
-					SELECT dc.id
-					FROM
-						dim_customer dc
-						INNER JOIN dim_location dl
-						 	ON dc.dim_location_id = dl.[id]
-					WHERE dl.[region] = 'NORA'
-				) dim_customer
-					ON f.dim_customer_id = dim_customer.id
-			WHERE
-				[dim_pdas_id] = @pdasid and
-				[dim_business_id] = @businessid and
-				[dim_demand_category_id] = @dim_demand_category_id_ntb and
-				[so_code] IS NOT NULL
-		) source
-			ON target.sales_order = source.sales_order
-
-	-- Update dim_customer_id for source system 'REVA'
-	-- 	If (source_system =='REVA')  // APAC POs
-	-- { Map sales_order against Customer PO# (column T) in APAC NTB file}
-	UPDATE target
-	SET
-		target.[dim_customer_id] = source.[dim_customer_id]
-	FROM
-		(
-			SELECT
-				[so_code] as sales_order
-				,dim_customer_id as dim_customer_id
-			FROM
-				[dbo].[fact_demand_total] f
-				INNER JOIN
-				(
-					SELECT dc.id
-					FROM
-						dim_customer dc
-						INNER JOIN dim_location dl
-						 	ON dc.dim_location_id = dl.[id]
-					WHERE dl.[region] = 'APAC'
-				) dim_customer
-					ON f.dim_customer_id = dim_customer.id
-			WHERE
-				[dim_pdas_id] = @pdasid and
-				[dim_business_id] = @businessid and
-				[dim_demand_category_id] IN (
-					@dim_demand_category_id_open_order,
-					@dim_demand_category_id_shipped_order
-				)
-				and [source_system] = 'REVA'
-		) target
-		INNER JOIN -- APAC NTB
-		(
-			SELECT
-				f.[po_code_customer] as sales_order
-				,f.dim_customer_id as dim_customer_id
-			FROM
-				[dbo].[fact_demand_total] f
-				INNER JOIN
-				(
-					SELECT dc.id
-					FROM
-						dim_customer dc
-						INNER JOIN dim_location dl
-						 	ON dc.dim_location_id = dl.[id]
-					WHERE dl.[region] = 'APAC'
-				) dim_customer
-					ON f.dim_customer_id = dim_customer.id
-			WHERE
-				[dim_pdas_id] = @pdasid and
-				[dim_business_id] = @businessid and
-				[dim_demand_category_id] = @dim_demand_category_id_ntb
-		) source
-			ON target.sales_order = source.sales_order
+	-- print 5
+  -- print CONVERT(varchar, SYSDATETIME(), 121)
+  --
+	-- -- Update dim_customer_id from initial customer mapping via PO/cut#
+	-- UPDATE target
+	-- SET
+	-- 	target.[dim_customer_id] = source.[dim_customer_id]
+	-- FROM
+	-- 	(
+	-- 		SELECT *
+	-- 		FROM [dbo].[fact_demand_total]
+	-- 		WHERE
+	-- 			[dim_pdas_id] = @pdasid and
+	-- 			[dim_business_id] = @businessid and
+	-- 			[dim_demand_category_id] IN (
+	-- 				@dim_demand_category_id_open_order,
+	-- 				@dim_demand_category_id_shipped_order
+	-- 			)
+	-- 	) target
+	-- 	INNER JOIN
+	-- 	(
+	-- 		SELECT
+	-- 			source.[PO/cut#] as po_code_cut
+	-- 			,dc.id as dim_customer_id
+	-- 		FROM
+	-- 			[dbo].[staging_pdas_footwear_vans_ngc_initial_load_customer_mapping] source
+	-- 			INNER JOIN dim_customer dc
+	-- 				ON dc.name = source.[Customer]
+	-- 	) source
+	-- 		ON target.[order_number] = source.po_code_cut
+  --
+	-- -- Update dim_customer_id for source system 'S65'
+	-- -- If (source_system =='S65')  // NORA POs
+	-- -- { Map sales_order (trim the leading zero) against Sales Doc (column BA) in NORA NTB file}
+	-- UPDATE target
+	-- SET
+	-- 	target.[dim_customer_id] = source.[dim_customer_id]
+	-- FROM
+	-- 	(
+	-- 		SELECT
+	-- 			SUBSTRING([so_code], 2, 255) as sales_order
+	-- 			,dim_customer_id as dim_customer_id
+	-- 		FROM
+	-- 			[dbo].[fact_demand_total] f
+	-- 			INNER JOIN
+	-- 			(
+	-- 				SELECT dc.id
+	-- 				FROM
+	-- 					dim_customer dc
+	-- 					INNER JOIN dim_location dl
+	-- 						ON dc.dim_location_id = dl.[id]
+	-- 				WHERE dl.[region] = 'NORA'
+	-- 			) dim_customer
+	-- 				ON f.dim_customer_id = dim_customer.id
+	-- 		WHERE
+	-- 			[dim_pdas_id] = @pdasid and
+	-- 			[dim_business_id] = @businessid and
+	-- 			[dim_demand_category_id] IN (
+	-- 				@dim_demand_category_id_open_order,
+	-- 				@dim_demand_category_id_shipped_order
+	-- 			)
+	-- 			and [source_system] = 'S65' and
+	-- 			[so_code] IS NOT NULL
+	-- 	) target
+	-- 	INNER JOIN -- NORA NTB
+	-- 	(
+	-- 		SELECT
+	-- 			f.[so_code] as sales_order
+	-- 			,f.dim_customer_id as dim_customer_id
+	-- 		FROM
+	-- 			[dbo].[fact_demand_total] f
+	-- 			INNER JOIN
+	-- 			(
+	-- 				SELECT dc.id
+	-- 				FROM
+	-- 					dim_customer dc
+	-- 					INNER JOIN dim_location dl
+	-- 					 	ON dc.dim_location_id = dl.[id]
+	-- 				WHERE dl.[region] = 'NORA'
+	-- 			) dim_customer
+	-- 				ON f.dim_customer_id = dim_customer.id
+	-- 		WHERE
+	-- 			[dim_pdas_id] = @pdasid and
+	-- 			[dim_business_id] = @businessid and
+	-- 			[dim_demand_category_id] = @dim_demand_category_id_ntb and
+	-- 			[so_code] IS NOT NULL
+	-- 	) source
+	-- 		ON target.sales_order = source.sales_order
+  --
+	-- -- Update dim_customer_id for source system 'REVA'
+	-- -- 	If (source_system =='REVA')  // APAC POs
+	-- -- { Map sales_order against Customer PO# (column T) in APAC NTB file}
+	-- UPDATE target
+	-- SET
+	-- 	target.[dim_customer_id] = source.[dim_customer_id]
+	-- FROM
+	-- 	(
+	-- 		SELECT
+	-- 			[so_code] as sales_order
+	-- 			,dim_customer_id as dim_customer_id
+	-- 		FROM
+	-- 			[dbo].[fact_demand_total] f
+	-- 			INNER JOIN
+	-- 			(
+	-- 				SELECT dc.id
+	-- 				FROM
+	-- 					dim_customer dc
+	-- 					INNER JOIN dim_location dl
+	-- 					 	ON dc.dim_location_id = dl.[id]
+	-- 				WHERE dl.[region] = 'APAC'
+	-- 			) dim_customer
+	-- 				ON f.dim_customer_id = dim_customer.id
+	-- 		WHERE
+	-- 			[dim_pdas_id] = @pdasid and
+	-- 			[dim_business_id] = @businessid and
+	-- 			[dim_demand_category_id] IN (
+	-- 				@dim_demand_category_id_open_order,
+	-- 				@dim_demand_category_id_shipped_order
+	-- 			)
+	-- 			and [source_system] = 'REVA'
+	-- 	) target
+	-- 	INNER JOIN -- APAC NTB
+	-- 	(
+	-- 		SELECT
+	-- 			f.[po_code_customer] as sales_order
+	-- 			,f.dim_customer_id as dim_customer_id
+	-- 		FROM
+	-- 			[dbo].[fact_demand_total] f
+	-- 			INNER JOIN
+	-- 			(
+	-- 				SELECT dc.id
+	-- 				FROM
+	-- 					dim_customer dc
+	-- 					INNER JOIN dim_location dl
+	-- 					 	ON dc.dim_location_id = dl.[id]
+	-- 				WHERE dl.[region] = 'APAC'
+	-- 			) dim_customer
+	-- 				ON f.dim_customer_id = dim_customer.id
+	-- 		WHERE
+	-- 			[dim_pdas_id] = @pdasid and
+	-- 			[dim_business_id] = @businessid and
+	-- 			[dim_demand_category_id] = @dim_demand_category_id_ntb
+	-- 	) source
+	-- 		ON target.sales_order = source.sales_order
 
 
 	-- Update the dim_date_id_forecast_vs_actual

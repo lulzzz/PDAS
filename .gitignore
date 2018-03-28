@@ -1,21 +1,40 @@
+# Django files and folders
 *.pyc
 *~
 __pycache__
-ve/
-users/
-help_script.py
 db.sqlite3
 .DS_Store
 test.py
-*manage.py
-*settings.py
+manage.py
+*project.py
+*.h5
 *.csv
 *.xlsx
 *.xls
 *.log
 *.bak
 *.svg
+vendors/
+
+# Workflow files and folders
+techpacks/
+photos/
+prints/
+uploads/
+artworks/
+sourcing/images/
+
+# Analytics files and folders
 *.ipynb
-documentation/
-*migrations/
-__pycache__/
+*.ckpt
+checkpoint
+parameters*
+ai_parameters/
+parameters/
+train.log/
+cache/
+
+# Elastic Beanstalk files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
