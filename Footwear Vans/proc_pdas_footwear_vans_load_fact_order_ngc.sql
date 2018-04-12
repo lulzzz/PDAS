@@ -149,8 +149,8 @@ BEGIN
 		CASE
 			WHEN [source_system] = 'S65' THEN @dim_customer_id_placeholder_nora
 			WHEN [source_system] = 'CONDOR' THEN @dim_customer_id_placeholder_casa
-			WHEN ([source_system] = 'REVA') OR ([source_system] = 'e-SPS' AND [dim_customer_dc_code_brio] = 'OABCJ') THEN @dim_customer_id_placeholder_nora
-			WHEN ([source_system] IN ('JBA-VF', 'JBA-VC') OR ([source_system] = 'e-SPS' AND [dim_customer_dc_code_brio] IN ('OCSDS', 'ORTLA')) THEN @dim_customer_id_placeholder_nora
+			WHEN ([source_system] = 'REVA') OR ([source_system] = 'e-SPS' AND [dim_customer_dc_code_brio] = 'OABCJ') THEN @dim_customer_id_placeholder_apac
+			WHEN ([source_system] IN ('JBA-VF', 'JBA-VC')) OR ([source_system] = 'e-SPS' AND [dim_customer_dc_code_brio] IN ('OCSDS', 'ORTLA')) THEN @dim_customer_id_placeholder_emea
 			ELSE @dim_customer_id_placeholder
 		END AS dim_customer_id,
 		CASE ISNULL(ngc.shipment_status, 0)
@@ -233,11 +233,7 @@ BEGIN
 	WHERE
 		(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL)
 		AND dd_revised_crd.id IS NOT NULL
-		-- AND DATEDIFF(month, dd_revised_crd.full_date, @pdas_release_full_d) <= 2
-
-		-- AND YEAR(actual_crd_dt) = 2018
-		-- AND MONTH(actual_crd_dt) >= 2
-		-- AND MONTH(actual_crd_dt) <= 4
+		AND DATEDIFF(month, dd_revised_crd.full_date, @pdas_release_full_d) <= 2
 	GROUP BY
 		ISNULL(po_code_cut, 'UNDEFINED'),
 		dd_revised_crd.id,
@@ -247,7 +243,8 @@ BEGIN
 			WHEN mapping_f.id IS NOT NULL THEN mapping_f.id
 			ELSE @dim_factory_id_placeholder
 		END,
-		source_system
+		source_system,
+		dim_customer_dc_code_brio,
 		CASE
 			WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
 			ELSE dp_m.id

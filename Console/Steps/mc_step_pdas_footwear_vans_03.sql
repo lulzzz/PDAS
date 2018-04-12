@@ -24,10 +24,13 @@ BEGIN
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]	@pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- NTB
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
-		@pdasid = @pdasid,
-		@businessid = @dim_business_id_footwear_vans,
-		@buying_program_id = @buying_program_id
+	-- EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
+	-- 	@pdasid = @pdasid,
+	-- 	@businessid = @dim_business_id_footwear_vans,
+	-- 	@buying_program_id = @buying_program_id
+
+	-- NGC
+	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
 	-- Forecast
 	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
@@ -35,13 +38,22 @@ BEGIN
 		@businessid = @dim_business_id_footwear_vans,
 		@buying_program_id = @buying_program_forecast_id
 
-	-- NGC
-	EXEC [dbo].[proc_pdas_footwear_vans_load_fact_order_ngc] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
 
-	-- Do manual overwrite
-	EXEC [dbo].[proc_pdas_footwear_vans_do_overwrite] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	-- Update id_original
+	UPDATE [fact_demand_total]
+	SET [id_original] = [id]
+	WHERE
+		[dim_pdas_id] = @pdasid
+		and [dim_business_id] = @dim_business_id_footwear_vans
+		and [is_from_previous_release] = 0
+		and ISNULL([id_original], 0) = 0
 
-	-- Prepare report tables for Excel frontend
-	-- EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	-- Update dim_date_id_original
+	UPDATE [fact_demand_total]
+	SET [dim_date_id_original] = [dim_date_id]
+	WHERE
+		[dim_pdas_id] = @pdasid
+		and [dim_business_id] = @dim_business_id_footwear_vans
+		and ISNULL([dim_date_id_original], 0) = 0
 
 END

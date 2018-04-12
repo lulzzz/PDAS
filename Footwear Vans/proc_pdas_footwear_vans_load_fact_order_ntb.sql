@@ -54,21 +54,51 @@ BEGIN
 			ON dim_pdas.[buy_month] = dim_date.[year_month_accounting]
 	)
 
-	-- Check if the session has already been loaded
-	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id AND dim_demand_category_id = @dim_demand_category_id_ntb AND is_from_previous_release = 0)
-	BEGIN
-		DELETE FROM [dbo].[fact_demand_total]
-		WHERE
-			dim_pdas_id = @pdasid
-			AND dim_business_id = @businessid
-			AND dim_buying_program_id = @buying_program_id
-			AND dim_demand_category_id = @dim_demand_category_id_ntb
-			AND is_from_previous_release = 0
-	END
+	-- Create temp table
+	CREATE TABLE #source_temp (
+		[dim_pdas_id] INT
+		,[dim_business_id] INT
+		,[dim_buying_program_id] INT
+		,[dim_product_id] INT
+		,[dim_date_id] INT
+		,[dim_date_id_buy_month] INT
+		,[dim_factory_id_original_unconstrained] INT
+		,[dim_factory_id_original_constrained] INT
+		,[dim_factory_id_final] INT
+		,[dim_factory_id] INT
+		,[dim_customer_id] INT
+		,[dim_demand_category_id] INT
+		,[order_number] NVARCHAR(45)
+		,[pr_code] NVARCHAR(45)
+		,[pr_cut_code] NVARCHAR(45)
+		,[po_code_customer] NVARCHAR(45)
+		,[so_code] NVARCHAR(45)
+		,[is_asap] TINYINT
+		,[quantity_lum] INT
+		,[quantity_non_lum] INT
+		,[quantity_unconsumed] INT
+		,[quantity] INT
+		,[material_id_sr] NVARCHAR(45)
+		,[production_lt_actual_buy] INT
+		,[comment_region] NVARCHAR(1000)
+		,[sold_to_customer_name] NVARCHAR(100)
+		,[mcq] INT
+		,[musical_cnt] NVARCHAR(200)
+		,[delivery_d] DATE
+		,[smu] NVARCHAR(200)
+		,[order_reference] NVARCHAR(45)
+		,[sku_footlocker] NVARCHAR(45)
+		,[prepack_code] NVARCHAR(45)
+		,[exp_delivery_with_constraint] NVARCHAR(45)
+		,[exp_delivery_without_constraint] NVARCHAR(45)
+		,[coo] NVARCHAR(45)
+		,[remarks_region] NVARCHAR(1000)
+		,[is_from_previous_release] TINYINT
+	)
 
 
-	-- NTB
-	INSERT INTO [dbo].[fact_demand_total]
+	-- NTB (temp table)
+	INSERT INTO #source_temp
     (
 		[dim_pdas_id]
 		,[dim_business_id]
@@ -508,13 +538,137 @@ BEGIN
 			AND [dim_business_id] = @businessid
 
 
-	-- Update id_original
-	UPDATE [fact_demand_total]
-	SET [id_original] = [id]
+
+	-- Insert/update/delete in real table
+	PRINT 'Insert'
+	INSERT INTO [dbo].[fact_demand_total]
+	(
+		[dim_pdas_id]
+		,[dim_business_id]
+		,[dim_buying_program_id]
+		,[dim_product_id]
+		,[dim_date_id]
+		,[dim_date_id_buy_month]
+		,[dim_factory_id_original_unconstrained]
+		,[dim_factory_id_original_constrained]
+		,[dim_factory_id_final]
+		,[dim_factory_id]
+		,[dim_customer_id]
+		,[dim_demand_category_id]
+		,[order_number]
+		,[pr_code]
+		,[pr_cut_code]
+		,[po_code_customer]
+		,[so_code]
+		,[is_asap]
+		,[quantity_lum]
+		,[quantity_non_lum]
+		,[quantity_unconsumed]
+		,[quantity]
+		,[material_id_sr]
+		,[production_lt_actual_buy]
+		,[comment_region]
+		,[sold_to_customer_name]
+		,[mcq]
+		,[musical_cnt]
+		,[delivery_d]
+		,[smu]
+		,[order_reference]
+		,[sku_footlocker]
+		,[prepack_code]
+		,[exp_delivery_with_constraint]
+		,[exp_delivery_without_constraint]
+		,[coo]
+		,[remarks_region]
+		,[is_from_previous_release]
+	)
+	SELECT s.*
+	FROM
+		#source_temp s
+		LEFT OUTER JOIN
+		(
+			SELECT *
+			FROM [dbo].[fact_demand_total]
+			WHERE
+				dim_pdas_id = @pdasid
+				AND dim_business_id = @businessid
+				AND dim_buying_program_id = @buying_program_id
+				AND dim_demand_category_id = @dim_demand_category_id_ntb
+				AND is_from_previous_release = 0
+		) t
+			ON
+				s.[dim_product_id] = t.[dim_product_id] and
+				s.[dim_date_id] = t.[dim_date_id_original] and
+				s.[dim_customer_id] = t.[dim_customer_id] and
+				s.[pr_cut_code] = t.[pr_cut_code]
 	WHERE
-		[dim_pdas_id] = @pdasid
-		and [dim_business_id] = @businessid
-		and [is_from_previous_release] = 0
-		and ISNULL([id_original], 0) = 0
+		t.[id] IS NULL
+
+	PRINT 'Update'
+	UPDATE t
+	SET
+		t.[dim_date_id] = s.[dim_date_id]
+		,t.[po_code_customer] = s.[po_code_customer]
+		,t.[so_code] = s.[so_code]
+		,t.[is_asap] = s.[is_asap]
+		,t.[quantity_lum] = s.[quantity_lum]
+		,t.[quantity_non_lum] = s.[quantity_non_lum]
+		,t.[quantity_unconsumed] = s.[quantity_unconsumed]
+		,t.[quantity] = s.[quantity]
+		,t.[material_id_sr] = s.[material_id_sr]
+		,t.[production_lt_actual_buy] = s.[production_lt_actual_buy]
+		,t.[sold_to_customer_name] = s.[sold_to_customer_name]
+		,t.[mcq] = s.[mcq]
+		,t.[musical_cnt] = s.[musical_cnt]
+		,t.[delivery_d] = s.[delivery_d]
+		,t.[smu] = s.[smu]
+		,t.[order_reference] = s.[order_reference]
+		,t.[sku_footlocker] = s.[sku_footlocker]
+		,t.[prepack_code] = s.[prepack_code]
+		,t.[exp_delivery_with_constraint] = s.[exp_delivery_with_constraint]
+		,t.[exp_delivery_without_constraint] = s.[exp_delivery_without_constraint]
+		,t.[coo] = s.[coo]
+	FROM
+		#source_temp s
+		INNER JOIN
+		(
+			SELECT *
+			FROM [dbo].[fact_demand_total]
+			WHERE
+				dim_pdas_id = @pdasid
+				AND dim_business_id = @businessid
+				AND dim_buying_program_id = @buying_program_id
+				AND dim_demand_category_id = @dim_demand_category_id_ntb
+				AND is_from_previous_release = 0
+		) t
+			ON
+				s.[dim_product_id] = t.[dim_product_id] and
+				s.[dim_date_id] = t.[dim_date_id_original] and
+				s.[dim_customer_id] = t.[dim_customer_id] and
+				s.[pr_cut_code] = t.[pr_cut_code]
+
+	PRINT 'Delete'
+	DELETE t
+	FROM
+		#source_temp s
+		LEFT OUTER JOIN
+		(
+			SELECT *
+			FROM [dbo].[fact_demand_total]
+			WHERE
+				dim_pdas_id = @pdasid
+				AND dim_business_id = @businessid
+				AND dim_buying_program_id = @buying_program_id
+				AND dim_demand_category_id = @dim_demand_category_id_ntb
+				AND is_from_previous_release = 0
+		) t
+			ON
+				s.[dim_product_id] = t.[dim_product_id] and
+				s.[dim_date_id] = t.[dim_date_id_original] and
+				s.[dim_customer_id] = t.[dim_customer_id] and
+				s.[pr_cut_code] = t.[pr_cut_code]
+	WHERE
+		s.[dim_pdas_id] IS NULL
+
 
 END

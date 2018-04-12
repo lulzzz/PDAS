@@ -9,6 +9,7 @@ SELECT
 	, f_1.[dim_product_id]
 	, dim_product.dim_construction_type_id as dim_construction_type_id
 	, f_1.[dim_date_id]
+	, f_1.[dim_date_id_original]
 	, f_1.[dim_date_id_buy_month]
 	, f_1.[dim_date_id_forecast_vs_actual]
 	, f_1.[dim_factory_id_original_unconstrained]
@@ -186,6 +187,9 @@ SELECT
 	,dim_date.[month_name_accounting] AS [dim_date_month_name_accounting]
 	,dim_date.[month_name_short_accounting] AS [dim_date_month_name_short_accounting]
 
+	-- dim_date_original
+	,dim_date_original.[full_date] AS [dim_date_original_full_date]
+
 	-- dim_factory_original_unconstrained
 	,dim_factory_original_unconstrained.vendor_group AS [dim_factory_original_unconstrained_vendor_group]
 	,dim_factory_original_unconstrained.short_name AS [dim_factory_original_unconstrained_short_name]
@@ -295,6 +299,9 @@ FROM
 
 	INNER JOIN dim_date
 		ON f_1.dim_date_id = dim_date.id
+
+	INNER JOIN dim_date as dim_date_original
+		ON f_1.dim_date_id_original = dim_date_original.id
 
 	INNER JOIN
 	(

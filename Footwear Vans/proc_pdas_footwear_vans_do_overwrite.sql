@@ -20,6 +20,7 @@ BEGIN
 
 	-- Declare variables
 	DECLARE	@current_dt datetime = GETDATE()
+	DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
 
 	-- Update fact_demand_total based on staging_pdas_footwear_vans_allocation_report_region
 	UPDATE target
@@ -118,15 +119,17 @@ BEGIN
 				,[Need to reallocate]
 				,[PO/CUT#]
 				,[Comment (VFA Vendor)]
-				,[Requested CRD]
-				,DATEDIFF(DAY, [Requested CRD], [Confirmed CRD Dt (Vendor)]) as [status_orig_req]
+				,DATEDIFF(DAY, [Rev. Requested CRD], [Confirmed CRD Dt (Vendor)]) as [status_orig_req]
 				,dd.[id] AS [dim_date_id]
-				,df.[id] AS [dim_factory_id_final]
+				, CASE
+					WHEN ISNULL(df.[id], 0) = 0 THEN @dim_factory_id_placeholder
+					ELSE df.[id]
+				END AS [dim_factory_id_final]
 			FROM
 				[dbo].[staging_pdas_footwear_vans_allocation_report_vendor] temp
 				INNER JOIN [dbo].[dim_date] dd
-					ON temp.[Requested CRD] = dd.[full_date]
-				INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
+					ON temp.[Rev. Requested CRD] = dd.[full_date]
+				LEFT OUTER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 					ON temp.[Final Factory Allocation] = df.[short_name]
 		) as temp
 			ON target.[id_original] = temp.[id_original]

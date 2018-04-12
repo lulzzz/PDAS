@@ -85,7 +85,7 @@ BEGIN
 			ELSE @dim_product_id_placeholder
 		END as dim_product_id,
 		dd.id as dim_date_id,
-		@dim_date_id_buy_month,
+		dd.id as dim_date_id_buy_month,
 		@dim_factory_id_placeholder AS [dim_factory_id_original_unconstrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_original_constrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_final],
@@ -155,7 +155,7 @@ BEGIN
 			ELSE @dim_product_id_placeholder
 		END as dim_product_id,
 		dd.id as dim_date_id,
-		@dim_date_id_buy_month,
+		dd.id as dim_date_id_buy_month,
 		@dim_factory_id_placeholder AS [dim_factory_id_original_unconstrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_original_constrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_final],
@@ -223,7 +223,7 @@ BEGIN
 			ELSE @dim_product_id_placeholder
 		END as dim_product_id,
 		dd.id as dim_date_id,
-		@dim_date_id_buy_month,
+		dd.id as dim_date_id_buy_month,
 		@dim_factory_id_placeholder AS [dim_factory_id_original_unconstrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_original_constrained],
 		@dim_factory_id_placeholder AS [dim_factory_id_final],
