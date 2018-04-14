@@ -73,6 +73,9 @@ BEGIN
 		,[quantity_unconsumed]
 		,[quantity]
 		,[is_from_previous_release]
+		,[sold_to_customer_name]
+		,[colorway_name]
+		,[style_description_long]
     )
 	-- APAC
 	-- Providing their forecast based on BUY months
@@ -102,6 +105,9 @@ BEGIN
 		sum(quantity) AS [quantity_unconsumed],
 		sum(quantity) AS [quantity],
 		0 AS [is_from_previous_release]
+		,[dim_market_name] as [sold_to_customer_name]
+		,NULL as [colorway_name]
+		,NULL as [style_description_long]
 	FROM
 		[dbo].[staging_pdas_footwear_vans_apac_forecast] nf
 		LEFT OUTER JOIN
@@ -140,7 +146,8 @@ BEGIN
 		CASE
 			WHEN dc.id IS NOT NULL THEN dc.id
 			ELSE @dim_customer_id_placeholder_apac
-		END
+		END,
+		[dim_market_name]
 
 
 	-- EMEA
@@ -172,6 +179,9 @@ BEGIN
 		sum(quantity) AS [quantity_unconsumed],
 		sum(quantity) AS [quantity],
 		0 AS [is_from_previous_release]
+		,[customer_type] as [sold_to_customer_name]
+		,NULL as [colorway_name]
+		,[dim_product_material_description] as [style_description_long]
 	FROM
 		[dbo].[staging_pdas_footwear_vans_emea_forecast] nf
 		LEFT OUTER JOIN
@@ -210,7 +220,9 @@ BEGIN
 			CASE
 				WHEN dc.id IS NOT NULL THEN dc.id
 				ELSE @dim_customer_id_placeholder_emea
-			END
+			END,
+			[customer_type],
+			[dim_product_material_description]
 
 	-- NORA (we pull intro month 2 months forward to reach CRD)
 	UNION
@@ -237,6 +249,9 @@ BEGIN
 		sum(quantity) AS [quantity_unconsumed],
 		sum(quantity) AS [quantity],
 		0 AS [is_from_previous_release]
+		,[dim_region_region] as [sold_to_customer_name]
+		,[dim_product_color_description] as [colorway_name]
+		,[dim_product_material_description] as [style_description_long]
 	FROM
 		[dbo].[staging_pdas_footwear_vans_nora_forecast] nf
 		INNER JOIN
@@ -271,16 +286,123 @@ BEGIN
 			ELSE @dim_product_id_placeholder
 		END,
 		dd.id,
-		dc.id
+		dc.id,
+		[dim_region_region],
+		[dim_product_color_description],
+		[dim_product_material_description]
 
 
-	-- Update id_original
+	-- Update single_or_dual_source
+	UPDATE t
+	SET
+		[single_or_dual_source] = CASE
+            WHEN ISNULL(prio.[dim_factory_id_2], 0) = 0 THEN 'Single source'
+            ELSE 'Dual source'
+        END
+	FROM
+		(
+			SELECT *
+			FROM
+				[fact_demand_total]
+			WHERE
+				[dim_pdas_id] = @pdasid
+				and [dim_business_id] = @businessid
+				and [is_from_previous_release] = 0
+				and dim_demand_category_id = @dim_demand_category_id_forecast
+		) t
+		INNER JOIN
+		(
+			SELECT *
+			FROM
+				[fact_priority_list]
+			WHERE
+				[dim_pdas_id] = @pdasid
+				and [dim_business_id] = @businessid
+		) prio
+			ON t.[dim_product_id] = prio.[dim_product_id]
+
+	-- Update style_ranking
+	UPDATE t
+	SET
+		[style_ranking] = t_ranked.[ranking]
+	FROM
+		(
+			SELECT f.*, dp.[style_id]
+			FROM
+				[fact_demand_total] f
+				INNER JOIN dim_product dp
+					ON f.[dim_product_id] = dp.[id]
+			WHERE
+				[dim_pdas_id] = @pdasid
+				and dp.[dim_business_id] = @businessid
+				and [is_from_previous_release] = 0
+				and dim_demand_category_id = @dim_demand_category_id_forecast
+		) t
+		INNER JOIN
+		(
+			SELECT dp.[style_id], RANK() OVER(ORDER BY SUM(f.[quantity_lum]) DESC) as [ranking]
+			FROM
+				[fact_demand_total] f
+				INNER JOIN dim_product dp
+					ON f.[dim_product_id] = dp.[id]
+			WHERE
+				[dim_pdas_id] = @pdasid
+				and f.[dim_business_id] = @businessid
+				and [is_from_previous_release] = 0
+				and dim_demand_category_id = @dim_demand_category_id_forecast
+			GROUP BY
+				dp.[style_id]
+		) t_ranked
+			ON t.[style_id] = t_ranked.[style_id]
+
+
+	-- Update mtr_ranking
+	UPDATE t
+	SET
+		[mtr_ranking] = t_ranked.[ranking]
+	FROM
+		(
+			SELECT f.*, dp.[material_id]
+			FROM
+				[fact_demand_total] f
+				INNER JOIN dim_product dp
+					ON f.[dim_product_id] = dp.[id]
+			WHERE
+				[dim_pdas_id] = @pdasid
+				and dp.[dim_business_id] = @businessid
+				and [is_from_previous_release] = 0
+				and dim_demand_category_id = @dim_demand_category_id_forecast
+		) t
+		INNER JOIN
+		(
+			SELECT dp.[material_id], RANK() OVER(ORDER BY SUM(f.[quantity_lum]) DESC) as [ranking]
+			FROM
+				[fact_demand_total] f
+				INNER JOIN dim_product dp
+					ON f.[dim_product_id] = dp.[id]
+			WHERE
+				[dim_pdas_id] = @pdasid
+				and f.[dim_business_id] = @businessid
+				and [is_from_previous_release] = 0
+				and dim_demand_category_id = @dim_demand_category_id_forecast
+			GROUP BY
+				dp.[material_id]
+		) t_ranked
+			ON t.[material_id] = t_ranked.[material_id]
+
+
+	-- Update top_50_mtl
 	UPDATE [fact_demand_total]
-	SET [id_original] = [id]
+	SET
+		[top_50_mtl] = CASE
+			WHEN [mtr_ranking] BETWEEN 1 AND 50 THEN 'Top 50 MTL'
+			ELSE NULL
+		END
 	WHERE
 		[dim_pdas_id] = @pdasid
 		and [dim_business_id] = @businessid
 		and [is_from_previous_release] = 0
-		and ISNULL([id_original], 0) = 0
+		and [dim_demand_category_id] = @dim_demand_category_id_forecast
+
 
 END

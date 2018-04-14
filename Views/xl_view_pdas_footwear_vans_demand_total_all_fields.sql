@@ -101,6 +101,12 @@ SELECT
 	, f_1.[need_to_reallocate]
 	, f_1.[comment_vfa_region]
 	, f_1.[comment_vfa_vendor]
+	, f_1.[colorway_name]
+	, f_1.[style_description_long]
+	, f_1.[single_or_dual_source]
+	, f_1.[style_ranking]
+	, f_1.[mtr_ranking]
+	, f_1.[top_50_mtl]
 
 	-- dim_pdas
 	,dim_pdas.[name] AS [dim_pdas_name]
@@ -167,8 +173,11 @@ SELECT
 		ELSE 'N'
 	END AS [dim_product_brt_in_house]
 	,dim_product.material_id_emea AS [dim_product_material_id_emea]
-	,dim_product.sku AS [dim_product_sku]
-
+	,dim_product.start_ship_dt AS [start_ship_dt]
+	,dim_product.wolverine_material AS [wolverine_material]
+	,dim_product.last AS [last]
+	,dim_product.costing_status AS [costing_status]
+	,dim_product.confirmed_fob AS [confirmed_fob]
 
 	-- dim_date
 	,dim_date.[full_date] AS [dim_date_full_date]

@@ -21,43 +21,6 @@ BEGIN
 
 	*/
 
-    -- Deduplicate the key pair (material_id, size)
-    IF OBJECT_ID('tempdb..#material_size') IS NOT NULL
-    BEGIN
-        DROP TABLE #material_size;
-    END
-
-    SELECT
-        dim_product_material_id,
-        dim_product_size
-    INTO #material_size
-    FROM [dbo].[staging_pdas_footwear_vans_size_master]
-    ;
-
-	DELETE x FROM (
-		SELECT *, rn=row_number() OVER (PARTITION BY dim_product_material_id, dim_product_size ORDER BY dim_product_material_id asc)
-		FROM #material_size
-	) x
-	WHERE rn > 1;
-
-
-    -- Prepare Insert / Update Keys
-    IF OBJECT_ID('tempdb..#split_ins_upd') IS NOT NULL
-	 BEGIN
-		DROP TABLE #split_ins_upd;
-	 END
-
-    SELECT
-        ms.dim_product_material_id,
-        ms.dim_product_size,
-        CASE ISNULL(flag, 0) WHEN 0 THEN 'Insert' ELSE 'Update' END as mode
-    INTO #split_ins_upd
-    FROM #material_size ms
-    LEFT OUTER JOIN (SELECT material_id, size, 1 as flag FROM [dbo].[dim_product]) dp
-        ON  ms.dim_product_material_id = dp.material_id
-            AND ms.dim_product_size = dp.size
-    WHERE dim_product_material_id NOT IN (SELECT DISTINCT material_id FROM [dbo].[dim_product])
-    ;
 
     /*
         INSERT
@@ -151,30 +114,6 @@ BEGIN
         [is_placeholder],
         [placeholder_level]
     )
-    SELECT
-        @businessid,
-        mat.dim_product_material_id  as material_id,
-        siz.dim_product_size as size,
-        mat.dim_product_style_id as style_id,
-        dim_product_color_description as color_description,
-        NULL as style_name,
-        mat.dim_product_material_description as material_description,
-        mat.dim_product_material_type as type,
-        dim_product_gender as gender,
-        'Active' as lifecycle,
-        'N/A' as style_complexity,
-        1 as dim_construction_type_id,
-        0 as is_placeholder,
-        NULL as placeholder_level
-    FROM
-        [dbo].[staging_pdas_footwear_vans_material_master] mat
-        INNER JOIN #material_size siz
-            ON mat.dim_product_material_id = siz.dim_product_material_id
-        INNER JOIN #split_ins_upd siu
-            ON  siz.dim_product_material_id = siu.dim_product_material_id
-                AND siz.dim_product_size = siu.dim_product_size
-                AND siu.mode = 'Insert'
-    UNION
     SELECT
         @businessid,
         ngc.dim_product_style_id as material_id,
@@ -339,32 +278,9 @@ BEGIN
     WHERE
         dp_s.[id] IS NULL
 
-    /*
-      UPDATE
-    */
-
-    UPDATE dp
-    SET
-        dp.style_id = mat.dim_product_style_id,
-        dp.color_description = mat.dim_product_color_description,
-        dp.material_description = mat.dim_product_material_description,
-        dp.type = mat.dim_product_material_type,
-        dp.gender = mat.dim_product_gender
-    FROM
-        [dbo].[dim_product] dp
-        INNER JOIN [dbo].[staging_pdas_footwear_vans_material_master] mat
-            ON dp.material_id = mat.dim_product_material_id
-        INNER JOIN #material_size siz
-            ON mat.dim_product_material_id = siz.dim_product_material_id
-        INNER JOIN #split_ins_upd siu
-            ON  siz.dim_product_material_id = siu.dim_product_material_id
-                AND siz.dim_product_size = siu.dim_product_size
-                AND siu.mode = 'Update'
-    WHERE dim_business_id = @businessid
-    ;
 
     /*
-        Update attributes with Priority List data
+    Update attributes with Priority List data
     */
     UPDATE dp
     SET
@@ -408,7 +324,12 @@ BEGIN
         dp.brt_in_house = CASE ISNULL(prio.[brt_in_house], '-')
             WHEN '-' THEN 0
             ELSE 1
-        END
+        END,
+        dp.start_ship_dt = prio.[startship_dt],
+        dp.wolverine_material = prio.[wolwerine_material],
+        dp.last = prio.[last],
+        dp.costing_status = prio.[brazil_or_argentina],
+        dp.confirmed_fob = prio.[chinal4l]
     FROM
         [dbo].[dim_product] dp
         INNER JOIN [dbo].[staging_pdas_footwear_vans_priority_list] prio
@@ -531,18 +452,10 @@ BEGIN
                 dp.size = ntb.dim_product_size
 
 
-    /*
-        Update by using existing fields in dim_product
-    */
-    UPDATE [dbo].[dim_product]
-    SET
-        [gender_new] = LEFT(ISNULL([style_name], ''), 2),
-        [style_name_new] = STUFF(ISNULL([style_name], ''), 1, 3, ''),
-        [style_id_erp] = LEFT(ISNULL([material_id], ''), 8)
 
 
     /*
-        Set Placeholders chain
+    Set Placeholders chain
     */
 
     -- Level Material
@@ -573,17 +486,11 @@ BEGIN
 
     UPDATE dp
     SET
-        dp.style_id = mat.dim_product_style_id,
-        dp.style_name = prio.dim_product_style_name,
-        dp.color_description = mat.dim_product_color_description,
-        dp.material_description = mat.dim_product_material_description,
-        dp.type = mat.dim_product_material_type,
-        dp.gender = mat.dim_product_gender,
+		dp.style_name = prio.dim_product_style_name,
         dp.style_complexity = prio.dim_product_style_complexity,
         dp.dim_construction_type_id = cons.id,
         dp.lifecycle = prio.dim_product_lifecycle
     FROM [dbo].[dim_product] dp
-        INNER JOIN [dbo].[staging_pdas_footwear_vans_material_master] mat ON dp.material_id = mat.dim_product_material_id
         INNER JOIN [dbo].[staging_pdas_footwear_vans_priority_list] prio ON dp.material_id = prio.dim_product_material_id
         INNER JOIN [dbo].[dim_construction_type] cons ON prio.dim_construction_type_name = cons.name
     WHERE dp.is_placeholder = 1 AND dp.placeholder_level = 'material_id'
@@ -698,5 +605,14 @@ BEGIN
         and dp.gender IS NOT NULL
         and dp.gender <> 'PLACEHOLDER'
 
+
+    /*
+    Update by using existing fields in dim_product
+    */
+    UPDATE [dbo].[dim_product]
+    SET
+        [gender_new] = LEFT(ISNULL([style_name], ''), 2),
+        [style_name_new] = STUFF(ISNULL([style_name], ''), 1, 3, ''),
+        [style_id_erp] = LEFT(ISNULL([material_id], ''), 8)
 
 END
