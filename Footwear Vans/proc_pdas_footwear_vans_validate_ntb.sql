@@ -11,7 +11,7 @@ GO
 -- Description:	Backend procedure to validate the staging area NTB tables and generate a validatio report.
 -- =============================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_validate_ntb]
-	@mc_user_name nvarchar(100) = NULL
+	@dim_release_id INT
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -19,11 +19,6 @@ BEGIN
     /* Declare variables */
 
     DECLARE	@current_date date = GETDATE()
-
-	DECLARE @dim_pdas_id int
-	SELECT @dim_pdas_id = MAX(id) FROM [dbo].[dim_pdas];
-
-
 	DECLARE @system nvarchar(15) = 'pdas_ftw_vans'
 	DECLARE @source	nvarchar(45)
 	DECLARE @type nvarchar(100)
@@ -90,6 +85,8 @@ BEGIN
 				[dbo].[fact_priority_list] f
 				INNER JOIN [dbo].[dim_product] dp
 					ON f.dim_product_id = dp.id
+			WHERE
+				f.[dim_release_id] = @dim_release_id
         ) dim
 			ON  staging.[dim_product_material_id] = dim.[material_id]
 	WHERE
@@ -189,6 +186,8 @@ BEGIN
 				[dbo].[fact_priority_list] f
 				INNER JOIN [dbo].[dim_product] dp
 					ON f.dim_product_id = dp.id
+			WHERE
+				f.[dim_release_id] = @dim_release_id
         ) dim
 			ON  staging.[dim_product_material_id] = dim.[material_id]
 	WHERE
@@ -295,6 +294,8 @@ BEGIN
 				[dbo].[fact_priority_list] f
 				INNER JOIN [dbo].[dim_product] dp
 					ON f.dim_product_id = dp.id
+			WHERE
+				f.[dim_release_id] = @dim_release_id
         ) dim
 			ON  staging.[dim_product_material_id] = dim.[material_id]
 	WHERE
@@ -387,6 +388,8 @@ BEGIN
 				[dbo].[fact_priority_list] f
 				INNER JOIN [dbo].[dim_product] dp
 					ON f.dim_product_id = dp.id
+			WHERE
+				f.[dim_release_id] = @dim_release_id
         ) dim
 			ON  staging.[dim_product_material_id] = dim.[material_id]
 	WHERE

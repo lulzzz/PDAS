@@ -80,6 +80,7 @@ BEGIN
 		,target.[confirmed_unit_price_memo] = temp.[Confirmed Unit Price (Price Conf Memo)]
 		,target.[min_surcharge] = temp.[Min Surcharge (Vendor)]
 		,target.[confirmed_unit_price_vendor] = temp.[Confirmed Unit Price (Vendor)]
+		,target.[production_lt_actual_vendor] = DATEDIFF(DAY, target.[buy_d], temp.[Confirmed CRD Dt (Vendor)])
 		,target.[nominated_supplier_name] = temp.[Nominated Supplier Name]
 		,target.[comment_vendor] = temp.[Comment (Vendor)]
 		,target.[confirmed_comp_eta_hk] = temp.[Confirm Comp. ETA HK]
@@ -94,8 +95,14 @@ BEGIN
 	FROM
 		(
 			SELECT
-				*
-			FROM [dbo].[fact_demand_total]
+				f.*,
+				dd.[full_date] as [buy_d]
+			FROM
+				[dbo].[fact_demand_total] f
+				INNER JOIN [dim_pdas] dpdas
+					ON f.[dim_pdas_id] = dpdas.[id]
+				INNER JOIN [dim_date] dd
+					ON dpdas.[dim_date_id] = dd.[id]
 			WHERE
 				dim_pdas_id = @pdasid and
 				dim_business_id = @businessid
@@ -105,7 +112,7 @@ BEGIN
 			SELECT
 				[id_original]
 				,[CY / CFS Load]
-				,[Confirmed CRD Dt (Vendor)]
+				,CONVERT(DATE, [Confirmed CRD Dt (Vendor)]) as [Confirmed CRD Dt (Vendor)]
 				,[Confirmed Unit Price (Price Conf Memo)]
 				,[Min Surcharge (Vendor)]
 				,[Confirmed Unit Price (Vendor)]

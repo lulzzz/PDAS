@@ -4,23 +4,23 @@
 -- Description:	Procedure to load the fact_priority_list table.
 -- ==============================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_priority_list]
-	@pdasid INT,
+	@dim_release_id INT,
 	@businessid INT
 AS
 BEGIN
 
 	-- Declare variables
 	DECLARE @pdas_release_full_date_id int
-	SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
+	SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_release] WHERE [id] = @dim_release_id)
 
 	-- Check if the session has already been loaded
 	DELETE FROM [dbo].[fact_priority_list]
-    WHERE dim_pdas_id = @pdasid
+    WHERE dim_release_id = @dim_release_id
 
 	-- Insert from staging
 	INSERT INTO [dbo].[fact_priority_list]
 	(
-		[dim_pdas_id],
+		[dim_release_id],
 		[dim_business_id],
 		[dim_product_id],
 		[dim_factory_id_1],
@@ -31,7 +31,7 @@ BEGIN
       	[asia_development_buy_ready]
 	)
 	SELECT
-        @pdasid as dim_pdas_id,
+        @dim_release_id as dim_release_id,
         @businessid as dim_business_id,
         dp.[id] as dim_product_id,
         MAX(df1.[id]) as dim_factory_id_1,

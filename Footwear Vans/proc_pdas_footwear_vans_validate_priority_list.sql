@@ -11,7 +11,6 @@ GO
 -- Description:	Backend procedure to validate the staging area priority list and generate a validatio report.
 -- =============================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_validate_priority_list]
-	@mc_user_name nvarchar(100) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -20,14 +19,9 @@ BEGIN
 
     DECLARE	@current_date date = GETDATE()
 
-	DECLARE @dim_pdas_id int
-	SELECT @dim_pdas_id = MAX(id) FROM [dbo].[dim_pdas];
-
-
 	DECLARE @system nvarchar(15) = 'pdas_ftw_vans'
 	DECLARE @source	nvarchar(45)
 	DECLARE @type nvarchar(100)
-
 
 	SET @source = 'PDAS_FTW_VANS_PRIORITY_LIST.xlsx';
 	DELETE FROM [dbo].[system_log_file] WHERE [system] = @system and [source] = @source
@@ -139,7 +133,8 @@ BEGIN
 			'Complex',
 			'Basic',
 			'Standard',
-			'Flex 2'
+			'Flex 2',
+			'Flex 3'
 		)
 
 

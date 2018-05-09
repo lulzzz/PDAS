@@ -148,6 +148,7 @@ SELECT
 	,dim_product.[product_cycle] AS [product_cycle]
 	,dim_product.[style_complexity] AS [dim_product_style_complexity]
 	,dim_product.[construction_type_name] AS [dim_product_construction_type_name]
+	,dim_product.[sku] AS [dim_product_sku]
 	,CASE dim_product.[pre_build_mtl]
 		WHEN 1 THEN 'Y'
 		ELSE 'N'

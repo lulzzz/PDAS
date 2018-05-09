@@ -296,28 +296,34 @@ BEGIN
 	UPDATE t
 	SET
 		[single_or_dual_source] = CASE
-            WHEN ISNULL(prio.[dim_factory_id_2], 0) = 0 THEN 'Single source'
-            ELSE 'Dual source'
+            WHEN ISNULL(prio.[dim_factory_id_2], 0) <> 0 THEN 'Dual source'
+			WHEN t.[style_complexity] LIKE '%flex%' THEN 'Dual source'
+			WHEN prio.[short_name] NOT IN ('CLK', 'DTP', 'SJD', 'MTL') THEN 'Dual source'
+            ELSE 'Single source'
         END
 	FROM
 		(
-			SELECT *
+			SELECT f.*, dp.[style_complexity]
 			FROM
-				[fact_demand_total]
+				[fact_demand_total] f
+				INNER JOIN dim_product dp
+					ON f.[dim_product_id] = dp.[id]
 			WHERE
 				[dim_pdas_id] = @pdasid
-				and [dim_business_id] = @businessid
+				and f.[dim_business_id] = @businessid
 				and [is_from_previous_release] = 0
 				and dim_demand_category_id = @dim_demand_category_id_forecast
 		) t
 		INNER JOIN
 		(
-			SELECT *
+			SELECT f.*, df.[short_name]
 			FROM
-				[fact_priority_list]
+				[fact_priority_list] f
+				INNER JOIN dim_factory df
+					ON f.[dim_factory_id_1] = df.[id]
 			WHERE
 				[dim_pdas_id] = @pdasid
-				and [dim_business_id] = @businessid
+				and f.[dim_business_id] = @businessid
 		) prio
 			ON t.[dim_product_id] = prio.[dim_product_id]
 

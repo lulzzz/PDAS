@@ -12,8 +12,10 @@ ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_moq_upcharge_adjustment]
 AS
 BEGIN
 
+	DECLARE @dim_demand_category_id_ntb int = (SELECT [id] FROM [dbo].[dim_demand_category] WHERE [name] = 'Need to Buy')
+
 	-- Reset data
-	UPDATE f
+	UPDATE [dbo].[fact_demand_total]
 	SET
 		[quantity_region_mtl_lvl] = NULL,
 		[quantity_customer_mtl_lvl] = NULL,
@@ -23,14 +25,10 @@ BEGIN
 		[region_below_moq] = NULL,
 		[upcharge] = NULL,
 		[is_rejected] = NULL
-	FROM
-		[dbo].[fact_demand_total] f
-		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-			ON f.[dim_demand_category_id] = ddc.[id]
 	WHERE
 		[dim_pdas_id] = @pdasid
 		and [dim_business_id] = @businessid
-		and ddc.[name] IN ('Forecast', 'Need to Buy')
+		and dim_demand_category_id = @dim_demand_category_id_ntb
 
 	-- Drop temporary table if exists
 	IF OBJECT_ID('tempdb..#fact_demand_total_region_level') IS NOT NULL
@@ -83,14 +81,12 @@ BEGIN
 					ON dc.[dim_location_id] = dl.[id]
 		) dc
 			ON dc.[id] = f.[dim_customer_id]
-		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-			ON f.[dim_demand_category_id] = ddc.[id]
 		INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
 			ON f.[dim_product_id] = dp.[id]
 	WHERE
 		[dim_pdas_id] = @pdasid and
 		[dim_business_id] = @businessid and
-		ddc.[name] IN ('Forecast', 'Need to Buy')
+		dim_demand_category_id = @dim_demand_category_id_ntb
 	GROUP BY
 		[dim_buying_program_id]
 		,[dim_demand_category_id]
@@ -122,15 +118,12 @@ BEGIN
 							ON dc.[dim_location_id] = dl.[id]
 				) dc
 					ON dc.[id] = f.[dim_customer_id]
-
-				INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-					ON f.[dim_demand_category_id] = ddc.[id]
 				INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
 					ON f.[dim_product_id] = dp.[id]
             WHERE
 				[dim_pdas_id] = @pdasid and
 				[dim_business_id] = @businessid and
-				ddc.[name] IN ('Forecast', 'Need to Buy')
+				dim_demand_category_id = @dim_demand_category_id_ntb
         ) f
 		INNER JOIN #fact_demand_total_region_level
 		as f_agg
@@ -154,8 +147,6 @@ BEGIN
 		END
 	FROM
 		[dbo].[fact_demand_total] f
-		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-			ON f.[dim_demand_category_id] = ddc.[id]
 		INNER JOIN (SELECT [id], [product_type] FROM [dbo].[dim_product]) dp
 			ON f.[dim_product_id] = dp.[id]
 
@@ -172,7 +163,7 @@ BEGIN
     WHERE
 		[dim_pdas_id] = @pdasid and
 		[dim_business_id] = @businessid and
-		ddc.[name] IN ('Forecast', 'Need to Buy')
+		dim_demand_category_id = @dim_demand_category_id_ntb
 
 	-- ,f.[customer_below_moq] =
 	-- ,f.[customer_moq] =
@@ -220,8 +211,6 @@ BEGIN
 		,SUM([quantity_lum]) as [quantity]
 	FROM
 		[dbo].[fact_demand_total] f
-		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-			ON f.[dim_demand_category_id] = ddc.[id]
 		INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
 			ON f.[dim_product_id] = dp.[id]
 		INNER JOIN (SELECT [id], [vendor_group] FROM [dbo].[dim_factory]) df
@@ -229,7 +218,7 @@ BEGIN
 	WHERE
 		[dim_pdas_id] = @pdasid and
 		[dim_business_id] = @businessid and
-		ddc.[name] IN ('Forecast', 'Need to Buy')
+		dim_demand_category_id = @dim_demand_category_id_ntb
 	GROUP BY
 		[dim_buying_program_id]
 		,[dim_demand_category_id]
@@ -251,8 +240,6 @@ BEGIN
 				,dp.[material_id]
             FROM
 				[dbo].[fact_demand_total] f
-				INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-					ON f.[dim_demand_category_id] = ddc.[id]
 				INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
 					ON f.[dim_product_id] = dp.[id]
 				INNER JOIN (SELECT [id], [vendor_group] FROM [dbo].[dim_factory]) df
@@ -260,7 +247,7 @@ BEGIN
             WHERE
 				[dim_pdas_id] = @pdasid and
 				[dim_business_id] = @businessid and
-				ddc.[name] IN ('Forecast', 'Need to Buy')
+				dim_demand_category_id = @dim_demand_category_id_ntb
         ) f
 		INNER JOIN #fact_demand_total_customer_level
 		as f_agg
@@ -302,7 +289,7 @@ BEGIN
     WHERE
 		[dim_pdas_id] = @pdasid and
 		[dim_business_id] = @businessid and
-		ddc.[name] IN ('Forecast', 'Need to Buy')
+		dim_demand_category_id = @dim_demand_category_id_ntb
 
 	-- Update customer_below_moq
 	UPDATE f
@@ -313,14 +300,12 @@ BEGIN
 		END
 	FROM
 		[dbo].[fact_demand_total] f
-		INNER JOIN (SELECT [id], [name] FROM [dbo].[dim_demand_category]) ddc
-			ON f.[dim_demand_category_id] = ddc.[id]
 		INNER JOIN (SELECT [id], [product_type] FROM [dbo].[dim_product]) dp
 			ON f.[dim_product_id] = dp.[id]
     WHERE
 		[dim_pdas_id] = @pdasid and
 		[dim_business_id] = @businessid and
-		ddc.[name] IN ('Forecast', 'Need to Buy')
+		dim_demand_category_id = @dim_demand_category_id_ntb
 
 
 	-- Update upcharge

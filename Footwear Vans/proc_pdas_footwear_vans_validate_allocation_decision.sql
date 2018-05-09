@@ -11,7 +11,6 @@ GO
 -- Description:	Backend procedure to validate the staging area decision tables for vendor, region and VFA.
 -- =============================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_validate_allocation_decision]
-	@mc_user_name nvarchar(100) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -19,10 +18,6 @@ BEGIN
     /* Declare variables */
 
     DECLARE	@current_date date = GETDATE()
-
-	DECLARE @dim_pdas_id int
-	SELECT @dim_pdas_id = MAX(id) FROM [dbo].[dim_pdas];
-
 
 	DECLARE @system nvarchar(15) = 'pdas_ftw_vans'
 	DECLARE @source	nvarchar(45)

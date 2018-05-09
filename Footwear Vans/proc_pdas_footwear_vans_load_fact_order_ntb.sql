@@ -600,7 +600,8 @@ BEGIN
 				s.[dim_product_id] = t.[dim_product_id] and
 				s.[dim_date_id] = t.[dim_date_id_original] and
 				s.[dim_customer_id] = t.[dim_customer_id] and
-				s.[pr_cut_code] = t.[pr_cut_code]
+				ISNULL(s.[pr_cut_code], 0) = ISNULL(t.[pr_cut_code], 0) and
+				ISNULL(s.[pr_code], 0) = ISNULL(t.[pr_code], 0)
 	WHERE
 		t.[id] IS NULL
 
@@ -645,7 +646,8 @@ BEGIN
 				s.[dim_product_id] = t.[dim_product_id] and
 				s.[dim_date_id] = t.[dim_date_id_original] and
 				s.[dim_customer_id] = t.[dim_customer_id] and
-				s.[pr_cut_code] = t.[pr_cut_code]
+				ISNULL(s.[pr_cut_code], 0) = ISNULL(t.[pr_cut_code], 0) and
+				ISNULL(s.[pr_code], 0) = ISNULL(t.[pr_code], 0)
 
 	PRINT 'Delete'
 	DELETE t
@@ -666,9 +668,10 @@ BEGIN
 				s.[dim_product_id] = t.[dim_product_id] and
 				s.[dim_date_id] = t.[dim_date_id_original] and
 				s.[dim_customer_id] = t.[dim_customer_id] and
-				s.[pr_cut_code] = t.[pr_cut_code]
+				ISNULL(s.[pr_cut_code], 0) = ISNULL(t.[pr_cut_code], 0) and
+				ISNULL(s.[pr_code], 0) = ISNULL(t.[pr_code], 0)
 	WHERE
-		s.[dim_pdas_id] IS NULL
+		t.[dim_pdas_id] IS NULL
 
 
 END
