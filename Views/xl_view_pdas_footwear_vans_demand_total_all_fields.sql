@@ -189,8 +189,8 @@ SELECT
 	,dim_date.[season_year_intro] AS [dim_date_season_year_intro]
 	,dim_date.[season_year_short_intro] AS [dim_date_season_year_short_intro]
 	,dim_date.[year_accounting] AS [dim_date_year_accounting]
-	,dim_date.[year_cw_accounting] AS [dim_date_year_cw_accounting]
-	,dim_date.[year_month_accounting] AS [dim_date_year_month_accounting]
+	,RIGHT(dim_date.[year_cw_accounting], 4) AS [dim_date_year_cw_accounting]
+	,dim_date.[month_name_short_accounting] AS [dim_date_year_month_accounting]
 	,dim_date.[month_name_accounting] AS [dim_date_month_name_accounting]
 	,dim_date.[month_name_short_accounting] AS [dim_date_month_name_short_accounting]
 

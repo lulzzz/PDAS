@@ -37,6 +37,10 @@ BEGIN
 		,target.[region_moq] = temp.[Regional MOQ]  
 		,target.[customer_moq] = temp.[Order MOQ]        
 		,target.[region_below_moq] = temp.[Below Regional Min]
+		,target.[confirmed_price_in_solid_size] = temp.[Confirmed Price in Solid Size]
+		,target.[upcharge] = temp.[upcharge]
+		,target.[fabriq_moq] = temp.[Fabric MOQ]
+		,target.[confirmed_unit_price_po] = temp.[Confirmed Unit Price (for this PO)]
 	FROM
 		(
 			SELECT
@@ -65,6 +69,10 @@ BEGIN
 				   WHEN 'Y' THEN 1
 				   ELSE 0
 				END as [Below Regional Min]
+				,[Confirmed Price in Solid Size]
+				,[upcharge]
+				,[Fabric MOQ]
+				,[Confirmed Unit Price (for this PO)]
 			FROM
 				[dbo].[staging_pdas_footwear_vans_allocation_report_region]
 		) as temp
