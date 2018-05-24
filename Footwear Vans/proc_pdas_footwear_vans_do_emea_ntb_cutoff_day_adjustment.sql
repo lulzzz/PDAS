@@ -10,7 +10,7 @@ GO
 --              3. Else keep Monday (standard)
 -- ==============================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_emea_ntb_cutoff_day_adjustment]
-	@pdasid INT,
+	@dim_release_id INT,
 	@businessid INT
 AS
 BEGIN
@@ -55,7 +55,7 @@ BEGIN
 				) dd
 					ON f.[dim_date_id] = dd.[id]
             WHERE
-				[dim_pdas_id] = @pdasid and
+				[dim_release_id] = @dim_release_id and
 				[dim_business_id] = @businessid and
 				[dim_demand_category_id] = @dim_demand_category_id_ntb
         ) target

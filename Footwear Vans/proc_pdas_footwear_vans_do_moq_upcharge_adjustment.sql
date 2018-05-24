@@ -7,7 +7,7 @@ GO
 -- Description:	Procedure to do MOQ upcharge adjustment
 -- ==============================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_moq_upcharge_adjustment]
-	@pdasid INT,
+	@dim_release_id INT,
 	@businessid INT
 AS
 BEGIN
@@ -26,7 +26,7 @@ BEGIN
 		[upcharge] = NULL,
 		[is_rejected] = NULL
 	WHERE
-		[dim_pdas_id] = @pdasid
+		[dim_release_id] = @dim_release_id
 		and [dim_business_id] = @businessid
 		and dim_demand_category_id = @dim_demand_category_id_ntb
 
@@ -84,7 +84,7 @@ BEGIN
 		INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
 			ON f.[dim_product_id] = dp.[id]
 	WHERE
-		[dim_pdas_id] = @pdasid and
+		[dim_release_id] = @dim_release_id and
 		[dim_business_id] = @businessid and
 		dim_demand_category_id = @dim_demand_category_id_ntb
 	GROUP BY
@@ -121,7 +121,7 @@ BEGIN
 				INNER JOIN (SELECT [id], [material_id] FROM [dbo].[dim_product]) dp
 					ON f.[dim_product_id] = dp.[id]
             WHERE
-				[dim_pdas_id] = @pdasid and
+				[dim_release_id] = @dim_release_id and
 				[dim_business_id] = @businessid and
 				dim_demand_category_id = @dim_demand_category_id_ntb
         ) f
@@ -161,7 +161,7 @@ BEGIN
 			ON dp.[product_type] = moq.[product_type]
 
     WHERE
-		[dim_pdas_id] = @pdasid and
+		[dim_release_id] = @dim_release_id and
 		[dim_business_id] = @businessid and
 		dim_demand_category_id = @dim_demand_category_id_ntb
 
@@ -216,7 +216,7 @@ BEGIN
 		INNER JOIN (SELECT [id], [vendor_group] FROM [dbo].[dim_factory]) df
 			ON f.[dim_factory_id] = df.[id]
 	WHERE
-		[dim_pdas_id] = @pdasid and
+		[dim_release_id] = @dim_release_id and
 		[dim_business_id] = @businessid and
 		dim_demand_category_id = @dim_demand_category_id_ntb
 	GROUP BY
@@ -245,7 +245,7 @@ BEGIN
 				INNER JOIN (SELECT [id], [vendor_group] FROM [dbo].[dim_factory]) df
 					ON f.[dim_factory_id] = df.[id]
             WHERE
-				[dim_pdas_id] = @pdasid and
+				[dim_release_id] = @dim_release_id and
 				[dim_business_id] = @businessid and
 				dim_demand_category_id = @dim_demand_category_id_ntb
         ) f
@@ -287,7 +287,7 @@ BEGIN
 		INNER JOIN (SELECT [id], [product_type] FROM [dbo].[dim_product]) dp
 			ON f.[dim_product_id] = dp.[id]
     WHERE
-		[dim_pdas_id] = @pdasid and
+		[dim_release_id] = @dim_release_id and
 		[dim_business_id] = @businessid and
 		dim_demand_category_id = @dim_demand_category_id_ntb
 
@@ -303,7 +303,7 @@ BEGIN
 		INNER JOIN (SELECT [id], [product_type] FROM [dbo].[dim_product]) dp
 			ON f.[dim_product_id] = dp.[id]
     WHERE
-		[dim_pdas_id] = @pdasid and
+		[dim_release_id] = @dim_release_id and
 		[dim_business_id] = @businessid and
 		dim_demand_category_id = @dim_demand_category_id_ntb
 

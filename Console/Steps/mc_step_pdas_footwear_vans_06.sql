@@ -14,19 +14,19 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE	@pdasid int = (SELECT MAX([id]) FROM [dbo].[dim_pdas])
+	DECLARE	@dim_release_id int = (SELECT MAX([dim_release_id]) FROM [dbo].[helper_pdas_footwear_vans_release_current])
 	DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 
 
 	-- Do manual overwrite
-	EXEC [dbo].[proc_pdas_footwear_vans_do_overwrite] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_do_overwrite] @dim_release_id = @dim_release_id, @businessid = @dim_business_id_footwear_vans
 
 	-- Adjust EMEA NTB based on cutoff days
-	EXEC [dbo].[proc_pdas_footwear_vans_do_emea_ntb_cutoff_day_adjustment] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	EXEC [dbo].[proc_pdas_footwear_vans_do_emea_ntb_cutoff_day_adjustment] @dim_release_id = @dim_release_id, @businessid = @dim_business_id_footwear_vans
 
 	-- Prepare report tables for Excel frontend
 	-- TAKES 30 MINUTES TO RUN BECAUSE OF SERVER PERFORMANCE
-	-- EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @pdasid = @pdasid, @businessid = @dim_business_id_footwear_vans
+	-- EXEC [proc_pdas_footwear_vans_do_excel_table_preparation] @dim_release_id = @dim_release_id, @businessid = @dim_business_id_footwear_vans
 
 	-- Validate source data (need to check the Vans Footwear Validation Report afterwards)
 	EXEC [dbo].[proc_pdas_footwear_vans_validate_allocation_decision]

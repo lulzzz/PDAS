@@ -4,14 +4,14 @@
 -- Description:	This procedure loads the the weekly and daily factory capacity
 -- =======================================================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_factory_capacity]
-    @pdasid INT,
+    @dim_release_id INT,
     @businessid INT
 AS
 BEGIN
 
     -- Check if the session has already been loaded
     DELETE FROM [dbo].[fact_factory_capacity]
-    WHERE dim_pdas_id = @pdasid and dim_business_id = @businessid;
+    WHERE dim_business_id = @businessid;
 
     -- Cleanse weekly capacity
     UPDATE [dbo].[staging_pdas_footwear_vans_capacity_by_week]
@@ -23,8 +23,7 @@ BEGIN
 
     -- Temp tables
     DECLARE @temp_capacity_available_weekly TABLE(
-        [dim_pdas_id] INT
-        ,[dim_business_id] INT
+		[dim_business_id] INT
         ,[dim_factory_id] INT
         ,[dim_customer_id] INT
         ,[dim_construction_type_id] INT
@@ -81,8 +80,7 @@ BEGIN
     -- Insert daily capacity from staging area
     INSERT INTO [dbo].[fact_factory_capacity]
     (
-        [dim_pdas_id]
-        ,[dim_business_id]
+		[dim_business_id]
         ,[dim_factory_id]
         ,[dim_customer_id]
         ,[dim_construction_type_id]
@@ -94,7 +92,6 @@ BEGIN
         ,[percentage_from_original]
     )
     SELECT
-        @pdasid as dim_pdas_id,
         @businessid as dim_business_id,
         CASE
             WHEN df.id IS NOT NULL THEN df.id
@@ -164,7 +161,7 @@ BEGIN
         f.[capacity_raw_weekly] = f_aggr.[capacity_raw_weekly],
         f.[capacity_raw_weekly_overwritten] = f_aggr.[capacity_raw_weekly_overwritten]
     FROM
-        (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
+        (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_business_id] = @businessid) as f
         INNER JOIN
         (
             SELECT
@@ -191,7 +188,7 @@ BEGIN
                     GROUP BY [year_cw_accounting]
                 ) dd2
                     ON dd1.[year_cw_accounting] = dd2.[year_cw_accounting]
-            WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid
+            WHERE [dim_business_id] = @businessid
             GROUP BY
                 [dim_factory_id]
                 ,[dim_customer_id]
@@ -408,8 +405,7 @@ BEGIN
     -- Fill temp table capacity_available_weekly (weekly capacity)
     INSERT INTO @temp_capacity_available_weekly
     (
-        [dim_pdas_id]
-        ,[dim_business_id]
+        [dim_business_id]
         ,[dim_factory_id]
         ,[dim_customer_id]
         ,[dim_construction_type_id]
@@ -421,7 +417,6 @@ BEGIN
         ,[percentage_from_original]
     )
     SELECT
-        @pdasid as dim_pdas_id,
         @businessid as dim_business_id,
         temp.[dim_factory_id],
         temp.[dim_customer_id],
@@ -443,8 +438,7 @@ BEGIN
     -- Insert on non-match (raw capacity not existing for the week)
     INSERT INTO [dbo].[fact_factory_capacity]
     (
-        [dim_pdas_id]
-        ,[dim_business_id]
+        [dim_business_id]
         ,[dim_factory_id]
         ,[dim_customer_id]
         ,[dim_construction_type_id]
@@ -463,7 +457,6 @@ BEGIN
             SELECT *
             FROM [dbo].[fact_factory_capacity]
             WHERE
-                [dim_pdas_id] = @pdasid AND
                 [dim_business_id] = @businessid
         ) as f
             ON	temp.[dim_factory_id] = f.[dim_factory_id] AND
@@ -482,7 +475,6 @@ BEGIN
             SELECT *
             FROM [dbo].[fact_factory_capacity]
             WHERE
-                [dim_pdas_id] = @pdasid AND
                 [dim_business_id] = @businessid
         ) as f
         INNER JOIN @temp_capacity_available_weekly temp
@@ -497,7 +489,7 @@ BEGIN
     SET
         f.[capacity_available_weekly_adjusted] = f.[capacity_available_weekly] * h.[percentage_adjustment]
     FROM
-        (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_pdas_id] = @pdasid AND [dim_business_id] = @businessid) as f
+        (SELECT * FROM [dbo].[fact_factory_capacity] WHERE [dim_business_id] = @businessid) as f
         INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
             ON f.[dim_factory_id] = df.[id]
         INNER JOIN [dbo].[helper_pdas_footwear_vans_factory_capacity_adjustment] h
@@ -507,35 +499,30 @@ BEGIN
     UPDATE [dbo].[fact_factory_capacity]
     SET [capacity_raw_weekly] = 0
     WHERE
-        [dim_pdas_id] = @pdasid AND
         [dim_business_id] = @businessid AND
         ISNULL([capacity_raw_weekly], 0) < 0
 
     UPDATE [dbo].[fact_factory_capacity]
     SET [capacity_raw_daily_overwritten] = 0
     WHERE
-        [dim_pdas_id] = @pdasid AND
         [dim_business_id] = @businessid AND
         ISNULL([capacity_raw_daily_overwritten], 0) < 0
 
     UPDATE [dbo].[fact_factory_capacity]
     SET [capacity_raw_weekly_overwritten] = 0
     WHERE
-        [dim_pdas_id] = @pdasid AND
         [dim_business_id] = @businessid AND
         ISNULL([capacity_raw_weekly_overwritten], 0) < 0
 
     UPDATE [dbo].[fact_factory_capacity]
     SET [capacity_available_weekly] = 0
     WHERE
-        [dim_pdas_id] = @pdasid AND
         [dim_business_id] = @businessid AND
         ISNULL([capacity_available_weekly], 0) < 0
 
     UPDATE [dbo].[fact_factory_capacity]
     SET [capacity_available_weekly_adjusted] = 0
     WHERE
-        [dim_pdas_id] = @pdasid AND
         [dim_business_id] = @businessid AND
         ISNULL([capacity_available_weekly_adjusted], 0) < 0
 

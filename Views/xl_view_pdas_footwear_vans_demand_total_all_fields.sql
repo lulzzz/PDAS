@@ -1,9 +1,9 @@
 SELECT
 	-- fact_demand_total
 	f_1.[id]
-	,f_1.[id_original]
-	,f_1.[is_from_previous_release]
-	, f_1.[dim_pdas_id]
+	,f_1.[id] as [id_original]
+	, 0 as [is_from_previous_release]
+	, f_1.[dim_release_id]
 	, f_1.[dim_business_id]
 	, f_1.[dim_buying_program_id]
 	, f_1.[dim_product_id]
@@ -11,7 +11,6 @@ SELECT
 	, f_1.[dim_date_id]
 	, f_1.[dim_date_id_original]
 	, f_1.[dim_date_id_buy_month]
-	, f_1.[dim_date_id_forecast_vs_actual]
 	, f_1.[dim_factory_id_original_unconstrained]
 	, f_1.[dim_factory_id_original_constrained]
 	,CASE
@@ -24,6 +23,7 @@ SELECT
 	, f_1.[dim_demand_category_id]
 	, f_1.[order_number_original]
 	, f_1.[order_number]
+	, f_1.[order_number_cut]
 	, LEFT(f_1.[order_number], 10) as [order_number_short]
 	, f_1.[pr_code]
 	, f_1.[pr_cut_code]
@@ -35,8 +35,8 @@ SELECT
 	END AS [is_asap]
 	, f_1.[quantity_lum]
 	, f_1.[quantity_non_lum]
-	, f_1.[quantity_unconsumed]
-	, f_1.[quantity]
+	, f_1.[quantity_non_lum] as [quantity_unconsumed]
+	, f_1.[quantity_non_lum] as [quantity]
 	, f_1.[quantity_region_mtl_lvl]
 	, f_1.[quantity_customer_mtl_lvl]
 	, f_1.[comment_vfa_allocation]
@@ -76,8 +76,8 @@ SELECT
 	, f_1.[confirmed_unit_price_po]
 	, f_1.[cy_csf_load]
 	, f_1.[min_surcharge]
-	, CASE dim_customer.region
-		WHEN 'APAC' THEN 'RMB'
+	, CASE
+		WHEN dim_customer.name = 'VF China Limited' and dim_factory_final.country = 'China' THEN 'RMB'
 		ELSE 'USD'
 	END as [currency]
 	, f_1.[confirmed_unit_price_vendor]
@@ -108,17 +108,14 @@ SELECT
 	, f_1.[mtr_ranking]
 	, f_1.[top_50_mtl]
 
-	-- dim_pdas
-	,dim_pdas.[name] AS [dim_pdas_name]
+	-- dim_release
+	,'Current Release' AS [dim_pdas_name]
 
-	,dim_pdas.[full_date] AS [dim_pdas_full_date]
-	,dim_pdas.[comment] AS [dim_pdas_comment]
+	,dim_release.[full_date] AS [dim_pdas_full_date]
+	,dim_release.[comment] AS [dim_pdas_comment]
 
 	-- dim_date_buy_month
 	,dim_date_buy_month.[year_month_accounting] AS [dim_pdas_buy_month]
-
-	-- dim_date_forecast_vs_actual
-	,dim_date_forecast_vs_actual.[year_month_accounting] AS [dim_date_forecast_vs_actual]
 
 	-- dim_business
 	,dim_business.[brand] AS [dim_business_brand]
@@ -222,7 +219,7 @@ SELECT
 	,dim_factory.country AS [dim_factory_country]
 
 	-- dim_factory (constrained overwritten by VFA and returned by vendor)
-	,dim_factory.vendor_group AS [dim_factory_final_vendor_group]
+	,dim_factory_final.vendor_group AS [dim_factory_final_vendor_group]
 	,dim_factory_final.short_name AS [dim_factory_final_short_name]
 	,dim_factory_final.valid_acadia_fty_plant_code AS [dim_factory_final_valid_acadia_fty_plant_code]
 	,dim_factory_final.valid_acadia_vendor_code_1505_1510 AS [dim_factory_final_valid_acadia_vendor_code_1505_1510]
@@ -270,19 +267,19 @@ FROM
 		SELECT *
 		FROM fact_demand_total
 		WHERE
-			dim_pdas_id = (SELECT MAX(id) FROM dim_pdas) AND
+			dim_release_id = (SELECT MAX([dim_release_id]) FROM [dbo].[helper_pdas_footwear_vans_release_current]) AND
 			dim_business_id = (SELECT id FROM dim_business WHERE (brand = 'Vans') AND (product_line = 'Footwear'))
 	) AS f_1
 
 	INNER JOIN
 	(
-		SELECT dim_pdas.*, dd.[full_date]
+		SELECT dim_release.*, dd.[full_date]
 		FROM
-			dim_pdas
+			dim_release
 			INNER JOIN (SELECT [id], [full_date] FROM [dbo].[dim_date]) dd
-				ON dim_pdas.dim_date_id = dd.[id]
-	) dim_pdas
-		ON f_1.dim_pdas_id = dim_pdas.id
+				ON dim_release.dim_date_id = dd.[id]
+	) dim_release
+		ON f_1.dim_release_id = dim_release.id
 
 	INNER JOIN
 	(
@@ -368,13 +365,6 @@ FROM
 
 	LEFT OUTER JOIN
 	(
-		SELECT *
-		FROM [dbo].[dim_date]
-	) dim_date_forecast_vs_actual
-		ON f_1.dim_date_id_forecast_vs_actual = dim_date_forecast_vs_actual.id
-
-	LEFT OUTER JOIN
-	(
 		SELECT
 			dp.[material_id] AS [dim_product_material_id]
 			,df1.[short_name] AS [factory_short_name_1]
@@ -392,7 +382,7 @@ FROM
 			LEFT OUTER JOIN dim_factory AS df2
 				ON f.dim_factory_id_2 = df2.id
 		WHERE
-			dim_pdas_id = (SELECT MAX(id) FROM dim_pdas)
+			dim_release_id = (SELECT MAX([dim_release_id]) FROM [dbo].[helper_pdas_footwear_vans_release_current])
 	) AS fact_priority_list
 		ON dim_product.material_id = fact_priority_list.[dim_product_material_id]
 

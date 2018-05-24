@@ -7,7 +7,7 @@ GO
 -- Description:	Procedure to load the forecast in fact_forecast.
 -- ==============================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_forecast]
-	@pdasid INT,
+	@dim_release_id INT,
 	@businessid INT,
 	@buying_program_id INT
 AS
@@ -25,10 +25,10 @@ BEGIN
 		FROM
 		(
 			SELECT [id], [buy_month]
-			FROM [dbo].[dim_pdas]
+			FROM [dbo].[dim_release]
 			WHERE
-				[id] = @pdasid
-		) dim_pdas
+				[id] = @dim_release_id
+		) dim_release
 		INNER JOIN
 		(
 			SELECT
@@ -37,24 +37,23 @@ BEGIN
 			FROM [dbo].[dim_date]
 			GROUP BY [year_month_accounting]
 		) dim_date
-			ON dim_pdas.[buy_month] = dim_date.[year_month_accounting]
+			ON dim_release.[buy_month] = dim_date.[year_month_accounting]
 	)
 
 	-- Check if the session has already been loaded
-	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_pdas_id = @pdasid AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id AND dim_demand_category_id = @dim_demand_category_id_forecast AND is_from_previous_release = 0)
+	IF EXISTS (SELECT 1 FROM [dbo].[fact_demand_total] WHERE dim_release_id = @dim_release_id AND dim_business_id = @businessid AND dim_buying_program_id = @buying_program_id AND dim_demand_category_id = @dim_demand_category_id_forecast)
 	BEGIN
 		DELETE FROM [dbo].[fact_demand_total]
-		WHERE dim_pdas_id = @pdasid
+		WHERE dim_release_id = @dim_release_id
 		AND dim_business_id = @businessid
 		AND dim_buying_program_id = @buying_program_id
 		AND dim_demand_category_id = @dim_demand_category_id_forecast
-		AND is_from_previous_release = 0
 	END
 
 	-- Forecast
 	INSERT INTO [dbo].[fact_demand_total]
-    (
-		[dim_pdas_id]
+	(
+		[dim_release_id]
 		,[dim_business_id]
 		,[dim_buying_program_id]
 		,[dim_product_id]
@@ -70,17 +69,14 @@ BEGIN
 		,[is_asap]
 		,[quantity_lum]
 		,[quantity_non_lum]
-		,[quantity_unconsumed]
-		,[quantity]
-		,[is_from_previous_release]
 		,[sold_to_customer_name]
 		,[colorway_name]
 		,[style_description_long]
-    )
+	)
 	-- APAC
 	-- Providing their forecast based on BUY months
 	SELECT
-		@pdasid as dim_pdas_id,
+		@dim_release_id as dim_release_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
 		CASE
@@ -102,10 +98,7 @@ BEGIN
 		0 AS [is_asap],
 		sum(quantity) AS [quantity_lum],
 		sum(quantity) AS [quantity_non_lum],
-		sum(quantity) AS [quantity_unconsumed],
-		sum(quantity) AS [quantity],
-		0 AS [is_from_previous_release]
-		,[dim_market_name] as [sold_to_customer_name]
+		[dim_market_name] as [sold_to_customer_name]
 		,NULL as [colorway_name]
 		,NULL as [style_description_long]
 	FROM
@@ -154,7 +147,7 @@ BEGIN
 	-- Providing their forecast based on CRD months for XDC (i.e. EU DC order) and CRD month + 1 for XF (i.e. EU Direct orders)
 	UNION
 	SELECT
-		@pdasid as dim_pdas_id,
+		@dim_release_id as dim_release_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
 		CASE
@@ -176,10 +169,7 @@ BEGIN
 		0 AS [is_asap],
 		sum(quantity) AS [quantity_lum],
 		sum(quantity) AS [quantity_non_lum],
-		sum(quantity) AS [quantity_unconsumed],
-		sum(quantity) AS [quantity],
-		0 AS [is_from_previous_release]
-		,[customer_type] as [sold_to_customer_name]
+		[customer_type] as [sold_to_customer_name]
 		,NULL as [colorway_name]
 		,[dim_product_material_description] as [style_description_long]
 	FROM
@@ -227,7 +217,7 @@ BEGIN
 	-- NORA (we pull intro month 2 months forward to reach CRD)
 	UNION
 	SELECT
-		@pdasid as dim_pdas_id,
+		@dim_release_id as dim_release_id,
 		@businessid as dim_business_id,
 		@buying_program_id as dim_buying_program_id,
 		CASE
@@ -246,12 +236,9 @@ BEGIN
 		0 AS [is_asap],
 		sum(quantity) AS [quantity_lum],
 		sum(quantity) AS [quantity_non_lum],
-		sum(quantity) AS [quantity_unconsumed],
-		sum(quantity) AS [quantity],
-		0 AS [is_from_previous_release]
-		,[dim_region_region] as [sold_to_customer_name]
-		,[dim_product_color_description] as [colorway_name]
-		,[dim_product_material_description] as [style_description_long]
+		[dim_region_region] as [sold_to_customer_name],
+		[dim_product_color_description] as [colorway_name],
+		[dim_product_material_description] as [style_description_long]
 	FROM
 		[dbo].[staging_pdas_footwear_vans_nora_forecast] nf
 		INNER JOIN
@@ -296,11 +283,11 @@ BEGIN
 	UPDATE t
 	SET
 		[single_or_dual_source] = CASE
-            WHEN ISNULL(prio.[dim_factory_id_2], 0) <> 0 THEN 'Dual source'
+			WHEN ISNULL(prio.[dim_factory_id_2], 0) <> 0 THEN 'Dual source'
 			WHEN t.[style_complexity] LIKE '%flex%' THEN 'Dual source'
 			WHEN prio.[short_name] NOT IN ('CLK', 'DTP', 'SJD', 'MTL') THEN 'Dual source'
-            ELSE 'Single source'
-        END
+			ELSE 'Single source'
+		END
 	FROM
 		(
 			SELECT f.*, dp.[style_complexity]
@@ -309,9 +296,8 @@ BEGIN
 				INNER JOIN dim_product dp
 					ON f.[dim_product_id] = dp.[id]
 			WHERE
-				[dim_pdas_id] = @pdasid
+				[dim_release_id] = @dim_release_id
 				and f.[dim_business_id] = @businessid
-				and [is_from_previous_release] = 0
 				and dim_demand_category_id = @dim_demand_category_id_forecast
 		) t
 		INNER JOIN
@@ -322,7 +308,7 @@ BEGIN
 				INNER JOIN dim_factory df
 					ON f.[dim_factory_id_1] = df.[id]
 			WHERE
-				[dim_pdas_id] = @pdasid
+				[dim_release_id] = @dim_release_id
 				and f.[dim_business_id] = @businessid
 		) prio
 			ON t.[dim_product_id] = prio.[dim_product_id]
@@ -339,9 +325,8 @@ BEGIN
 				INNER JOIN dim_product dp
 					ON f.[dim_product_id] = dp.[id]
 			WHERE
-				[dim_pdas_id] = @pdasid
+				[dim_release_id] = @dim_release_id
 				and dp.[dim_business_id] = @businessid
-				and [is_from_previous_release] = 0
 				and dim_demand_category_id = @dim_demand_category_id_forecast
 		) t
 		INNER JOIN
@@ -352,9 +337,8 @@ BEGIN
 				INNER JOIN dim_product dp
 					ON f.[dim_product_id] = dp.[id]
 			WHERE
-				[dim_pdas_id] = @pdasid
+				[dim_release_id] = @dim_release_id
 				and f.[dim_business_id] = @businessid
-				and [is_from_previous_release] = 0
 				and dim_demand_category_id = @dim_demand_category_id_forecast
 			GROUP BY
 				dp.[style_id]
@@ -374,9 +358,8 @@ BEGIN
 				INNER JOIN dim_product dp
 					ON f.[dim_product_id] = dp.[id]
 			WHERE
-				[dim_pdas_id] = @pdasid
+				[dim_release_id] = @dim_release_id
 				and dp.[dim_business_id] = @businessid
-				and [is_from_previous_release] = 0
 				and dim_demand_category_id = @dim_demand_category_id_forecast
 		) t
 		INNER JOIN
@@ -387,9 +370,8 @@ BEGIN
 				INNER JOIN dim_product dp
 					ON f.[dim_product_id] = dp.[id]
 			WHERE
-				[dim_pdas_id] = @pdasid
+				[dim_release_id] = @dim_release_id
 				and f.[dim_business_id] = @businessid
-				and [is_from_previous_release] = 0
 				and dim_demand_category_id = @dim_demand_category_id_forecast
 			GROUP BY
 				dp.[material_id]
@@ -405,9 +387,8 @@ BEGIN
 			ELSE NULL
 		END
 	WHERE
-		[dim_pdas_id] = @pdasid
+		[dim_release_id] = @dim_release_id
 		and [dim_business_id] = @businessid
-		and [is_from_previous_release] = 0
 		and [dim_demand_category_id] = @dim_demand_category_id_forecast
 
 

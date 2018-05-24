@@ -13,7 +13,7 @@ GO
 --				Return process of
 -- ==============================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_do_overwrite]
-	@pdasid INT,
+	@dim_release_id INT,
 	@businessid INT
 AS
 BEGIN
@@ -30,6 +30,7 @@ BEGIN
 		,target.[comment_region] = temp.[Comment (US/EU/APAC)]
 		,target.[order_number_original] = temp.[Orig PO#]
 		,target.[order_number] = temp.[PO#]
+		,target.[order_number_cut] = temp.[PO/CUT#]
 		,target.[pr_cut_code] = temp.[PR/CUT#]
 		,target.[po_release_date] = temp.[PO release Date]
 		,target.[system_error] = temp.[System Error]
@@ -42,7 +43,7 @@ BEGIN
 				*
 			FROM [dbo].[fact_demand_total]
 			WHERE
-				dim_pdas_id = @pdasid and
+				dim_release_id = @dim_release_id and
 				dim_business_id = @businessid
 		) as target
 		INNER JOIN
@@ -52,8 +53,9 @@ BEGIN
 				,[Remarks]
 				,[Comment (VFA Region)]
 				,[Comment (US/EU/APAC)]
-				,[Orig PO#]
-				,[PO#]
+				,ISNULL([Orig PO#], 'UNDEFINED') [Orig PO#]
+				,ISNULL([PO#], 'UNDEFINED') [PO#]
+				,[PO/CUT#]
 				,[PR/CUT#]
 				,[PO release Date]
 				,[System Error]
@@ -67,7 +69,7 @@ BEGIN
 				[dbo].[staging_pdas_footwear_vans_allocation_report_region]
 		) as temp
 			ON
-				target.[id_original] = temp.[id_original]
+				target.[id] = temp.[id_original]
 	-- WHERE
 	-- 	target.[remarks_region] <> temp.[remarks]
 
@@ -99,12 +101,12 @@ BEGIN
 				dd.[full_date] as [buy_d]
 			FROM
 				[dbo].[fact_demand_total] f
-				INNER JOIN [dim_pdas] dpdas
-					ON f.[dim_pdas_id] = dpdas.[id]
+				INNER JOIN [dim_release] dpdas
+					ON f.[dim_release_id] = dpdas.[id]
 				INNER JOIN [dim_date] dd
 					ON dpdas.[dim_date_id] = dd.[id]
 			WHERE
-				dim_pdas_id = @pdasid and
+				dim_release_id = @dim_release_id and
 				dim_business_id = @businessid
 		) as target
 		INNER JOIN
@@ -139,7 +141,7 @@ BEGIN
 				LEFT OUTER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 					ON temp.[Final Factory Allocation] = df.[short_name]
 		) as temp
-			ON target.[id_original] = temp.[id_original]
+			ON target.[id] = temp.[id_original]
 
 		LEFT OUTER JOIN [dbo].[helper_pdas_footwear_vans_performance] perf
 			ON temp.[status_orig_req] = perf.[days_delay]
@@ -159,7 +161,7 @@ BEGIN
 				*
 			FROM [dbo].[fact_demand_total]
 			WHERE
-				dim_pdas_id = @pdasid and
+				dim_release_id = @dim_release_id and
 				dim_business_id = @businessid
 		) as target
 		INNER JOIN
@@ -175,7 +177,7 @@ BEGIN
 				INNER JOIN (SELECT [id], [short_name] FROM [dbo].[dim_factory]) df
 					ON temp.[Factory Code VFA] = df.[short_name]
 		) as temp
-			ON target.[id_original] = temp.[id_original]
+			ON target.[id] = temp.[id_original]
 	-- WHERE
 	-- 	(
 	-- 		target.[dim_factory_id] <> temp.[dim_factory_id]

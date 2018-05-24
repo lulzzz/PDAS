@@ -7,11 +7,15 @@ GO
 -- Description:	Procedure to load the NTB in fact_order.
 -- ==============================================================
 ALTER PROCEDURE [dbo].[proc_pdas_footwear_vans_load_fact_order_ntb]
-	@pdasid INT,
+	@dim_release_id INT,
 	@businessid INT,
 	@buying_program_id INT
 AS
 BEGIN
+
+	--DECLARE @dim_release_id INT =
+	--DECLARE @businessid INT = 1
+	--DECLARE @buying_program_id int = (SELECT [dim_buying_program_id] FROM [dbo].[dim_release] WHERE [id] = @dim_release_id)
 
 	-- Placeholder
 	DECLARE @dim_factory_id_placeholder int = (SELECT [id] FROM [dbo].[dim_factory] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'PLACEHOLDER')
@@ -21,8 +25,8 @@ BEGIN
 	DECLARE @dim_customer_id_placeholder_apac int = (SELECT [id] FROM [dbo].[dim_customer] WHERE [is_placeholder] = 1 AND [placeholder_level] = 'Region' and [name] = 'APAC')
 	DECLARE @dim_demand_category_id_ntb int = (SELECT [id] FROM [dbo].[dim_demand_category] WHERE [name] = 'Need to Buy')
 
-	DECLARE @dim_date_id_pdas_release_day int = (SELECT MAX(dd.[id]) FROM [dbo].[dim_date] dd INNER JOIN [dbo].[dim_pdas] pdas ON pdas.dim_date_id = dd.id)
-	DECLARE @dim_date_id_pdas_release_day_future int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(yy, 1, full_date) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
+	DECLARE @dim_date_id_pdas_release_day int = (SELECT MAX(dd.[id]) FROM [dbo].[dim_date] dd INNER JOIN [dbo].[dim_release] pdas ON pdas.dim_date_id = dd.id)
+	DECLARE @dim_date_id_pdas_release_day_future int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(month, -1, DATEADD(yy, 1, full_date)) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
 
 	DECLARE @dim_date_id_asap_73 int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(day, 73, [full_date]) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
 	DECLARE @dim_date_id_asap_103 int = (SELECT [id] FROM [dbo].[dim_date] WHERE [full_date] = (SELECT DATEADD(day, 103, [full_date]) FROM [dbo].[dim_date] WHERE [id] = @dim_date_id_pdas_release_day))
@@ -31,7 +35,7 @@ BEGIN
 
 	-- Release full dim_date_id
 	DECLARE @pdas_release_full_date_id int
-	SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_pdas] WHERE [id] = @pdasid)
+	SET @pdas_release_full_date_id = (SELECT [dim_date_id] FROM [dbo].[dim_release] WHERE [id] = @dim_release_id)
 	DECLARE @pdas_release_full_d date = (SELECT [full_date] FROM [dbo].[dim_date] WHERE [id] = @pdas_release_full_date_id)
 
 	DECLARE @dim_date_id_buy_month int = (
@@ -39,10 +43,10 @@ BEGIN
 		FROM
 		(
 			SELECT [id], [buy_month]
-			FROM [dbo].[dim_pdas]
+			FROM [dbo].[dim_release]
 			WHERE
-				[id] = @pdasid
-		) dim_pdas
+				[id] = @dim_release_id
+		) dim_release
 		INNER JOIN
 		(
 			SELECT
@@ -51,16 +55,17 @@ BEGIN
 			FROM [dbo].[dim_date]
 			GROUP BY [year_month_accounting]
 		) dim_date
-			ON dim_pdas.[buy_month] = dim_date.[year_month_accounting]
+			ON dim_release.[buy_month] = dim_date.[year_month_accounting]
 	)
 
 	-- Create temp table
 	CREATE TABLE #source_temp (
-		[dim_pdas_id] INT
+		[dim_release_id] INT
 		,[dim_business_id] INT
 		,[dim_buying_program_id] INT
 		,[dim_product_id] INT
 		,[dim_date_id] INT
+		,[dim_date_id_original] INT
 		,[dim_date_id_buy_month] INT
 		,[dim_factory_id_original_unconstrained] INT
 		,[dim_factory_id_original_constrained] INT
@@ -76,8 +81,6 @@ BEGIN
 		,[is_asap] TINYINT
 		,[quantity_lum] INT
 		,[quantity_non_lum] INT
-		,[quantity_unconsumed] INT
-		,[quantity] INT
 		,[material_id_sr] NVARCHAR(45)
 		,[production_lt_actual_buy] INT
 		,[comment_region] NVARCHAR(1000)
@@ -93,18 +96,18 @@ BEGIN
 		,[exp_delivery_without_constraint] NVARCHAR(45)
 		,[coo] NVARCHAR(45)
 		,[remarks_region] NVARCHAR(1000)
-		,[is_from_previous_release] TINYINT
 	)
 
 
 	-- NTB (temp table)
 	INSERT INTO #source_temp
-    (
-		[dim_pdas_id]
+	(
+		[dim_release_id]
 		,[dim_business_id]
 		,[dim_buying_program_id]
 		,[dim_product_id]
 		,[dim_date_id]
+		,[dim_date_id_original]
 		,[dim_date_id_buy_month]
 		,[dim_factory_id_original_unconstrained]
 		,[dim_factory_id_original_constrained]
@@ -120,8 +123,6 @@ BEGIN
 		,[is_asap]
 		,[quantity_lum]
 		,[quantity_non_lum]
-		,[quantity_unconsumed]
-		,[quantity]
 		,[material_id_sr]
 		,[production_lt_actual_buy]
 		,[comment_region]
@@ -137,15 +138,15 @@ BEGIN
 		,[exp_delivery_without_constraint]
 		,[coo]
 		,[remarks_region]
-		,[is_from_previous_release]
-    )
+	)
 	-- fact_order
 	SELECT
-		[dim_pdas_id]
+		[dim_release_id]
 		,[dim_business_id]
 		,[dim_buying_program_id]
 		,[dim_product_id]
 		,ntb.[dim_date_id]
+		,ntb.[dim_date_id] as dim_date_id_original
 		,@dim_date_id_buy_month
 		,@dim_factory_id_placeholder as [dim_factory_id_original_unconstrained]
 		,@dim_factory_id_placeholder as [dim_factory_id_original_constrained]
@@ -161,8 +162,6 @@ BEGIN
 		,[is_asap]
 		,[quantity_lum]
 		,[quantity_non_lum]
-		,[quantity_lum] as [quantity_unconsumed]
-		,[quantity_lum] as [quantity]
 		,[material_id_sr]
 		,DATEDIFF(day, @pdas_release_full_d, dd.[full_date]) as [production_lt_actual_buy]
 		,[comment_region]
@@ -178,12 +177,11 @@ BEGIN
 		,[exp_delivery_without_constraint]
 		,[coo]
 		,[remarks_region]
-		,0 AS [is_from_previous_release]
 	FROM
 		(
 			-- EMEA
 			SELECT
-				@pdasid as dim_pdas_id,
+				@dim_release_id as dim_release_id,
 				@businessid as dim_business_id,
 				@buying_program_id as dim_buying_program_id,
 				ISNULL(ntb.[pr_code], 'UNDEFINED') as order_number,
@@ -195,6 +193,14 @@ BEGIN
 						END
 					ELSE dd_xfw.id
 				END as dim_date_id,
+				CASE UPPER(ntb.[exp_delivery_no_constraint_dt])
+					WHEN 'ASAP' THEN
+						CASE dp_m.[production_lt]
+							WHEN 110 THEN @dim_date_id_asap_103
+							ELSE @dim_date_id_asap_73
+						END
+					ELSE dd_xfw.id
+				END as dim_date_id_original,
 				dc.id as dim_customer_id,
 				CASE
 					WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
@@ -291,11 +297,12 @@ BEGIN
 			-- APAC
 			UNION
 			SELECT
-				@pdasid as dim_pdas_id,
+				@dim_release_id as dim_release_id,
 				@businessid as dim_business_id,
 				@buying_program_id as dim_buying_program_id,
 				ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[line_item], 'UNDEFINED') as order_number,
 				dd_xfac.id as dim_date_id,
+				dd_xfac.id as dim_date_id_original,
 				dc.id as dim_customer_id,
 				CASE
 					WHEN dp_ms.id IS NOT NULL THEN dp_ms.id
@@ -361,13 +368,15 @@ BEGIN
 			-- CASA
 			UNION
 			SELECT
-				@pdasid as dim_pdas_id,
+				@dim_release_id as dim_release_id,
 				@businessid as dim_business_id,
 				@buying_program_id as dim_buying_program_id,
 				ISNULL(ntb.[pr_code], 'UNDEFINED') as order_number,
 				dd_xfac.id as dim_date_id,
+				dd_xfac.id as dim_date_id_original,
 				CASE
 					WHEN dc.id IS NOT NULL THEN dc.id
+					WHEN dcm.id IS NOT NULL THEN dcm.id
 					ELSE @dim_customer_id_placeholder_casa
 				END as dim_customer_id,
 				CASE
@@ -417,6 +426,7 @@ BEGIN
 				LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product] WHERE is_placeholder = 0) dp_ms
 					ON 	ntb.[dim_product_material_id_corrected] = dp_ms.material_id AND
 						ntb.dim_product_size = dp_ms.size
+
 				LEFT OUTER JOIN
 				(
 					SELECT MAX([id]) AS [id], [dc_plt]
@@ -424,6 +434,20 @@ BEGIN
 					GROUP BY [dc_plt]
 				) AS dc
 					ON ntb.[dim_customer_dc_sr_code] = dc.[dc_plt]
+
+				LEFT OUTER JOIN
+				(
+					SELECT MAX([id]) AS [id], [child]
+					FROM
+						[dbo].[dim_customer] dc
+						INNER JOIN
+						(SELECT [parent], [child] FROM [dbo].[helper_pdas_footwear_vans_mapping] WHERE [category] = 'Customer Master') m
+							ON dc.[name] = m.[parent]
+					GROUP BY
+						[child]
+				) dcm
+					ON ntb.[dim_customer_dc_sr_code] = dcm.[child]
+
 				INNER JOIN [dbo].[dim_date] dd_xfac ON ntb.xfac_dt = dd_xfac.full_date
 			WHERE
 				ntb.lum_qty IS NOT NULL AND
@@ -433,6 +457,7 @@ BEGIN
 				dd_xfac.id,
 				CASE
 					WHEN dc.id IS NOT NULL THEN dc.id
+					WHEN dcm.id IS NOT NULL THEN dcm.id
 					ELSE @dim_customer_id_placeholder_casa
 				END,
 				CASE
@@ -443,14 +468,16 @@ BEGIN
 			-- NORA
 			UNION
 			SELECT
-				@pdasid as dim_pdas_id,
+				@dim_release_id as dim_release_id,
 				@businessid as dim_business_id,
 				@buying_program_id as dim_buying_program_id,
 				ISNULL(ntb.[pr_code], 'UNDEFINED') + '-' + ISNULL(ntb.[item], 'UNDEFINED') as order_number,
 				dd_xfac.id as dim_date_id,
+				dd_xfac.id as dim_date_id_original,
 				CASE
 					WHEN dc_name.id IS NOT NULL THEN dc_name.id
 					WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
+					WHEN dcm.id IS NOT NULL THEN dcm.id
 					ELSE @dim_customer_id_placeholder_nora
 				END as dim_customer_id,
 				CASE
@@ -515,6 +542,19 @@ BEGIN
 				LEFT OUTER JOIN (SELECT MAX([id]) as [id], MAX([sold_to_party]) as [sold_to_party], [dc_plt] FROM [dbo].[dim_customer] GROUP BY [dc_plt]) dc_plt
 					ON ntb.[plnt] = dc_plt.[dc_plt]
 
+				LEFT OUTER JOIN
+				(
+					SELECT MAX([id]) AS [id], [child]
+					FROM
+						[dbo].[dim_customer] dc
+						INNER JOIN
+						(SELECT [parent], [child] FROM [dbo].[helper_pdas_footwear_vans_mapping] WHERE [category] = 'Customer Master') m
+							ON dc.[name] = m.[parent]
+					GROUP BY
+						[child]
+				) dcm
+					ON ntb.[plnt] = dcm.[child]
+
 			WHERE
 				(dp_ms.id IS NOT NULL OR dp_m.id IS NOT NULL) AND
 				ntb.lum_qty IS NOT NULL
@@ -524,6 +564,7 @@ BEGIN
 				CASE
 					WHEN dc_name.id IS NOT NULL THEN dc_name.id
 					WHEN dc_plt.id IS NOT NULL THEN dc_plt.id
+					WHEN dcm.id IS NOT NULL THEN dcm.id
 					ELSE @dim_customer_id_placeholder_nora
 				END,
 				CASE
@@ -534,7 +575,7 @@ BEGIN
 		INNER JOIN [dbo].[dim_date] dd
 			ON ntb.[dim_date_id] = dd.[id]
 		WHERE
-			[dim_pdas_id] = @pdasid
+			[dim_release_id] = @dim_release_id
 			AND [dim_business_id] = @businessid
 
 
@@ -543,11 +584,12 @@ BEGIN
 	PRINT 'Insert'
 	INSERT INTO [dbo].[fact_demand_total]
 	(
-		[dim_pdas_id]
+		[dim_release_id]
 		,[dim_business_id]
 		,[dim_buying_program_id]
 		,[dim_product_id]
 		,[dim_date_id]
+		,[dim_date_id_original]
 		,[dim_date_id_buy_month]
 		,[dim_factory_id_original_unconstrained]
 		,[dim_factory_id_original_constrained]
@@ -563,8 +605,6 @@ BEGIN
 		,[is_asap]
 		,[quantity_lum]
 		,[quantity_non_lum]
-		,[quantity_unconsumed]
-		,[quantity]
 		,[material_id_sr]
 		,[production_lt_actual_buy]
 		,[comment_region]
@@ -580,7 +620,6 @@ BEGIN
 		,[exp_delivery_without_constraint]
 		,[coo]
 		,[remarks_region]
-		,[is_from_previous_release]
 	)
 	SELECT s.*
 	FROM
@@ -590,11 +629,7 @@ BEGIN
 			SELECT *
 			FROM [dbo].[fact_demand_total]
 			WHERE
-				dim_pdas_id = @pdasid
-				AND dim_business_id = @businessid
-				AND dim_buying_program_id = @buying_program_id
-				AND dim_demand_category_id = @dim_demand_category_id_ntb
-				AND is_from_previous_release = 0
+				dim_release_id = @dim_release_id
 		) t
 			ON
 				s.[dim_product_id] = t.[dim_product_id] and
@@ -614,8 +649,6 @@ BEGIN
 		,t.[is_asap] = s.[is_asap]
 		,t.[quantity_lum] = s.[quantity_lum]
 		,t.[quantity_non_lum] = s.[quantity_non_lum]
-		,t.[quantity_unconsumed] = s.[quantity_unconsumed]
-		,t.[quantity] = s.[quantity]
 		,t.[material_id_sr] = s.[material_id_sr]
 		,t.[production_lt_actual_buy] = s.[production_lt_actual_buy]
 		,t.[sold_to_customer_name] = s.[sold_to_customer_name]
@@ -636,11 +669,7 @@ BEGIN
 			SELECT *
 			FROM [dbo].[fact_demand_total]
 			WHERE
-				dim_pdas_id = @pdasid
-				AND dim_business_id = @businessid
-				AND dim_buying_program_id = @buying_program_id
-				AND dim_demand_category_id = @dim_demand_category_id_ntb
-				AND is_from_previous_release = 0
+				dim_release_id = @dim_release_id
 		) t
 			ON
 				s.[dim_product_id] = t.[dim_product_id] and
@@ -653,16 +682,12 @@ BEGIN
 	DELETE t
 	FROM
 		#source_temp s
-		LEFT OUTER JOIN
+		RIGHT OUTER JOIN
 		(
 			SELECT *
 			FROM [dbo].[fact_demand_total]
 			WHERE
-				dim_pdas_id = @pdasid
-				AND dim_business_id = @businessid
-				AND dim_buying_program_id = @buying_program_id
-				AND dim_demand_category_id = @dim_demand_category_id_ntb
-				AND is_from_previous_release = 0
+				dim_release_id = @dim_release_id
 		) t
 			ON
 				s.[dim_product_id] = t.[dim_product_id] and
@@ -671,7 +696,7 @@ BEGIN
 				ISNULL(s.[pr_cut_code], 0) = ISNULL(t.[pr_cut_code], 0) and
 				ISNULL(s.[pr_code], 0) = ISNULL(t.[pr_code], 0)
 	WHERE
-		t.[dim_pdas_id] IS NULL
+		s.[dim_release_id] IS NULL
 
 
 END
