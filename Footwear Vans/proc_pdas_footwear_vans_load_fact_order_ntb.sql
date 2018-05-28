@@ -96,6 +96,7 @@ BEGIN
 		,[exp_delivery_without_constraint] NVARCHAR(45)
 		,[coo] NVARCHAR(45)
 		,[remarks_region] NVARCHAR(1000)
+		,[carton_qty] INT
 	)
 
 
@@ -138,6 +139,7 @@ BEGIN
 		,[exp_delivery_without_constraint]
 		,[coo]
 		,[remarks_region]
+		,[carton_qty]
 	)
 	-- fact_order
 	SELECT
@@ -177,6 +179,7 @@ BEGIN
 		,[exp_delivery_without_constraint]
 		,[coo]
 		,[remarks_region]
+		,[carton_qty]
 	FROM
 		(
 			-- EMEA
@@ -232,7 +235,8 @@ BEGIN
 				MAX(ntb.exp_delivery_with_constraint_dt) as [exp_delivery_with_constraint],
 				MAX(ntb.exp_delivery_no_constraint_dt) as [exp_delivery_without_constraint],
 				MAX(ntb.dim_location_country) as [coo],
-				MAX(ntb.comment_region) as [remarks_region]
+				MAX(ntb.comment_region) as [remarks_region],
+				NULL as [carton_qty]
 			FROM
 				(
 					SELECT
@@ -331,7 +335,8 @@ BEGIN
 				NULL as [exp_delivery_with_constraint],
 				NULL as [exp_delivery_without_constraint],
 				NULL as [coo],
-				MAX(ntb.remarks) as [remarks_region]
+				MAX(ntb.remarks) as [remarks_region],
+				MAX([carton_qty]) as [carton_qty]
 			FROM
 				(
 					SELECT
@@ -406,7 +411,8 @@ BEGIN
 				NULL as [exp_delivery_with_constraint],
 				NULL as [exp_delivery_without_constraint],
 				MAX(ntb.country_origin) as [coo],
-				MAX(ntb.comment_region) as [remarks_region]
+				MAX(ntb.comment_region) as [remarks_region],
+				NULL as [carton_qty]
 			FROM
 				(
 					SELECT
@@ -513,7 +519,8 @@ BEGIN
 				NULL as [exp_delivery_with_constraint],
 				NULL as [exp_delivery_without_constraint],
 				NULL as [coo],
-				NULL as [remarks_region]
+				NULL as [remarks_region],
+				NULL as [carton_qty]
 			FROM
 				(
 					SELECT

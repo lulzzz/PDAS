@@ -294,29 +294,26 @@ BEGIN
 	     ) target
 
 		INNER JOIN #source_temp
-			ON target.[dim_pdas_id] = #source_temp.[dim_pdas_id]
-			AND target.[dim_business_id] = #source_temp.[dim_business_id]
-			AND target.[dim_buying_program_id] = #source_temp.[dim_buying_program_id]
-			AND target.[dim_product_id] = #source_temp.[dim_product_id]
-			AND target.[dim_date_id] = #source_temp.[dim_date_id]
-			AND target.[dim_factory_id_original_unconstrained] = #source_temp.[dim_factory_id_original_unconstrained]
-			AND target.[dim_customer_id] = #source_temp.[dim_customer_id]
-			AND target.[dim_demand_category_id] = #source_temp.[dim_demand_category_id]
-			AND target.[order_number] = #source_temp.[order_number]
-
-
-
-		   AND target.[dim_date_id_buy_month] = @dim_date_id_buy_month
-		   AND target.[so_code] = #source_temp.[so_code]
-		   AND target.[is_asap] = #source_temp.[is_asap]
-
-		   -- ,target.[quantity_lum] = #source_temp.[quantity_lum]
-		   -- ,target.[quantity_non_lum] = #source_temp.[quantity_non_lum]
-		   -- ,target.[quantity_unconsumed] = #source_temp.[quantity_unconsumed]
-		   -- ,target.[quantity] = #source_temp.[quantity]
-		   -- ,target.[production_lt_actual_buy] = #source_temp.[production_lt_actual_buy]
-		   AND target.[is_from_previous_release] = #source_temp.[is_from_previous_release]
-		   AND target.[source_system] = #source_temp.[source_system]
+			ON
+				target.[dim_pdas_id] = #source_temp.[dim_pdas_id]
+				AND target.[dim_business_id] = #source_temp.[dim_business_id]
+				AND target.[dim_buying_program_id] = #source_temp.[dim_buying_program_id]
+				AND target.[dim_product_id] = #source_temp.[dim_product_id]
+				AND target.[dim_date_id] = #source_temp.[dim_date_id]
+				AND target.[dim_factory_id_original_unconstrained] = #source_temp.[dim_factory_id_original_unconstrained]
+				AND target.[dim_customer_id] = #source_temp.[dim_customer_id]
+				AND target.[dim_demand_category_id] = #source_temp.[dim_demand_category_id]
+				AND target.[order_number] = #source_temp.[order_number]
+				AND target.[dim_date_id_buy_month] = @dim_date_id_buy_month
+				AND target.[so_code] = #source_temp.[so_code]
+				AND target.[is_asap] = #source_temp.[is_asap]
+				-- ,target.[quantity_lum] = #source_temp.[quantity_lum]
+				-- ,target.[quantity_non_lum] = #source_temp.[quantity_non_lum]
+				-- ,target.[quantity_unconsumed] = #source_temp.[quantity_unconsumed]
+				-- ,target.[quantity] = #source_temp.[quantity]
+				-- ,target.[production_lt_actual_buy] = #source_temp.[production_lt_actual_buy]
+				AND target.[is_from_previous_release] = #source_temp.[is_from_previous_release]
+				AND target.[source_system] = #source_temp.[source_system]
 
 	print 4
   print CONVERT(varchar, SYSDATETIME(), 121)
@@ -578,15 +575,5 @@ BEGIN
 
 	print 6
   	print CONVERT(varchar, SYSDATETIME(), 121)
-
-
-	-- Update id_original
-	UPDATE [fact_demand_total]
-	SET [id_original] = [id]
-	WHERE
-		[dim_pdas_id] = @pdasid
-		and [dim_business_id] = @businessid
-		and [is_from_previous_release] = 0
-		and ISNULL([id_original], 0) = 0
 
 END

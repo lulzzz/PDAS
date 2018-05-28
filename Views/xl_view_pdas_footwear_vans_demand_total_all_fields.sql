@@ -107,6 +107,7 @@ SELECT
 	, f_1.[style_ranking]
 	, f_1.[mtr_ranking]
 	, f_1.[top_50_mtl]
+	, f_1.[carton_qty]
 
 	-- dim_release
 	,'Current Release' AS [dim_pdas_name]
