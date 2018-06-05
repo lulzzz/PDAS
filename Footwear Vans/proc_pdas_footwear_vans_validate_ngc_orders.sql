@@ -31,7 +31,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_product_style_id], '') + '/' + ISNULL([dim_product_size], '') as [value]
 	FROM
-		(SELECT DISTINCT REPLACE([dim_product_style_id], ' ', '') as [dim_product_style_id], LTRIM(RTRIM([dim_product_size])) as [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_ngc_po]) staging
+		(SELECT DISTINCT REPLACE([dim_product_style_id], ' ', '') as [dim_product_style_id], LTRIM(RTRIM([dim_product_size])) as [dim_product_size] FROM [dbo].[staging_pdas_footwear_vans_ngc_po_delta]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT
@@ -48,7 +48,7 @@ BEGIN
 	INSERT INTO [dbo].[system_log_file] (system, source, category, value)
 	SELECT DISTINCT @system, @source, @type, ISNULL([dim_factory_factory_code], '') as [value]
 	FROM
-		(SELECT DISTINCT REPLACE([dim_factory_factory_code], ' ', '') as [dim_factory_factory_code] FROM [dbo].[staging_pdas_footwear_vans_ngc_po]) staging
+		(SELECT DISTINCT REPLACE([dim_factory_factory_code], ' ', '') as [dim_factory_factory_code] FROM [dbo].[staging_pdas_footwear_vans_ngc_po_delta]) staging
         LEFT OUTER JOIN
         (
             SELECT DISTINCT

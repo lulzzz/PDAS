@@ -44,9 +44,9 @@ BEGIN
 	END
 
 	-- NGC
-	-- IF @dim_demand_category_id IN (23, 26)
-	-- BEGIN
-		-- EXEC [dbo].[proc_pdas_footwear_vans_validate_ngc_orders]
-	-- END
+	IF @dim_demand_category_id IN (23, 26)
+	BEGIN
+		EXEC [dbo].[proc_pdas_footwear_vans_validate_ngc_orders]
+	END
 
 END

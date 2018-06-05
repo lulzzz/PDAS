@@ -4,67 +4,21 @@ GO
 -- ==============================================================
 -- Author:		ebp Global
 -- Create date: 9/12/2017
+-- Update date: 6/4/2018
 -- Description:	Code to transfer the NGC data into the staging area (delta only!)
 --              This procedure is meant to run on a nightly basis (SQL job agent task)
 -- ==============================================================
 
 -- Declare variables
 DECLARE	@current_dt datetime = GETDATE()
-DECLARE	@starting_dt_last_modified datetime = DATEADD(day, -2, GETDATE())
-DECLARE	@starting_dt_rev datetime = DATEADD(day, -30, GETDATE())
+DECLARE	@starting_dt_rev datetime = DATEADD(month, -1, @current_dt)
 
 
--- Drop temporary table if exists
-IF OBJECT_ID('tempdb..#temp_ngc') IS NOT NULL
-BEGIN
-	DROP TABLE #temp_ngc;
-END
-
--- Create temp table
-CREATE TABLE #temp_ngc (
-    [Row #] [nvarchar](500) NULL,
-	[dim_factory_vendor_code] [nvarchar](500) NULL,
-	[dim_factory_factory_code] [nvarchar](500) NULL,
-	[po_code_cut] [nvarchar](500) NULL,
-	[dim_product_sbu] [nvarchar](500) NULL,
-	[dim_product_size] [nvarchar](500) NULL,
-	[dim_product_color_description] [nvarchar](500) NULL,
-	[dimension] [nvarchar](500) NULL,
-	[po_issue_dt] [datetime] NULL,
-	[shipment_status] [nvarchar](500) NULL,
-	[source] [nvarchar](500) NULL,
-	[order_qty] [int] NULL,
-	[shipped_qty] [int] NULL,
-	[dim_product_style_id] [nvarchar](500) NULL,
-	[ship_to_address] [nvarchar](500) NULL,
-	[ship_to_address_bis] [nvarchar](500) NULL,
-	[po_code] [nvarchar](500) NULL,
-	[po_type] [nvarchar](500) NULL,
-	[vf_sla] [nvarchar](500) NULL,
-	[dim_customer_dc_code_brio] [nvarchar](500) NULL,
-	[actual_crd_dt] [datetime] NULL,
-	[revised_crd_dt] [datetime] NULL,
-	[shipped_dt] [datetime] NULL,
-	[delay_reason] [nvarchar](500) NULL,
-	[shipment_id] [nvarchar](500) NULL,
-	[lum_order_qty] [int] NULL,
-	[lum_shipped_qty] [int] NULL,
-	[source_system] [nvarchar](500) NULL,
-	[shipment_closed_on_dt] [datetime] NULL,
-	[is_po_completed] [nvarchar](500) NULL,
-	[dc_name] [nvarchar](500) NULL,
-	[sales_order] [nvarchar](500) NULL,
-	[is_deleted] [tinyint] NULL
-)
-
--- Create table index
-CREATE INDEX idx_temp_ngc01 ON #temp_ngc
-(
-    [po_code_cut]
-)
+-- Delete latest delta
+DELETE FROM [dbo].[staging_pdas_footwear_vans_ngc_po_delta]
 
 -- Dump data into temp table
-INSERT INTO #temp_ngc
+INSERT INTO [dbo].[staging_pdas_footwear_vans_ngc_po_delta]
 (
     [Row #]
     ,[dim_factory_vendor_code]
@@ -98,7 +52,6 @@ INSERT INTO #temp_ngc
     ,[is_po_completed]
     ,[dc_name]
     ,[sales_order]
-	,[is_deleted]
 )
 
 SELECT
@@ -116,8 +69,8 @@ SELECT
     LTRIM(RTRIM(Nbbundet.qty)) AS [order_qty],
     LTRIM(RTRIM(Shipped.unitship)) AS [shipped_qty],
     LTRIM(RTRIM(Prbunhea.style)) AS [dim_product_style_id],
-    LTRIM(RTRIM(Shshipto.ship_to_1)) AS [ship_to_address],
-    LTRIM(RTRIM(Shshipto_2.ship_to_1)) AS [ship_to_address_bis],
+    NULL AS [ship_to_address],
+    NULL AS [ship_to_address_bis],
     LTRIM(RTRIM(Prbunhea.ship_no)) AS [po_code],
     LTRIM(RTRIM(Prbunhea.misc25)) AS [po_type],
     LTRIM(RTRIM(Prbunhea.misc41)) AS [vf_sla],
@@ -139,20 +92,12 @@ SELECT
     LTRIM(RTRIM(Shipment.firstclosedon)) AS [shipment_closed_on_dt],
     LTRIM(RTRIM(Prbunhea.done)) AS [is_po_completed],
     LTRIM(RTRIM(Shipmast.shipname)) AS [dc_name],
-    LTRIM(RTRIM(Prbunhea.misc27)) AS [sales_order],
-	CASE
-		WHEN Prbunhea.POLocation = 'CANCELED' THEN 1
-		ELSE 0
-	END AS [is_deleted]
+    LTRIM(RTRIM(Prbunhea.misc27)) AS [sales_order]
 FROM
 
 	[ITGC2W000187].[ESPSODV14RPT].[dbo].Prbunhea
     LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Nbbundet WITH (nolock)
         ON (Prbunhea.Id_Cut=Nbbundet.Id_Cut)
-    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shshipto WITH (nolock)
-        ON (Prbunhea.Rdacode=Shshipto.Factory)
-    LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].shshipto as Shshipto_2 WITH (nolock)
-        ON (Prbunhea.Rfactory=Shshipto_2.Factory)
     LEFT OUTER JOIN [ITGC2W000187].[ESPSODV14RPT].[dbo].Shipped WITH (nolock)
         ON
         (
@@ -171,166 +116,12 @@ FROM
         ON (nbbundet.size=prscale.scale)
 
 WHERE
-    Prbunhea.Modifiedon >= @starting_dt_last_modified
-    AND Prbunhea.revdd >= @starting_dt_rev
+    Prbunhea.revdd >= @starting_dt_rev
     AND Prbunhea.Misc6 NOT IN ('DIRECT BRAZIL')
     AND Prbunhea.Misc1 IN ('50 VANS FOOTWEAR', '503', '503 VN_Footwear', '508', '508 VN_Snow Footwear', '56 VANS SNOWBOOTS', 'VANS Footwear', 'VANS FOOTWEAR', 'VANS Snowboots', 'VANS SNOWBOOTS', 'VF  Vans Footwear', 'VN_Footwear', 'VN_Snow Footwear', 'VS  Vans Snowboots')
     AND NOT (Prbunhea.Qtyship=0 AND Prbunhea.Done=1)
     AND NOT (Nbbundet.qty=0)
-
-
--- Insert new rows
-INSERT INTO [dbo].[staging_pdas_footwear_vans_ngc_po]
-(
-	[Row #]
-    ,[dim_factory_vendor_code]
-    ,[dim_factory_factory_code]
-    ,[po_code_cut]
-    ,[dim_product_sbu]
-    ,[dim_product_size]
-    ,[dim_product_color_description]
-    ,[dimension]
-    ,[po_issue_dt]
-    ,[shipment_status]
-    ,[source]
-    ,[order_qty]
-    ,[shipped_qty]
-    ,[dim_product_style_id]
-    ,[ship_to_address]
-    ,[ship_to_address_bis]
-    ,[po_code]
-    ,[po_type]
-    ,[vf_sla]
-    ,[dim_customer_dc_code_brio]
-    ,[actual_crd_dt]
-    ,[revised_crd_dt]
-    ,[shipped_dt]
-    ,[delay_reason]
-    ,[shipment_id]
-    ,[lum_order_qty]
-    ,[lum_shipped_qty]
-    ,[source_system]
-    ,[shipment_closed_on_dt]
-    ,[is_po_completed]
-    ,[dc_name]
-    ,[sales_order]
-)
-SELECT
-	temp.[Row #]
-	,temp.[dim_factory_vendor_code]
-	,temp.[dim_factory_factory_code]
-	,temp.[po_code_cut]
-	,temp.[dim_product_sbu]
-	,temp.[dim_product_size]
-	,temp.[dim_product_color_description]
-	,temp.[dimension]
-	,temp.[po_issue_dt]
-	,temp.[shipment_status]
-	,temp.[source]
-	,temp.[order_qty]
-	,temp.[shipped_qty]
-	,temp.[dim_product_style_id]
-	,temp.[ship_to_address]
-	,temp.[ship_to_address_bis]
-	,temp.[po_code]
-	,temp.[po_type]
-	,temp.[vf_sla]
-	,temp.[dim_customer_dc_code_brio]
-	,temp.[actual_crd_dt]
-	,temp.[revised_crd_dt]
-	,temp.[shipped_dt]
-	,temp.[delay_reason]
-	,temp.[shipment_id]
-	,temp.[lum_order_qty]
-	,temp.[lum_shipped_qty]
-	,temp.[source_system]
-	,temp.[shipment_closed_on_dt]
-	,temp.[is_po_completed]
-	,temp.[dc_name]
-	,temp.[sales_order]
-FROM
-    #temp_ngc temp
-    LEFT OUTER JOIN
-    (
-        SELECT
-            [po_code_cut]
-            ,[dim_product_style_id]
-            ,[dim_product_size]
-			,[dim_product_color_description]
-			,[dimension]
-			,[shipment_id]
-        FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
-    ) as staging
-        ON
-            staging.[po_code_cut] = temp.[po_code_cut]
-			and staging.[dim_product_style_id] = temp.[dim_product_style_id]
-			and staging.[dim_product_color_description] = temp.[dim_product_color_description]
-            and staging.[dim_product_size] = temp.[dim_product_size]
-			and staging.[dimension] = temp.[dimension]
-			and staging.[shipment_id] = temp.[shipment_id]
-WHERE
-	temp.[is_deleted] = 0 and
-    staging.[po_code_cut] IS NULL
-
--- Update existing rows
-UPDATE staging
-SET
-    staging.[dim_factory_vendor_code] 	= temp.[dim_factory_vendor_code]
-    ,staging.[dim_factory_factory_code]	= temp.[dim_factory_factory_code]
-    ,staging.[dim_product_sbu]	= temp.[dim_product_sbu]
-    ,staging.[dim_product_color_description]	= temp.[dim_product_color_description]
-    ,staging.[dimension]	= temp.[dimension]
-    ,staging.[po_issue_dt]	= temp.[po_issue_dt]
-    ,staging.[shipment_status]	= temp.[shipment_status]
-    ,staging.[source]	= temp.[source]
-    ,staging.[order_qty]	= temp.[order_qty]
-    ,staging.[shipped_qty]	= temp.[shipped_qty]
-    ,staging.[ship_to_address]	= temp.[ship_to_address]
-    ,staging.[ship_to_address_bis]	= temp.[ship_to_address_bis]
-    ,staging.[po_code]	= temp.[po_code]
-    ,staging.[po_type]	= temp.[po_type]
-    ,staging.[vf_sla]	= temp.[vf_sla]
-    ,staging.[dim_customer_dc_code_brio]	= temp.[dim_customer_dc_code_brio]
-    ,staging.[actual_crd_dt]	= temp.[actual_crd_dt]
-    ,staging.[revised_crd_dt]	= temp.[revised_crd_dt]
-    ,staging.[shipped_dt]	= temp.[shipped_dt]
-    ,staging.[delay_reason]	= temp.[delay_reason]
-    ,staging.[shipment_id]	= temp.[shipment_id]
-    ,staging.[lum_order_qty]	= temp.[lum_order_qty]
-    ,staging.[lum_shipped_qty]	= temp.[lum_shipped_qty]
-    ,staging.[source_system]	= temp.[source_system]
-    ,staging.[shipment_closed_on_dt]	= temp.[shipment_closed_on_dt]
-    ,staging.[is_po_completed]	= temp.[is_po_completed]
-    ,staging.[dc_name]	= temp.[dc_name]
-    ,staging.[sales_order]	= temp.[sales_order]
-FROM
-    [dbo].[staging_pdas_footwear_vans_ngc_po] as staging
-    INNER JOIN #temp_ngc temp
-        ON
-            staging.[po_code_cut] = temp.[po_code_cut]
-            and staging.[dim_product_style_id] = temp.[dim_product_style_id]
-			and staging.[dim_product_color_description] = temp.[dim_product_color_description]
-            and staging.[dim_product_size] = temp.[dim_product_size]
-			and staging.[dimension] = temp.[dimension]
-			and staging.[shipment_id] = temp.[shipment_id]
-WHERE
-	temp.[is_deleted] = 0
-
-
--- Delete canceled orders
-DELETE staging
-FROM
-	[dbo].[staging_pdas_footwear_vans_ngc_po] as staging
-	INNER JOIN #temp_ngc temp
-		ON
-			staging.[po_code_cut] = temp.[po_code_cut]
-			and staging.[dim_product_style_id] = temp.[dim_product_style_id]
-			and staging.[dim_product_color_description] = temp.[dim_product_color_description]
-			and staging.[dim_product_size] = temp.[dim_product_size]
-			and staging.[dimension] = temp.[dimension]
-			and staging.[shipment_id] = temp.[shipment_id]
-WHERE
-	temp.[is_deleted] = 1
+	AND Prbunhea.POLocation <> 'CANCELED'
 
 
 -- Update timestamp of NGC load in metadata table
@@ -339,4 +130,4 @@ SET
 	[state] = 'OK',
 	[timestamp_file] = @current_dt
 WHERE
-	[table_name] = 'staging_pdas_footwear_vans_ngc_po'
+	[table_name] = 'staging_pdas_footwear_vans_ngc_po_delta'

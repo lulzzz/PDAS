@@ -12,18 +12,16 @@ AS
 BEGIN
 
 	/*
-
-		Incremental loading
-		First we map the keys between staging table and dimension.
-		If the key matched then we set the action flag to Update, otherwise flag equals Insert
-		Then we insert
-		Then we update
-
+	Incremental loading
+	First we map the keys between staging table and dimension.
+	If the key matched then we set the action flag to Update, otherwise flag equals Insert
+	Then we insert
+	Then we update
 	*/
 
 
     /*
-        INSERT
+    INSERT
     */
 
     INSERT INTO [dbo].[dim_product]
@@ -137,10 +135,10 @@ BEGIN
                 MAX([dim_product_sbu]) as [dim_product_sbu],
                 MAX([dim_product_color_description]) as [dim_product_color_description],
                 MAX([dimension]) as [dimension]
-            FROM [dbo].[staging_pdas_footwear_vans_ngc_po]
+            FROM [dbo].[staging_pdas_footwear_vans_ngc_po_delta]
             GROUP BY
-                [dim_product_style_id],
-                [dim_product_size]
+                REPLACE([dim_product_style_id], ' ', ''),
+                LTRIM(RTRIM(ISNULL([dim_product_size], '')))
         ) AS ngc
         LEFT OUTER JOIN (SELECT [id], [material_id], [size] FROM [dbo].[dim_product]) dp
             ON  ngc.[dim_product_style_id] = dp.[material_id]
