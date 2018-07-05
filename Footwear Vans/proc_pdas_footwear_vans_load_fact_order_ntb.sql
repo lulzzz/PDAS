@@ -627,6 +627,7 @@ BEGIN
 		,[exp_delivery_without_constraint]
 		,[coo]
 		,[remarks_region]
+		,[carton_qty]
 	)
 	SELECT s.*
 	FROM
