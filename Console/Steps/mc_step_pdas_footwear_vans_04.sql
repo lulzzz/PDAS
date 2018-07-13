@@ -14,6 +14,7 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
+	DECLARE	@dim_release_id int = (SELECT MAX([dim_release_id]) FROM [dbo].[helper_pdas_footwear_vans_release_current])
 	DECLARE @dim_business_id_footwear_vans int = (SELECT [id] FROM [dbo].[dim_business] WHERE [brand] = 'Vans' and [product_line] = 'Footwear')
 	DECLARE	@buying_program_id int
 
