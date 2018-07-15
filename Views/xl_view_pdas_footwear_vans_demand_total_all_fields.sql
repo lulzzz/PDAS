@@ -59,7 +59,10 @@ SELECT
 	   WHEN 1 THEN 'Y'
 	   ELSE 'N'
 	END AS [is_rejected]
-	, f_1.[material_id_sr]
+	,CASE dim_customer.[region]
+	   WHEN 'EMEA' THEN dim_product.material_id_emea
+	   ELSE f_1.[material_id_sr]
+	END AS [material_id_sr]
 	, f_1.[component_factory_short_name]
 	, f_1.[production_lt_actual_buy]
 	, f_1.[production_lt_actual_vendor]
@@ -146,7 +149,10 @@ SELECT
 	,dim_product.[product_cycle] AS [product_cycle]
 	,dim_product.[style_complexity] AS [dim_product_style_complexity]
 	,dim_product.[construction_type_name] AS [dim_product_construction_type_name]
-	,dim_product.[sku] AS [dim_product_sku]
+	,CASE dim_customer.[region]
+	   WHEN 'APAC' THEN dim_product.[sku]
+	   ELSE NULL
+	END AS [dim_product_sku]
 	,CASE dim_product.[pre_build_mtl]
 		WHEN 1 THEN 'Y'
 		ELSE 'N'
@@ -232,6 +238,14 @@ SELECT
 	,dim_factory_final.eu_supplier_code AS [dim_factory_final_eu_supplier_code]
 	,dim_factory_final.reva_vendor_fty AS [dim_factory_final_reva_vendor_fty]
 	,dim_factory_final.reva_agent_vendor AS [dim_factory_final_reva_agent_vendor]
+	,CASE dim_customer.[region]
+	   WHEN 'APAC' THEN dim_factory_final.reva_vendor_fty
+	   ELSE dim_factory_final.valid_acadia_fty_plant_code
+	END AS [vendor_plnt_conf]
+	,CASE dim_customer.[region]
+	   WHEN 'APAC' THEN dim_factory_final.reva_agent_vendor
+	   ELSE dim_factory_final.valid_acadia_vendor_code_1505_1510
+	END AS [vendor_number_conf]
 
 	-- dim_customer
 	,dim_customer.[name] AS [dim_customer_name]
