@@ -45,11 +45,22 @@ SELECT
 	, f_1.[allocation_logic_unconstrained]
 	, f_1.[allocation_logic_constrained]
 	, f_1.[customer_moq]
+	,CASE
+	   WHEN f_1.[customer_moq] >= 240 THEN '>= 240'
+	   WHEN f_1.[customer_moq] BETWEEN 96 AND 239 THEN '96 - 239'
+	   ELSE '< 96'
+	END AS [customer_moq_label]
 	,CASE f_1.[customer_below_moq]
 	   WHEN 1 THEN 'Y'
 	   ELSE 'N'
 	END AS [customer_below_moq]
 	, f_1.[region_moq]
+	,CASE
+	   WHEN f_1.[region_moq] >= 480 THEN '>= 480'
+	   WHEN f_1.[region_moq] BETWEEN 240 AND 479 THEN '240 - 479'
+	   WHEN f_1.[region_moq] BETWEEN 96 AND 239 THEN '96 - 239'
+	   ELSE '< 96'
+	END AS [region_moq_label]
 	,CASE f_1.[region_below_moq]
 	   WHEN 1 THEN 'Y'
 	   ELSE 'N'
